@@ -4,9 +4,10 @@ Node add-on for memory reading and writing! (finally!)
 # Features
 
 - open a process
+- close the process (handle)
+- list all open processes
 
 TODO:
-- list all open processes
 - list modules associated with a process
 - read memory
 - write to memory
