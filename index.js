@@ -24,3 +24,19 @@ memoryjs.openProcess(processName, function(process){
   szExeFile: 'chrome.exe',
   th32ProcessID: 10044,
   th32ParentProcessID: 5868 } */
+
+
+// sync
+var processes = memoryjs.getProcesses();
+console.log("\ngetting all processes sync\n---\n");
+for (var i = 0; i < processes.length; i++) {
+    console.log(processes[i].szExeFile);
+}
+
+// async
+console.log("\ngetting all procsses async\n---\n");
+memoryjs.getProcesses(function(processes){
+    for (var i = 0; i < processes.length; i++) {
+        console.log(processes[i].szExeFile);
+    }
+});

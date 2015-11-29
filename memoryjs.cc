@@ -15,6 +15,8 @@ using v8::Object;
 using v8::String;
 using v8::Number;
 using v8::Value;
+using v8::Handle;
+using v8::Array;
 
 process Memory;
 
@@ -44,6 +46,13 @@ void openProcess(const FunctionCallbackInfo<Value>& args) {
   if(!args[0]->IsString()){
     throwError("first argument must be a string", isolate);
     return;
+  }
+
+  // If there is a second argument and it's not
+  // a function, throw an error
+  if (args.Length() == 2 && !args[1]->IsFunction()) {
+	  throwError("second argument must be a function", isolate);
+	  return;
   }
 
   // Convert from v8 to char with toCharString
@@ -77,7 +86,7 @@ void openProcess(const FunctionCallbackInfo<Value>& args) {
     const unsigned argc = 1;
     Local<Value> argv[argc] = { processInfo };
     callback->Call(Null(isolate), argc, argv);
-  } else if(args.Length() == 1){
+  } else {
 	// return JSON
     args.GetReturnValue().Set(processInfo);
   }
@@ -88,9 +97,58 @@ void closeProcess(const FunctionCallbackInfo<Value>& args){
   Memory.closeProcess();
 }
 
+void getProcesses(const FunctionCallbackInfo<Value>& args) {
+	Isolate* isolate = args.GetIsolate();
+
+	// Argument is the process name,
+	// if this hasn't been provided throw an error
+	if (args.Length() > 1) {
+		throwError("requires either 0 arguments or 1 argument", isolate);
+		return;
+	}
+
+	// If there is an argument and it's not
+	// a function, throw an error
+	if (args.Length() == 1 && !args[0]->IsFunction()) {
+		throwError("first argument must be a function", isolate);
+		return;
+	}
+
+	std::vector<PROCESSENTRY32> processEntries = Memory.getProcesses(isolate);
+	Handle<Array> processes = Array::New(isolate, processEntries.size());
+
+	for (std::vector<PROCESSENTRY32>::size_type i = 0; i != processEntries.size(); i++) {
+		Local<Object> process = Object::New(isolate);
+
+		process->Set(String::NewFromUtf8(isolate, "cntThreads"), Number::New(isolate, (int)processEntries[i].cntThreads));
+		process->Set(String::NewFromUtf8(isolate, "cntUsage"), Number::New(isolate, (int)processEntries[i].cntUsage));
+		process->Set(String::NewFromUtf8(isolate, "dwFlags"), Number::New(isolate, (int)processEntries[i].dwFlags));
+		process->Set(String::NewFromUtf8(isolate, "dwSize"), Number::New(isolate, (int)processEntries[i].dwSize));
+		process->Set(String::NewFromUtf8(isolate, "szExeFile"), String::NewFromUtf8(isolate, processEntries[i].szExeFile));
+		process->Set(String::NewFromUtf8(isolate, "th32ProcessID"), Number::New(isolate, (int)processEntries[i].th32ProcessID));
+		process->Set(String::NewFromUtf8(isolate, "th32ParentProcessID"), Number::New(isolate, (int)processEntries[i].th32ParentProcessID));
+	
+		processes->Set(i, process);
+	}
+
+	// getProcesses can either take no arguments or one argument
+	// one argument is for asychronous use (the callback)
+	if (args.Length() == 1) {
+		// Callback to let the user handle with the information
+		Local<Function> callback = Local<Function>::Cast(args[0]);
+		const unsigned argc = 1;
+		Local<Value> argv[argc] = { processes };
+		callback->Call(Null(isolate), argc, argv);
+	} else {
+		// return JSON
+		args.GetReturnValue().Set(processes);
+	}
+}
+
 void init(Local<Object> exports) {
   NODE_SET_METHOD(exports, "openProcess", openProcess);
   NODE_SET_METHOD(exports, "closeProcess", closeProcess);
+  NODE_SET_METHOD(exports, "getProcesses", getProcesses);
 }
 
 NODE_MODULE(memoryjs, init)

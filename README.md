@@ -53,3 +53,15 @@ memoryjs.openProcess(processName, function(process){
   th32ProcessID: 10044,
   th32ParentProcessID: 5868 } */
 ```
+
+Get all processes (sync):
+``` javascript
+var processes = memoryjs.getProcesses();
+```
+
+Get all processes (async):
+``` javascript
+memoryjs.getProcesses(function(processes){
+
+});
+```
