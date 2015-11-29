@@ -44,12 +44,12 @@ memoryjs.openProcess(processName, function(process){
 ```
 
 ``` javascript
-/* process =
+// process =
 { cntThreads: 14,
   cntUsage: 0,
   dwFlags: 0,
   dwSize: 304,
   szExeFile: 'chrome.exe',
   th32ProcessID: 10044,
-  th32ParentProcessID: 5868 } */
+  th32ParentProcessID: 5868 }
 ```
