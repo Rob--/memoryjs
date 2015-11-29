@@ -19,8 +19,10 @@ public:
 	process();
 	~process();
 
-	bool openProcess(const char* processName, Isolate* isolate);
+	int openProcess(const char* processName, Isolate* isolate);
+	void closeProcess(int process);
 	std::vector<PROCESSENTRY32> getProcesses(Isolate* isolate);
+
 };
 #endif
 #pragma once

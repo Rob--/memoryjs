@@ -21,7 +21,7 @@ void throwError(char* error, Isolate* isolate){
   return;
 }
 
-bool process::openProcess(const char* processName, Isolate* isolate){
+int process::openProcess(const char* processName, Isolate* isolate){
 	std::vector<PROCESSENTRY32> processes = getProcesses(isolate);
 
 	for(std::vector<PROCESSENTRY32>::size_type i = 0; i != processes.size(); i++){
@@ -29,11 +29,15 @@ bool process::openProcess(const char* processName, Isolate* isolate){
 		if (!strcmp(processes[i].szExeFile, processName)) {
 			dwProcessId = processes[i].th32ProcessID;
 			hProcess = OpenProcess(PROCESS_ALL_ACCESS, FALSE, dwProcessId);
-      return TRUE;
+      return (int) hProcess;
 		}
 	}
 
-	return FALSE;
+	return 0;
+}
+
+void process::closeProcess(int process){
+	CloseHandle((HANDLE) process);
 }
 
 std::vector<PROCESSENTRY32> process::getProcesses(Isolate* isolate) {
@@ -60,7 +64,7 @@ std::vector<PROCESSENTRY32> process::getProcesses(Isolate* isolate) {
 	do {
 		processes.push_back(pEntry);
 	} while (Process32Next(hProcessSnapshot, &pEntry));
-	
+
 	CloseHandle(hProcessSnapshot);
 
   return processes;
