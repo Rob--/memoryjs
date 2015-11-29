@@ -114,12 +114,19 @@ void getProcesses(const FunctionCallbackInfo<Value>& args) {
 		return;
 	}
 
+	// processEntries stores PROCESSENTRY32s in a vector
 	std::vector<PROCESSENTRY32> processEntries = Memory.getProcesses(isolate);
+
+	// Creates v8 array with the size being that of the processEntries vector
+	// processes is an array of JavaScript objects
 	Handle<Array> processes = Array::New(isolate, processEntries.size());
 
+	// Loop over all processes found
 	for (std::vector<PROCESSENTRY32>::size_type i = 0; i != processEntries.size(); i++) {
+		// Create a v8 object to store the current process' information
 		Local<Object> process = Object::New(isolate);
 
+		// Assign key/values
 		process->Set(String::NewFromUtf8(isolate, "cntThreads"), Number::New(isolate, (int)processEntries[i].cntThreads));
 		process->Set(String::NewFromUtf8(isolate, "cntUsage"), Number::New(isolate, (int)processEntries[i].cntUsage));
 		process->Set(String::NewFromUtf8(isolate, "dwFlags"), Number::New(isolate, (int)processEntries[i].dwFlags));
@@ -127,7 +134,8 @@ void getProcesses(const FunctionCallbackInfo<Value>& args) {
 		process->Set(String::NewFromUtf8(isolate, "szExeFile"), String::NewFromUtf8(isolate, processEntries[i].szExeFile));
 		process->Set(String::NewFromUtf8(isolate, "th32ProcessID"), Number::New(isolate, (int)processEntries[i].th32ProcessID));
 		process->Set(String::NewFromUtf8(isolate, "th32ParentProcessID"), Number::New(isolate, (int)processEntries[i].th32ParentProcessID));
-	
+
+		// Push the object to the array
 		processes->Set(i, process);
 	}
 
