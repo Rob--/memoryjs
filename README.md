@@ -26,10 +26,19 @@ This is currently in development, therefore to test the add-on you must:
 To simply open a process:
 ``` javascript
 var memoryjs = require('./build/Release/memoryjs');
+var processName = "chrome.exe";
 
-if(memoryjs.openProcess("chrome.exe")){
-  console.log("Successfully opened", processName);
-} else {
-  console.log("Unable to open", processName);
-}
+// open the process, callback parameter is the HANDLE cast to an integer
+// and will equal 0 if unable to open the process
+memoryjs.openProcess(processName, function(process){
+  if(process){
+    console.log("Successfully opened handle on", processName);
+
+    // closes the handle on the process
+    memoryjs.closeProcess(process);
+    console.log("Closed handle on", processName)
+  } else {
+    console.log("Unable to open handle on", processName);
+  }
+});
 ```

@@ -1,5 +1,4 @@
 var memoryjs = require('./build/Release/memoryjs');
-
 var processName = "chrome.exe";
 
 memoryjs.openProcess(processName, function(process){
