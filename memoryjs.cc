@@ -1,9 +1,6 @@
 #include <node.h>
 #include <windows.h>
-#include <iostream>
 #include <TlHelp32.h>
-#include <string>
-#include <sstream>
 #include "process.h"
 
 namespace Memory {

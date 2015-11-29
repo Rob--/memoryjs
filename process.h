@@ -5,6 +5,7 @@
 
 #include <node.h>
 #include <windows.h>
+#include <vector>
 
 using v8::Isolate;
 
@@ -18,7 +19,8 @@ public:
 	process();
 	~process();
 
-	bool openProcess(const char* name, Isolate* isolate);
+	bool openProcess(const char* processName, Isolate* isolate);
+	std::vector<PROCESSENTRY32> getProcesses(Isolate* isolate);
 };
 #endif
 #pragma once

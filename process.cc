@@ -1,9 +1,7 @@
 #include <node.h>
 #include <windows.h>
-#include <iostream>
 #include <TlHelp32.h>
-#include <string>
-#include <sstream>
+#include <vector>
 #include "process.h"
 
 process::process() {}
@@ -23,7 +21,24 @@ void throwError(char* error, Isolate* isolate){
   return;
 }
 
-bool process::openProcess(const char* processName, Isolate* isolate) {
+bool process::openProcess(const char* processName, Isolate* isolate){
+	std::vector<PROCESSENTRY32> processes = getProcesses(isolate);
+
+	for(std::vector<PROCESSENTRY32>::size_type i = 0; i != processes.size(); i++){
+		// Check to see if this is the process we want.
+		if (!strcmp(processes[i].szExeFile, processName)) {
+			dwProcessId = processes[i].th32ProcessID;
+			hProcess = OpenProcess(PROCESS_ALL_ACCESS, FALSE, dwProcessId);
+      return TRUE;
+		}
+	}
+
+	return FALSE;
+}
+
+std::vector<PROCESSENTRY32> process::getProcesses(Isolate* isolate) {
+	std::vector<PROCESSENTRY32> processes;
+
   // Take a snapshot of all processes.
 	HANDLE hProcessSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, NULL);
 	PROCESSENTRY32 pEntry;
@@ -43,14 +58,10 @@ bool process::openProcess(const char* processName, Isolate* isolate) {
 
 	// Loop through processes.
 	do {
-		// Check to see if this is the process we want.
-		if (!strcmp(pEntry.szExeFile, processName)) {
-			dwProcessId = pEntry.th32ProcessID;
-			CloseHandle(hProcessSnapshot);
-			hProcess = OpenProcess(PROCESS_ALL_ACCESS, FALSE, dwProcessId);
-      return TRUE;
-		}
+		processes.push_back(pEntry);
 	} while (Process32Next(hProcessSnapshot, &pEntry));
+	
+	CloseHandle(hProcessSnapshot);
 
-  return FALSE;
+  return processes;
 }
