@@ -23,22 +23,33 @@ This is currently in development, therefore to test the add-on you must:
 
 # Usage
 
-To simply open a process:
+For a complete example, view `index.js`.
+
+Initialise:
 ``` javascript
 var memoryjs = require('./build/Release/memoryjs');
 var processName = "chrome.exe";
+```
 
-// open the process, callback parameter is the HANDLE cast to an integer
-// and will equal 0 if unable to open the process
+Open a process (sync):
+``` javascript
+var process = memoryjs.openProcess(processName);
+```
+
+Open a process (async):
+``` javascript
 memoryjs.openProcess(processName, function(process){
-  if(process){
-    console.log("Successfully opened handle on", processName);
 
-    // closes the handle on the process
-    memoryjs.closeProcess(process);
-    console.log("Closed handle on", processName)
-  } else {
-    console.log("Unable to open handle on", processName);
-  }
 });
+```
+
+``` javascript
+/* process =
+{ cntThreads: 14,
+  cntUsage: 0,
+  dwFlags: 0,
+  dwSize: 304,
+  szExeFile: 'chrome.exe',
+  th32ProcessID: 10044,
+  th32ParentProcessID: 5868 } */
 ```

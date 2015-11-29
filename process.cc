@@ -21,23 +21,33 @@ void throwError(char* error, Isolate* isolate){
   return;
 }
 
-int process::openProcess(const char* processName, Isolate* isolate){
+PROCESSENTRY32 process::openProcess(const char* processName, Isolate* isolate){
+	//process process;
+	PROCESSENTRY32 process;
+
+	// A list of processes (PROCESSENTRY32)
 	std::vector<PROCESSENTRY32> processes = getProcesses(isolate);
 
 	for(std::vector<PROCESSENTRY32>::size_type i = 0; i != processes.size(); i++){
 		// Check to see if this is the process we want.
 		if (!strcmp(processes[i].szExeFile, processName)) {
+			// Store the process handle and process ID internally
+			// for reading/writing to memory
 			dwProcessId = processes[i].th32ProcessID;
 			hProcess = OpenProcess(PROCESS_ALL_ACCESS, FALSE, dwProcessId);
-      return (int) hProcess;
+
+			// Store the handle (just for reference to close the handle later)
+			// process is returned and processEntry is used internally for reading/writing to memory
+			handle = (int) hProcess;
+			process = processEntry = processes[i];
 		}
 	}
 
-	return 0;
+	return process;
 }
 
-void process::closeProcess(int process){
-	CloseHandle((HANDLE) process);
+void process::closeProcess(){
+	CloseHandle((HANDLE) handle);
 }
 
 std::vector<PROCESSENTRY32> process::getProcesses(Isolate* isolate) {

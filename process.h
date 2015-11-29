@@ -13,14 +13,16 @@ class process {
 
 public:
 	HANDLE hProcess;
-	DWORD dwProcessId, dwClient;
-	HWND tWindow;
+	DWORD dwProcessId;
+
+	PROCESSENTRY32 processEntry;
+	int handle = 0;
 
 	process();
 	~process();
 
-	int openProcess(const char* processName, Isolate* isolate);
-	void closeProcess(int process);
+	PROCESSENTRY32 openProcess(const char* processName, Isolate* isolate);
+	void closeProcess();
 	std::vector<PROCESSENTRY32> getProcesses(Isolate* isolate);
 
 };
