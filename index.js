@@ -1,10 +1,10 @@
 var memoryjs = require('./build/Release/memoryjs');
 var processName = "chrome.exe";
 
-// sync
+// open a process (sync)
 var process = memoryjs.openProcess(processName);
 
-// async
+// open a process (async)
 memoryjs.openProcess(processName, function (process) {
     console.log(JSON.stringify(process, null, 3));
     if (process.szExeFile) {
@@ -17,14 +17,14 @@ memoryjs.openProcess(processName, function (process) {
     }
 });
 
-// sync
+// get all processes (sync)
 var processes = memoryjs.getProcesses();
 console.log("\nGetting all processes (sync)\n---\n");
 for (var i = 0; i < processes.length; i++) {
     console.log(processes[i].szExeFile);
 }
 
-// async
+// get all processes (async)
 console.log("\nGetting all processes (async)\n---\n");
 memoryjs.getProcesses(function(processes){
     for (var i = 0; i < processes.length; i++) {
@@ -41,14 +41,14 @@ memoryjs.getProcesses(function(processes){
   th32ProcessID: 10044,
   th32ParentProcessID: 5868 } */
 
-// sync
+// get all modules (sync)
 console.log("\nGetting all modules (sync)\n---\n");
 var modules = memoryjs.getModules(process.th32ProcessID);
 for (var i = 0; i < modules.length; i++) {
     console.log(modules[i].szExePath);
 }
 
-// sync
+// get all modules (async)
 console.log("\nGetting all modules (async)\n---\n");
 memoryjs.getModules(process.th32ProcessID, function (modules) {
     for (var i = 0; i < modules.length; i++) {
@@ -56,15 +56,15 @@ memoryjs.getModules(process.th32ProcessID, function (modules) {
     }
 });
 
-// async
+// find a module associated with a process (sync)
+console.log("\nFinding module \"ntdll.dll\" (sync)\n---\n");
+console.log(memoryjs.findModule("ntdll.dll", process.th32ProcessID));
+
+// find a module associated with a process (async)
 console.log("\nFinding module \"ntdll.dll\" (async)\n---\n");
 memoryjs.findModule("ntdll.dll", process.th32ProcessID, function (module) {
     console.log(module.szModule);
 });
-
-// sync
-console.log("\nFinding module \"ntdll.dll\" (sync)\n---\n");
-console.log(memoryjs.findModule("ntdll.dll", process.th32ProcessID));
 
 /* module =
 { dwSize: 568,
