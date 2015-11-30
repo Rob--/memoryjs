@@ -6,13 +6,8 @@ Node add-on for memory reading and writing! (finally!)
 - open a process
 - close the process (handle)
 - list all open processes
-<<<<<<< HEAD
-=======
-
-TODO:
->>>>>>> 801b44ca175065c13dd5a884ebe0a540d49f4acf
-- list modules associated with a process
-- find a specific module within a process
+- list all modules associated with a process
+- find a certain module associated with a process
 
 TODO:
 - read memory
