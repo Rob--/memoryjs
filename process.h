@@ -5,6 +5,7 @@
 
 #include <node.h>
 #include <windows.h>
+#include <TlHelp32.h>
 #include <vector>
 
 using v8::Isolate;
@@ -13,9 +14,8 @@ class process {
 
 public:
 	HANDLE hProcess;
-	DWORD dwProcessId;
 
-	PROCESSENTRY32 processEntry;
+	static PROCESSENTRY32 processEntry;
 	int handle = 0;
 
 	process();
