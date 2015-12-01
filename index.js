@@ -3,7 +3,7 @@ var processName = "chrome.exe";
 
 // open a process (sync)
 var process = memoryjs.openProcess(processName);
-
+/*
 // open a process (async)
 memoryjs.openProcess(processName, function (process) {
     console.log(JSON.stringify(process, null, 3));
@@ -30,7 +30,7 @@ memoryjs.getProcesses(function(processes){
     for (var i = 0; i < processes.length; i++) {
         console.log(processes[i].szExeFile);
     }
-});
+});*/
 
 /* process =
 { cntThreads: 14,
@@ -40,7 +40,7 @@ memoryjs.getProcesses(function(processes){
   szExeFile: 'chrome.exe',
   th32ProcessID: 10044,
   th32ParentProcessID: 5868 } */
-
+/*
 // get all modules (sync)
 console.log("\nGetting all modules (sync)\n---\n");
 var modules = memoryjs.getModules(process.th32ProcessID);
@@ -59,7 +59,7 @@ memoryjs.getModules(process.th32ProcessID, function (modules) {
 // find a module associated with a process (sync)
 console.log("\nFinding module \"ntdll.dll\" (sync)\n---\n");
 console.log(memoryjs.findModule("ntdll.dll", process.th32ProcessID));
-
+*/
 // find a module associated with a process (async)
 console.log("\nFinding module \"ntdll.dll\" (async)\n---\n");
 memoryjs.findModule("ntdll.dll", process.th32ProcessID, function (module) {

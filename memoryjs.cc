@@ -72,12 +72,12 @@ void openProcess(const FunctionCallbackInfo<Value>& args) {
   Local<Object> processInfo = Object::New(isolate);
 
   // Set the key/values
-  processInfo->Set(String::NewFromUtf8(isolate, "cntThreads"),			Number::New(isolate, (int)process.cntThreads));
-  processInfo->Set(String::NewFromUtf8(isolate, "cntUsage"),			Number::New(isolate, (int)process.cntUsage));
-  processInfo->Set(String::NewFromUtf8(isolate, "dwFlags"),				Number::New(isolate, (int)process.dwFlags));
-  processInfo->Set(String::NewFromUtf8(isolate, "dwSize"),				Number::New(isolate, (int)process.dwSize));
-  processInfo->Set(String::NewFromUtf8(isolate, "szExeFile"),			String::NewFromUtf8(isolate, process.szExeFile));
-  processInfo->Set(String::NewFromUtf8(isolate, "th32ProcessID"),		Number::New(isolate, (int)process.th32ProcessID));
+  processInfo->Set(String::NewFromUtf8(isolate, "cntThreads"), Number::New(isolate, (int)process.cntThreads));
+  processInfo->Set(String::NewFromUtf8(isolate, "cntUsage"), Number::New(isolate, (int)process.cntUsage));
+  processInfo->Set(String::NewFromUtf8(isolate, "dwFlags"), Number::New(isolate, (int)process.dwFlags));
+  processInfo->Set(String::NewFromUtf8(isolate, "dwSize"), Number::New(isolate, (int)process.dwSize));
+  processInfo->Set(String::NewFromUtf8(isolate, "szExeFile"), String::NewFromUtf8(isolate, process.szExeFile));
+  processInfo->Set(String::NewFromUtf8(isolate, "th32ProcessID"), Number::New(isolate, (int)process.th32ProcessID));
   processInfo->Set(String::NewFromUtf8(isolate, "th32ParentProcessID"), Number::New(isolate, (int)process.th32ParentProcessID));
 
   // openProcess can either take one argument or can take
@@ -267,12 +267,11 @@ void findModule(const FunctionCallbackInfo<Value>& args) {
 	// three arguments for asychronous use (third argument is the callback)
 	if (args.Length() == 3) {
 		// Callback to let the user handle with the information
-		Local<Function> callback = Local<Function>::Cast(args[1]);
+		Local<Function> callback = Local<Function>::Cast(args[2]);
 		const unsigned argc = 1;
 		Local<Value> argv[argc] = { moduleInfo };
 		callback->Call(Null(isolate), argc, argv);
-	}
-	else {
+	} else {
 		// return JSON
 		args.GetReturnValue().Set(moduleInfo);
 	}
