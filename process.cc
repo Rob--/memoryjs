@@ -44,7 +44,7 @@ PROCESSENTRY32 process::openProcess(const char* processName, char** errorMessage
 }
 
 void process::closeProcess(){
-	CloseHandle((HANDLE) handle);
+	CloseHandle(process::hProcess);
 }
 
 std::vector<PROCESSENTRY32> process::getProcesses(char** errorMessage) {
