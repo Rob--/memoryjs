@@ -9,9 +9,9 @@ Node add-on for memory reading and writing! (finally!)
 - list all modules associated with a process
 - find a certain module associated with a process
 - read memory
+- write to memory
 
 TODO:
-- write to memory
 - pattern scanning
 
 # Install
