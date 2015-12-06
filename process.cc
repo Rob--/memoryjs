@@ -16,6 +16,7 @@ using v8::Isolate;
 using v8::String;
 
 PROCESSENTRY32 process::processEntry;
+HANDLE process::hProcess;
 
 PROCESSENTRY32 process::openProcess(const char* processName, char** errorMessage){
 	PROCESSENTRY32 process;
@@ -28,11 +29,11 @@ PROCESSENTRY32 process::openProcess(const char* processName, char** errorMessage
 		if (!strcmp(processes[i].szExeFile, processName)) {
 			// Store the process handle and process ID internally
 			// for reading/writing to memory
-			hProcess = OpenProcess(PROCESS_ALL_ACCESS, FALSE, processEntry.th32ProcessID);
+			process::hProcess = OpenProcess(PROCESS_ALL_ACCESS, FALSE, processes[i].th32ProcessID);
 
 			// Store the handle (just for reference to close the handle later)
 			// process is returned and processEntry is used internally for reading/writing to memory
-			handle = (int) hProcess;
+			handle = (int) process::hProcess;
 			process = processEntry = processes[i];
 
 			break;
