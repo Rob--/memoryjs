@@ -13,16 +13,16 @@ class memory {
 
 public:
 
-	template <class cData>
-	cData readMemory(HANDLE hProcess, DWORD dwAddress) {
-		cData cRead;
-		ReadProcessMemory(hProcess, (LPVOID)dwAddress, &cRead, sizeof(cData), NULL);
+	template <class dataType>
+	dataType readMemory(HANDLE hProcess, DWORD dwAddress) {
+		dataType cRead;
+		ReadProcessMemory(hProcess, (LPVOID)dwAddress, &cRead, sizeof(dataType), NULL);
 		return cRead;
 	}
 
-	template <class cData>
-	void writeMemory(HANDLE hProcess, DWORD dwAddress, cData value) {
-		WriteProcessMemory(hProcess, (LPVOID)dwAddress, &value, sizeof(cData), NULL);
+	template <class dataType>
+	void writeMemory(HANDLE hProcess, DWORD dwAddress, dataType value) {
+		WriteProcessMemory(hProcess, (LPVOID)dwAddress, &value, sizeof(dataType), NULL);
 	}
 };
 #endif

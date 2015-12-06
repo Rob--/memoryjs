@@ -89,3 +89,6 @@ console.log("value of " + value + ": " + memoryjs.readMemory(value, "int"));
 memoryjs.readMemory(value, "int", function (result) {
     console.log("value of " + value + ": " + result);
 });
+
+// write memory
+memoryjs.writeMemory(value, 1, "int");

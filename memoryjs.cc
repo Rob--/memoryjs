@@ -299,7 +299,7 @@ void findModule(const FunctionCallbackInfo<Value>& args) {
 void readMemory(const FunctionCallbackInfo<Value>& args) {
 	Isolate* isolate = args.GetIsolate();
 
-	// If there is neithr 2, nor 3 arguments, throw an error
+	// If there is neither 2, nor 3 arguments, throw an error
 	if (args.Length() != 2 && args.Length() != 3) {
 		memoryjs::throwError("requires 2 arguments, or 3 arguments if a callback is being used", isolate);
 		return;
@@ -380,6 +380,64 @@ void readMemory(const FunctionCallbackInfo<Value>& args) {
 	if (args.Length() == 3) callback->Call(Null(isolate), argc, argv);
 }
 
+void writeMemory(const FunctionCallbackInfo<Value>& args) {
+	Isolate* isolate = args.GetIsolate();
+
+	// If there is not 3 arguments, throw an error
+	if (args.Length() != 3) {
+		memoryjs::throwError("requires 3 arguments", isolate);
+		return;
+	}
+
+	// If the argument we've been given is not a number and the
+	// third argument we've been given is not a string, throw an error
+	if (!args[0]->IsNumber() && !args[2]->IsString()) {
+		memoryjs::throwError("first argument must be a number, second argument must be a string", isolate);
+		return;
+	}
+
+	v8::String::Utf8Value dataTypeArg(args[2]);
+	char* dataType = (char*)*(dataTypeArg);
+
+	// following if statements find the data type to read and then return the correct data type
+	// args[0] -> Uint32Value() is the address to read, unsigned int is used because address needs to be positive
+	// args[2] -> value is the value to write to the address
+	if (!strcmp(dataType, "int")) {
+
+		Memory.writeMemory<int>(process::hProcess, args[0]->Uint32Value(), args[1]->NumberValue());
+
+	} else if (!strcmp(dataType, "dword")) {
+
+		Memory.writeMemory<DWORD>(process::hProcess, args[0]->Uint32Value(), args[1]->NumberValue());
+
+	} else if (!strcmp(dataType, "long")) {
+
+		Memory.writeMemory<long>(process::hProcess, args[0]->Uint32Value(), args[1]->NumberValue());
+
+	} else if (!strcmp(dataType, "float")) {
+
+		Memory.writeMemory<float>(process::hProcess, args[0]->Uint32Value(), args[1]->NumberValue());
+
+	} else if (!strcmp(dataType, "double")) {
+
+		Memory.writeMemory<double>(process::hProcess, args[0]->Uint32Value(), args[1]->NumberValue());
+
+	} else if (!strcmp(dataType, "bool") || !strcmp(dataType, "boolean")) {
+
+		Memory.writeMemory<bool>(process::hProcess, args[0]->Uint32Value(), args[1]->BooleanValue());
+
+	} else if (!strcmp(dataType, "string") || !strcmp(dataType, "str")) {
+
+		v8::String::Utf8Value valueParam(args[1]->ToString());
+		Memory.writeMemory<std::string>(process::hProcess, args[0]->Uint32Value(), std::string(*valueParam));
+
+	} else {
+		memoryjs::throwError("unexpected data type", isolate);
+		return;
+	}
+
+}
+
 void init(Local<Object> exports) {
   NODE_SET_METHOD(exports, "openProcess", openProcess);
   NODE_SET_METHOD(exports, "closeProcess", closeProcess);
@@ -387,6 +445,7 @@ void init(Local<Object> exports) {
   NODE_SET_METHOD(exports, "getModules", getModules);
   NODE_SET_METHOD(exports, "findModule", findModule);
   NODE_SET_METHOD(exports, "readMemory", readMemory);
+  NODE_SET_METHOD(exports, "writeMemory", writeMemory);
 }
 
 NODE_MODULE(memoryjs, init)

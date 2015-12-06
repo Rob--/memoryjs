@@ -62,11 +62,11 @@ memoryjs.getProcesses(function(processes){
 A process object looks like this:
 ``` javascript
 // process =
-{ cntThreads: 14,
-  cntUsage: 0,
-  szExeFile: 'chrome.exe',
-  th32ProcessID: 10044,
-  th32ParentProcessID: 5868 }
+{  cntThreads: 47,
+   szExeFile: "csgo.exe",
+   th32ProcessID: 10316,
+   th32ParentProcessID: 7804,
+   pcPriClassBase: 8 }
 ```
 
 ### Modules
@@ -98,11 +98,11 @@ memoryjs.getModules(processId, function(modules){
 A module object looks like this:
 ``` javascript
 // module =
-{ modBaseAddr: -1870135296,
-  modBaseSize: 1839104,
-  szExePath: 'C:\\WINDOWS\\SYSTEM32\\ntdll.dll',
-  szModule: 'ntdll.dll',
-  th32ModuleID: 5844 }
+{ modBaseAddr: 468123648,
+  modBaseSize: 80302080,
+  szExePath: 'c:\\program files (x86)\\steam\\steamapps\\common\\counter-strike global offensive\\csgo\\bin\\client.dll',
+  szModule: 'client.dll',
+  th32ProcessID: 10316 }
   ```
 
 ### Memory
@@ -117,4 +117,9 @@ Read from memory (async):
 memoryjs.readMemory(address, dataType, function(result){
 
 });
+```
+
+Write to memory:
+``` javascript
+memoryjs.writeMemory(address, value, dataType);
 ```
