@@ -59,7 +59,7 @@ memoryjs.getProcesses(function(processes){
 });
 ```
 
-See the `Documentation` section of this README to see what a process object looks like.
+See the [Documentation](#user-content-documentation) section of this README to see what a process object looks like.
 
 ### Modules
 
