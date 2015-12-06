@@ -13,7 +13,7 @@ using v8::Isolate;
 class process {
 
 public:
-	HANDLE hProcess;
+	static HANDLE hProcess;
 
 	static PROCESSENTRY32 processEntry;
 	int handle = 0;

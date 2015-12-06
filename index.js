@@ -1,5 +1,7 @@
 var memoryjs = require('./build/Release/memoryjs');
-var processName = "chrome.exe";
+var processName = "csgo.exe";
+var processModule;
+var offset = 0x00A9D44C;
 
 // open a process (sync)
 var process = memoryjs.openProcess(processName);
@@ -33,13 +35,11 @@ memoryjs.getProcesses(function(processes){
 });
 
 /* process =
-{ cntThreads: 14,
-  cntUsage: 0,
-  dwFlags: 0,
-  dwSize: 304,
-  szExeFile: 'chrome.exe',
-  th32ProcessID: 10044,
-  th32ParentProcessID: 5868 } */
+{  cntThreads: 47,
+   szExeFile: "csgo.exe",
+   th32ProcessID: 10316,
+   th32ParentProcessID: 7804,
+   pcPriClassBase: 8 } */
 
 // get all modules (sync)
 console.log("\nGetting all modules (sync)\n---\n");
@@ -58,26 +58,34 @@ memoryjs.getModules(process.th32ProcessID, function (modules) {
 
 memoryjs.getModules(process.th32ProcessID, function(modules){
   for(var i = 0; i < modules.length; i++){
-    console.log(JSON.stringify(modules, null, 3));
+    //console.log(JSON.stringify(modules, null, 3));
   }
 });
 
 // find a module associated with a process (sync)
-console.log("\nFinding module \"ntdll.dll\" (sync)\n---\n");
-console.log(memoryjs.findModule("ntdll.dll", process.th32ProcessID));
+console.log("\nFinding module \"client.dll\" (sync)\n---\n");
+console.log(memoryjs.findModule("client.dll", process.th32ProcessID));
 
 // find a module associated with a process (async)
-console.log("\nFinding module \"ntdll.dll\" (async)\n---\n");
-memoryjs.findModule("ntdll.dll", process.th32ProcessID, function (module) {
+console.log("\nFinding module \"client.dll\" (async)\n---\n");
+memoryjs.findModule("client.dll", process.th32ProcessID, function (module) {
     console.log(module.szModule);
+    processModule = module;
 });
 
 /* module =
-{ dwSize: 568,
-  GlblcntUsage: 65535,
-  modBaseAddr: -1870135296,
-  modBaseSize: 1839104,
-  ProccntUsage: 65535,
-  szExePath: 'C:\\WINDOWS\\SYSTEM32\\ntdll.dll',
-  szModule: 'ntdll.dll',
-  th32ModuleID: 5844 } */
+{ modBaseAddr: 468123648,
+  modBaseSize: 80302080,
+  szExePath: 'c:\\program files (x86)\\steam\\steamapps\\common\\counter-strike global offensive\\csgo\\bin\\client.dll',
+  szModule: 'client.dll',
+  th32ProcessID: 10316 } */
+
+var value = processModule.modBaseAddr + offset;
+
+// read memory (sync)
+console.log("value of " + value + ": " + memoryjs.readMemory(value, "int"));
+
+// read memory (async)
+memoryjs.readMemory(value, "int", function (result) {
+    console.log("value of " + value + ": " + result);
+});

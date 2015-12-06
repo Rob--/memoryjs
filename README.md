@@ -8,9 +8,9 @@ Node add-on for memory reading and writing! (finally!)
 - list all open processes
 - list all modules associated with a process
 - find a certain module associated with a process
+- read memory
 
 TODO:
-- read memory
 - write to memory
 - pattern scanning
 
@@ -33,7 +33,7 @@ var memoryjs = require('./build/Release/memoryjs');
 var processName = "chrome.exe";
 ```
 
-### Process
+### Processes
 
 Open a process (sync):
 ``` javascript
@@ -69,7 +69,7 @@ A process object looks like this:
   th32ParentProcessID: 5868 }
 ```
 
-### Module
+### Modules
 
 Find a module (sync):
 ``` javascript
@@ -104,3 +104,17 @@ A module object looks like this:
   szModule: 'ntdll.dll',
   th32ModuleID: 5844 }
   ```
+
+### Memory
+
+Read from memory (sync):
+``` javascript
+memoryjs.readMemory(address, dataType);
+```
+
+Read from memory (async):
+``` javascript
+memoryjs.readMemory(address, dataType, function(result){
+
+});
+```

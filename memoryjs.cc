@@ -5,6 +5,7 @@
 #include "module.h"
 #include "process.h"
 #include "memoryjs.h"
+#include "memory.h"
 
 using v8::Exception;
 using v8::Function;
@@ -17,9 +18,11 @@ using v8::Number;
 using v8::Value;
 using v8::Handle;
 using v8::Array;
+using v8::Boolean;
 
 process Process;
 module Module;
+memory Memory;
 
 void memoryjs::throwError(char* error, Isolate* isolate) {
 	isolate->ThrowException(
@@ -233,7 +236,7 @@ void findModule(const FunctionCallbackInfo<Value>& args) {
 
 	// If there is neither 1 nor, nor 2, nor 3 arguments, throw an error
 	if (args.Length() != 1 && args.Length() != 2 && args.Length() != 3) {
-		memoryjs::throwError("requires 2 arguments, or 3 arguments if a callback is being used", isolate);
+		memoryjs::throwError("requires 1 argument, 2 arguments, or 3 arguments if a callback is being used", isolate);
 		return;
 	}
 
@@ -293,12 +296,97 @@ void findModule(const FunctionCallbackInfo<Value>& args) {
 	}
 }
 
+void readMemory(const FunctionCallbackInfo<Value>& args) {
+	Isolate* isolate = args.GetIsolate();
+
+	// If there is neithr 2, nor 3 arguments, throw an error
+	if (args.Length() != 2 && args.Length() != 3) {
+		memoryjs::throwError("requires 2 arguments, or 3 arguments if a callback is being used", isolate);
+		return;
+	}
+
+	// If the argument we've been given is not a number and the
+	// second argument we've been given is not a string, throw an error
+	if (!args[0]->IsNumber() && !args[1]->IsString()) {
+		memoryjs::throwError("first argument must be a number, second argument must be a string", isolate);
+		return;
+	}
+
+	// If there is a third argument and it's not a function, throw an error
+	if (args.Length() == 3 && !args[2]->IsFunction()) {
+		memoryjs::throwError("third argument must be a function", isolate);
+		return;
+	}
+
+	v8::String::Utf8Value dataTypeArg(args[1]);
+	char* dataType = (char*) *(dataTypeArg);
+
+	// Set callback variables in the case the a callback parameter has been passed
+	Local<Function> callback = Local<Function>::Cast(args[2]);
+	const unsigned argc = 1;
+	Local<Value> argv[argc];
+
+	// following if statements find the data type to read and then return the correct data type
+	// args[0] -> Uint32Value() is the address to read, unsigned int is used because address needs to be positive
+	if (!strcmp(dataType, "int")) {
+
+		int result = Memory.readMemory<int>(process::hProcess, args[0]->Uint32Value());
+		if (args.Length() == 3) argv[0] = Number::New(isolate, result);
+		else args.GetReturnValue().Set(Number::New(isolate, result));
+
+	} else if (!strcmp(dataType, "dword")) {
+
+		DWORD result = Memory.readMemory<DWORD>(process::hProcess, args[0]->Uint32Value());
+		if (args.Length() == 3) argv[0] = Number::New(isolate, result);
+		else args.GetReturnValue().Set(Number::New(isolate, result));
+
+	} else if (!strcmp(dataType, "long")) {
+
+		long result = Memory.readMemory<long>(process::hProcess, args[0]->Uint32Value());
+		if (args.Length() == 3) argv[0] = Number::New(isolate, result);
+		else args.GetReturnValue().Set(Number::New(isolate, result));
+
+	} else if (!strcmp(dataType, "float")) {
+
+		float result = Memory.readMemory<float>(process::hProcess, args[0]->Uint32Value());
+		if (args.Length() == 3) argv[0] = Number::New(isolate, result);
+		else args.GetReturnValue().Set(Number::New(isolate, result));
+
+	} else if (!strcmp(dataType, "double")) {
+		
+		double result = Memory.readMemory<double>(process::hProcess, args[0]->Uint32Value());
+		if (args.Length() == 3) argv[0] = Number::New(isolate, result);
+		else args.GetReturnValue().Set(Number::New(isolate, result));
+
+	} else if (!strcmp(dataType, "bool") || !strcmp(dataType, "boolean")) {
+
+		bool result = Memory.readMemory<bool>(process::hProcess, args[0]->Uint32Value());
+		if (args.Length() == 3) argv[0] = Boolean::New(isolate, result);
+		else args.GetReturnValue().Set(Boolean::New(isolate, result));
+
+	} else if (!strcmp(dataType, "string") || !strcmp(dataType, "str")) {
+
+		char* result = Memory.readMemory<char*>(process::hProcess, args[0]->Uint32Value());
+		if (args.Length() == 3) argv[0] = String::NewFromUtf8(isolate, result);
+		else args.GetReturnValue().Set(String::NewFromUtf8(isolate, result));
+
+	} else {
+		memoryjs::throwError("unexpected data type", isolate);
+		return;
+	}
+	
+	// We check if there is three arguments and if the third argument is a function earlier on
+	// now we check again if we must call the function passed on
+	if (args.Length() == 3) callback->Call(Null(isolate), argc, argv);
+}
+
 void init(Local<Object> exports) {
   NODE_SET_METHOD(exports, "openProcess", openProcess);
   NODE_SET_METHOD(exports, "closeProcess", closeProcess);
   NODE_SET_METHOD(exports, "getProcesses", getProcesses);
   NODE_SET_METHOD(exports, "getModules", getModules);
   NODE_SET_METHOD(exports, "findModule", findModule);
+  NODE_SET_METHOD(exports, "readMemory", readMemory);
 }
 
 NODE_MODULE(memoryjs, init)
