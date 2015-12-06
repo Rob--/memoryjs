@@ -14,11 +14,11 @@ using v8::Exception;
 using v8::Isolate;
 using v8::String;
 
-MODULEENTRY32 module::findModule(const char* moduleName, DWORD processId, Isolate* isolate) {
+MODULEENTRY32 module::findModule(const char* moduleName, DWORD processId, char** errorMessage) {
 	MODULEENTRY32 module;
 
 	// A list of modules (MODULEENTRY32)
-	std::vector<MODULEENTRY32> modules = getModules(processId, isolate);
+	std::vector<MODULEENTRY32> modules = getModules(processId, errorMessage);
 
 	// Loop over every module
 	for (std::vector<MODULEENTRY32>::size_type i = 0; i != modules.size(); i++) {
@@ -32,17 +32,15 @@ MODULEENTRY32 module::findModule(const char* moduleName, DWORD processId, Isolat
 	}
 
 	return module;
-}
+} 
 
-std::vector<MODULEENTRY32> module::getModules(DWORD processId, Isolate* isolate) {	
+std::vector<MODULEENTRY32> module::getModules(DWORD processId, char** errorMessage) {
 	// Take a snapshot of all modules inside a given process.
 	HANDLE hModuleSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPMODULE, processId);
 	MODULEENTRY32 mEntry;
 
-	std::vector<MODULEENTRY32> modules;
-
 	if (hModuleSnapshot == INVALID_HANDLE_VALUE) {
-		memoryjs::throwError("method failed to take snapshot of the process", isolate);
+		*errorMessage = "method failed to take snapshot of the process";
 	}
 
 	// Before use, set the structure size.
@@ -51,14 +49,18 @@ std::vector<MODULEENTRY32> module::getModules(DWORD processId, Isolate* isolate)
 	// Exit if unable to find the first module.
 	if (!Module32First(hModuleSnapshot, &mEntry)) {
 		CloseHandle(hModuleSnapshot);
-		memoryjs::throwError("method failed to retrieve the first module", isolate);
+		*errorMessage = "method failed to retrieve the first module";
 	}
+
+	std::vector<MODULEENTRY32> modules;
 
 	// Loop through modules.
 	do {
 		// Add the module to the vector
 		modules.push_back(mEntry);
 	} while (Module32Next(hModuleSnapshot, &mEntry));
+
+	CloseHandle(hModuleSnapshot);
 
 	return modules;
 }

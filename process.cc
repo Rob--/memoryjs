@@ -17,11 +17,11 @@ using v8::String;
 
 PROCESSENTRY32 process::processEntry;
 
-PROCESSENTRY32 process::openProcess(const char* processName, Isolate* isolate){
+PROCESSENTRY32 process::openProcess(const char* processName, char** errorMessage){
 	PROCESSENTRY32 process;
 
 	// A list of processes (PROCESSENTRY32)
-	std::vector<PROCESSENTRY32> processes = getProcesses(isolate);
+	std::vector<PROCESSENTRY32> processes = getProcesses(errorMessage);
 
 	for(std::vector<PROCESSENTRY32>::size_type i = 0; i != processes.size(); i++){
 		// Check to see if this is the process we want.
@@ -46,15 +46,13 @@ void process::closeProcess(){
 	CloseHandle((HANDLE) handle);
 }
 
-std::vector<PROCESSENTRY32> process::getProcesses(Isolate* isolate) {
+std::vector<PROCESSENTRY32> process::getProcesses(char** errorMessage) {
 	// Take a snapshot of all processes.
 	HANDLE hProcessSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, NULL);
 	PROCESSENTRY32 pEntry;
 
-	std::vector<PROCESSENTRY32> processes;
-
 	if (hProcessSnapshot == INVALID_HANDLE_VALUE) {
-		memoryjs::throwError("method failed to take snapshot of the process", isolate);
+		*errorMessage = "method failed to take snapshot of the process";
 	}
 
 	// Before use, set the structure size.
@@ -63,8 +61,10 @@ std::vector<PROCESSENTRY32> process::getProcesses(Isolate* isolate) {
 	// Exit if unable to find the first process.
 	if (!Process32First(hProcessSnapshot, &pEntry)) {
 		CloseHandle(hProcessSnapshot);
-		memoryjs::throwError("method failed to retrieve the first process", isolate);
+		*errorMessage = "method failed to retrieve the first process";
 	}
+
+	std::vector<PROCESSENTRY32> processes;
 
 	// Loop through processes.
 	do {
@@ -73,6 +73,5 @@ std::vector<PROCESSENTRY32> process::getProcesses(Isolate* isolate) {
 	} while (Process32Next(hProcessSnapshot, &pEntry));
 
 	CloseHandle(hProcessSnapshot);
-
-  return processes;
+	return processes;
 }

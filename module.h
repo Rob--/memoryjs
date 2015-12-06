@@ -18,8 +18,8 @@ public:
 	module();
 	~module();
 
-	MODULEENTRY32 findModule(const char* moduleName, DWORD processId, Isolate* isolate);
-	std::vector<MODULEENTRY32> getModules(DWORD processId, Isolate* isolate);
+	MODULEENTRY32 findModule(const char* moduleName, DWORD processId, char** errorMessage);
+	std::vector<MODULEENTRY32> getModules(DWORD processId, char** errorMessage);
 };
 #endif
 #pragma once

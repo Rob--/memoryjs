@@ -6,8 +6,6 @@
 #include "process.h"
 #include "memoryjs.h"
 
-//namespace Memory {
-
 using v8::Exception;
 using v8::Function;
 using v8::FunctionCallbackInfo;
@@ -30,13 +28,9 @@ void memoryjs::throwError(char* error, Isolate* isolate) {
 	return;
 }
 
-const char* toCharString(const v8::String::Utf8Value &value) {
-  return *value;
-}
-
 void openProcess(const FunctionCallbackInfo<Value>& args) {
   Isolate* isolate = args.GetIsolate();
-
+  
   // If there is neither 1 nor 2 arguments, throw an error
   if(args.Length() != 1 && args.Length() != 2){
     memoryjs::throwError("requires 1 argument, or 2 arguments if a callback is being used", isolate);
@@ -56,29 +50,35 @@ void openProcess(const FunctionCallbackInfo<Value>& args) {
 	  memoryjs::throwError("second argument must be a function", isolate);
 	  return;
   }
-
-  // Convert from v8 to char with toCharString
+  
   v8::String::Utf8Value processName(args[0]);
 
+  // Define error message that may be set by the function that opens the process
+  char* errorMessage = "";
+
   // Opens a process and returns PROCESSENTRY32 class
-  PROCESSENTRY32 process = Process.openProcess(toCharString(processName), isolate);
+  PROCESSENTRY32 process = Process.openProcess((char*) *(processName), &errorMessage);
 
   // In case it failed to open, let's keep retrying
   while(!strcmp(process.szExeFile, "")) {
-    process = Process.openProcess(toCharString(processName), isolate);
+    process = Process.openProcess((char*) *(processName), &errorMessage);
   };
+
+  // If an error message was returned from the function that opens the process, throw the error.
+  if (strcmp(errorMessage, "")) {
+	  memoryjs::throwError(errorMessage, isolate);
+	  return;
+  }
 
   // Create a v8 Object (JSON) to store the process information
   Local<Object> processInfo = Object::New(isolate);
 
   // Set the key/values
   processInfo->Set(String::NewFromUtf8(isolate, "cntThreads"), Number::New(isolate, (int)process.cntThreads));
-  processInfo->Set(String::NewFromUtf8(isolate, "cntUsage"), Number::New(isolate, (int)process.cntUsage));
-  processInfo->Set(String::NewFromUtf8(isolate, "dwFlags"), Number::New(isolate, (int)process.dwFlags));
-  processInfo->Set(String::NewFromUtf8(isolate, "dwSize"), Number::New(isolate, (int)process.dwSize));
   processInfo->Set(String::NewFromUtf8(isolate, "szExeFile"), String::NewFromUtf8(isolate, process.szExeFile));
   processInfo->Set(String::NewFromUtf8(isolate, "th32ProcessID"), Number::New(isolate, (int)process.th32ProcessID));
   processInfo->Set(String::NewFromUtf8(isolate, "th32ParentProcessID"), Number::New(isolate, (int)process.th32ParentProcessID));
+  processInfo->Set(String::NewFromUtf8(isolate, "pcPriClassBase"), Number::New(isolate, (int)process.pcPriClassBase));
 
   // openProcess can either take one argument or can take
   // two arguments for asychronous use (second argument is the callback)
@@ -115,8 +115,17 @@ void getProcesses(const FunctionCallbackInfo<Value>& args) {
 		return;
 	}
 
+	// Define error message that may be set by the function that gets the processes
+	char* errorMessage = "";
+
 	// processEntries stores PROCESSENTRY32s in a vector
-	std::vector<PROCESSENTRY32> processEntries = Process.getProcesses(isolate);
+	std::vector<PROCESSENTRY32> processEntries = Process.getProcesses(&errorMessage);
+
+	// If an error message was returned from the function that gets the processes, throw the error.
+	if (strcmp(errorMessage, "")) {
+		memoryjs::throwError(errorMessage, isolate);
+		return;
+	}
 
 	// Creates v8 array with the size being that of the processEntries vector
 	// processes is an array of JavaScript objects
@@ -129,12 +138,10 @@ void getProcesses(const FunctionCallbackInfo<Value>& args) {
 
 		// Assign key/values
 		process->Set(String::NewFromUtf8(isolate, "cntThreads"), Number::New(isolate, (int)processEntries[i].cntThreads));
-		process->Set(String::NewFromUtf8(isolate, "cntUsage"), Number::New(isolate, (int)processEntries[i].cntUsage));
-		process->Set(String::NewFromUtf8(isolate, "dwFlags"), Number::New(isolate, (int)processEntries[i].dwFlags));
-		process->Set(String::NewFromUtf8(isolate, "dwSize"), Number::New(isolate, (int)processEntries[i].dwSize));
 		process->Set(String::NewFromUtf8(isolate, "szExeFile"), String::NewFromUtf8(isolate, processEntries[i].szExeFile));
 		process->Set(String::NewFromUtf8(isolate, "th32ProcessID"), Number::New(isolate, (int)processEntries[i].th32ProcessID));
 		process->Set(String::NewFromUtf8(isolate, "th32ParentProcessID"), Number::New(isolate, (int)processEntries[i].th32ParentProcessID));
+		process->Set(String::NewFromUtf8(isolate, "pcPriClassBase"), Number::New(isolate, (int)processEntries[i].pcPriClassBase));
 
 		// Push the object to the array
 		processes->Set(i, process);
@@ -175,8 +182,17 @@ void getModules(const FunctionCallbackInfo<Value>& args) {
 		return;
 	}
 
+	// Define error message that may be set by the function that gets the modules
+	char* errorMessage = "";
+
 	// moduleEntries stores MODULEENTRY32s in a vector
-	std::vector<MODULEENTRY32> moduleEntries = Module.getModules(args[0]->NumberValue(), isolate);
+	std::vector<MODULEENTRY32> moduleEntries = Module.getModules(args[0]->Int32Value(), &errorMessage);
+
+	// If an error message was returned from the function getting the modules, throw the error.
+	if (strcmp(errorMessage, "")) {
+		memoryjs::throwError(errorMessage, isolate);
+		return;
+	}
 
 	// Creates v8 array with the size being that of the moduleEntries vector
 	// modules is an array of JavaScript objects
@@ -188,21 +204,17 @@ void getModules(const FunctionCallbackInfo<Value>& args) {
 		Local<Object> module = Object::New(isolate);
 
 		// Assign key/values
-		module->Set(String::NewFromUtf8(isolate, "dwSize"), Number::New(isolate, (int)moduleEntries[i].dwSize));
-		module->Set(String::NewFromUtf8(isolate, "GlblcntUsage"), Number::New(isolate, (int)moduleEntries[i].GlblcntUsage));
 		module->Set(String::NewFromUtf8(isolate, "modBaseAddr"), Number::New(isolate, (int)moduleEntries[i].modBaseAddr));
 		module->Set(String::NewFromUtf8(isolate, "modBaseSize"), Number::New(isolate, (int)moduleEntries[i].modBaseSize));
-		module->Set(String::NewFromUtf8(isolate, "ProccntUsage"), Number::New(isolate, (int)moduleEntries[i].ProccntUsage));
 		module->Set(String::NewFromUtf8(isolate, "szExePath"), String::NewFromUtf8(isolate, moduleEntries[i].szExePath));
 		module->Set(String::NewFromUtf8(isolate, "szModule"), String::NewFromUtf8(isolate, moduleEntries[i].szModule));
-		module->Set(String::NewFromUtf8(isolate, "th32ModuleID"), Number::New(isolate, (int)moduleEntries[i].th32ModuleID));
 		module->Set(String::NewFromUtf8(isolate, "th32ModuleID"), Number::New(isolate, (int)moduleEntries[i].th32ProcessID));
 
 		// Push the object to the array
 		modules->Set(i, module);
 	}
 
-	// getModules can either take no arguments, one argument or two arguments
+	// getModules can either take one argument or two arguments
 	// one/two arguments is for asychronous use (the callback)
 	if (args.Length() == 2) {
 		// Callback to let the user handle with the information
@@ -237,31 +249,35 @@ void findModule(const FunctionCallbackInfo<Value>& args) {
 		memoryjs::throwError("third argument must be a function", isolate);
 		return;
 	}
-
-	// Convert from v8 to char with toCharString
+	
 	v8::String::Utf8Value moduleName(args[0]);
+	
+	// Define error message that may be set by the function that gets the modules
+	char* errorMessage = "";
 
 	// Searches all modules for requested module and returns PROCESSENTRY32 class
-	MODULEENTRY32 module = Module.findModule(toCharString(moduleName), args[1]->NumberValue(), isolate);
+	MODULEENTRY32 module = Module.findModule((char*) *(moduleName), args[1]->Int32Value(), &errorMessage);
+
+	// If an error message was returned from the function getting the module, throw the error.
+	if (strcmp(errorMessage, "")) {
+		memoryjs::throwError(errorMessage, isolate);
+		return;
+	}
 
 	// In case it failed to open, let's keep retrying
 	while (!strcmp(module.szExePath, "")) {
-		module = Module.findModule(toCharString(moduleName), args[1]->NumberValue(), isolate);
+		module = Module.findModule((char*) *(moduleName), args[1]->Int32Value(), &errorMessage);
 	};
 
 	// Create a v8 Object (JSON) to store the process information
 	Local<Object> moduleInfo = Object::New(isolate);
 
 	// Set the key/values
-	moduleInfo->Set(String::NewFromUtf8(isolate, "dwSize"), Number::New(isolate, (int)module.dwSize));
-	moduleInfo->Set(String::NewFromUtf8(isolate, "GlblcntUsage"), Number::New(isolate, (int)module.GlblcntUsage));
 	moduleInfo->Set(String::NewFromUtf8(isolate, "modBaseAddr"), Number::New(isolate, (int)module.modBaseAddr));
 	moduleInfo->Set(String::NewFromUtf8(isolate, "modBaseSize"), Number::New(isolate, (int)module.modBaseSize));
-	moduleInfo->Set(String::NewFromUtf8(isolate, "ProccntUsage"), Number::New(isolate, (int)module.ProccntUsage));
 	moduleInfo->Set(String::NewFromUtf8(isolate, "szExePath"), String::NewFromUtf8(isolate, module.szExePath));
 	moduleInfo->Set(String::NewFromUtf8(isolate, "szModule"), String::NewFromUtf8(isolate, module.szModule));
-	moduleInfo->Set(String::NewFromUtf8(isolate, "th32ModuleID"), Number::New(isolate, (int)module.th32ModuleID));
-	moduleInfo->Set(String::NewFromUtf8(isolate, "th32ModuleID"), Number::New(isolate, (int)module.th32ProcessID));
+	moduleInfo->Set(String::NewFromUtf8(isolate, "th32ProcessID"), Number::New(isolate, (int)module.th32ProcessID));
 
 	// findModule can either take one or two arguments,
 	// three arguments for asychronous use (third argument is the callback)
@@ -286,5 +302,3 @@ void init(Local<Object> exports) {
 }
 
 NODE_MODULE(memoryjs, init)
-
-//}

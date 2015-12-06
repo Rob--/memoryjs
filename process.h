@@ -21,9 +21,9 @@ public:
 	process();
 	~process();
 
-	PROCESSENTRY32 openProcess(const char* processName, Isolate* isolate);
+	PROCESSENTRY32 openProcess(const char* processName, char** errorMessage);
 	void closeProcess();
-	std::vector<PROCESSENTRY32> getProcesses(Isolate* isolate);
+	std::vector<PROCESSENTRY32> getProcesses(char** errorMessage);
 
 };
 #endif
