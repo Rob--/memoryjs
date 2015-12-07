@@ -21,10 +21,6 @@ module.exports = {
     else memoryjs.getModules(processId, callback);
   },
 
-  readMemory: function(address, dataType){
-    return memoryjs.readMemory(address, dataType);
-  },
-
   readMemory: function(address, dataType, callback){
     if(arguments.length == 2) return memoryjs.readMemory(address, dataType);
     else memoryjs.readMemory(address, dataType, callback);
