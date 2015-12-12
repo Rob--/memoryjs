@@ -16,7 +16,7 @@ TODO:
 
 # Install
 
-This is a Node add-on and therefore requires [node-gyp](https://github.com/nodejs/node-gyp) to use.
+This is a Node add-on (for `v0.12.x`) and therefore requires [node-gyp](https://github.com/nodejs/node-gyp) to use.
 
 You may also need to [follow these steps](https://github.com/nodejs/node-gyp#user-content-installation).
 
@@ -28,7 +28,7 @@ For a complete example, view `index.js`.
 
 Initialise:
 ``` javascript
-var memoryjs = require('./build/Release/memoryjs');
+var memoryjs = require('memoryjs');
 var processName = "chrome.exe";
 ```
 
