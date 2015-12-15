@@ -4,15 +4,15 @@ var processModule;
 var offset = 0x00A9D44C;
 
 // open a process (sync)
-var process = memoryjs.openProcess(processName);
+var processObject = memoryjs.openProcess(processName);
 
 // open a process (async)
-memoryjs.openProcess(processName, function(err, process) {
-  console.log(JSON.stringify(process, null, 3));
+memoryjs.openProcess(processName, function(err, processObject) {
+  console.log(JSON.stringify(processObject, null, 3));
   if (process.szExeFile) {
     console.log("Successfully opened handle on", processName);
 
-    memoryjs.closeProcess(process.handle);
+    memoryjs.closeProcess(processObject.handle);
     console.log("Closed handle on", processName)
   } else {
     console.log("Unable to open handle on", processName);
@@ -43,20 +43,20 @@ memoryjs.getProcesses(function(err, processes){
 
 // get all modules (sync)
 console.log("\nGetting all modules (sync)\n---\n");
-var modules = memoryjs.getModules(process.th32ProcessID);
+var modules = memoryjs.getModules(processObject.th32ProcessID);
 for (var i = 0; i < modules.length; i++) {
   console.log(modules[i].szExePath);
 }
 
 // get all modules (async)
 console.log("\nGetting all modules (async)\n---\n");
-memoryjs.getModules(process.th32ProcessID, function(err, modules) {
+memoryjs.getModules(processObject.th32ProcessID, function(err, modules) {
   for (var i = 0; i < modules.length; i++) {
     console.log(modules[i].szModule);
   }
 });
 
-memoryjs.getModules(process.th32ProcessID, function(err, modules){
+memoryjs.getModules(processObject.th32ProcessID, function(err, modules){
   for(var i = 0; i < modules.length; i++){
     //console.log(JSON.stringify(modules, null, 3));
   }
@@ -64,11 +64,11 @@ memoryjs.getModules(process.th32ProcessID, function(err, modules){
 
 // find a module associated with a process (sync)
 console.log("\nFinding module \"client.dll\" (sync)\n---\n");
-console.log(memoryjs.findModule("client.dll", process.th32ProcessID));
+console.log(memoryjs.findModule("client.dll", processObject.th32ProcessID));
 
 // find a module associated with a process (async)
 console.log("\nFinding module \"client.dll\" (async)\n---\n");
-memoryjs.findModule("client.dll", process.th32ProcessID, function(err, module) {
+memoryjs.findModule("client.dll", processObject.th32ProcessID, function(err, module) {
   console.log(module.szModule);
   processModule = module;
 });
