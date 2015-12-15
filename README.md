@@ -16,7 +16,7 @@ TODO:
 
 # Install
 
-This is a Node add-on and therefore requires [node-gyp](https://github.com/nodejs/node-gyp) to use.
+This is a Node add-on (for `v0.12.x`) and therefore requires [node-gyp](https://github.com/nodejs/node-gyp) to use.
 
 You may also need to [follow these steps](https://github.com/nodejs/node-gyp#user-content-installation).
 
@@ -28,7 +28,7 @@ For a complete example, view `index.js`.
 
 Initialise:
 ``` javascript
-var memoryjs = require('./build/Release/memoryjs');
+var memoryjs = require('memoryjs');
 var processName = "chrome.exe";
 ```
 
@@ -41,7 +41,7 @@ var processObject = memoryjs.openProcess(processName);
 
 Open a process (async):
 ``` javascript
-memoryjs.openProcess(processName, function(processObject){
+memoryjs.openProcess(processName, function(err, processObject){
 
 });
 ```
@@ -53,7 +53,7 @@ var processes = memoryjs.getProcesses();
 
 Get all processes (async):
 ``` javascript
-memoryjs.getProcesses(function(processes){
+memoryjs.getProcesses(function(err, processes){
 
 });
 ```
@@ -69,7 +69,7 @@ var module = memoryjs.findModule(moduleName, processId);
 
 Find a module (async):
 ``` javascript
-memoryjs.findModule(moduleName, processId, function(module){
+memoryjs.findModule(moduleName, processId, function(err, module){
 
 });
 ```
@@ -81,7 +81,7 @@ var modules = memoryjs.getModules(processId);
 
 Get all modules (async):
 ``` javascript
-memoryjs.getModules(processId, function(modules){
+memoryjs.getModules(processId, function(err, modules){
 
 });
 ```
@@ -97,7 +97,7 @@ memoryjs.readMemory(address, dataType);
 
 Read from memory (async):
 ``` javascript
-memoryjs.readMemory(address, dataType, function(result){
+memoryjs.readMemory(address, dataType, function(err, result){
 
 });
 ```
@@ -141,9 +141,11 @@ Module object:
 opens a process to be able to read from and write to it
 
 - **processName** *(string)* - the name of the process to open
-- **callback** *(function)* - has one parameter (processObject)
+- **callback** *(function)* - has two parameters:
+  - **err** *(string)* - error message (empty if there were no errors)
+  - **processObject** *(JSON [process object])* - information about the process
 
-**returns** *process object* either directly or via the callback
+**returns** *process object (JSON)* either directly or via the callback
 
 #### closeProcess()
 ---
@@ -155,9 +157,11 @@ closes the handle on the opened process
 
 collects information about all the running processes
 
-- **callback** *(function)* - has one parameter (array of processes)
+- **callback** *(function)* - has two parameters:
+  - **err** *(string)* - error message (empty if there were no errors)
+  - **processes** *(array)* - array of *process object (JSON)*
 
-**returns** an array of *process object* for all the running processes
+**returns** an array of *process object (JSON)* for all the running processes
 
 #### findModule(moduleName, processId[, callback])
 ---
@@ -166,9 +170,11 @@ finds a module associated with a given process
 
 - **moduleName** *(string)* - the name of the module to find
 - **processId** *(int)* - the id of the process in which to find the module
-- **callback** *(function)* - has one parameter (module)
+- **callback** *(function)* - has two parameters:
+  - **err** *(string)* - error message (empty if there were no errors)
+  - **module** *(JSON [module object])* - information about the module
 
-**returns** *module object* either directly or via the callback
+**returns** *module object (JSON)* either directly or via the callback
 
 #### getModules(processId[, callback])
 ---
@@ -176,9 +182,11 @@ finds a module associated with a given process
 gets all modules associated with a given process
 
 - **processId** *(int)* - the id of the process in which to find the module
-- **callback** *(function)* - has one parameter (array of modules)
+- **callback** *(function)* - has two parameters:
+  - **err** *(string)* - error message (empty if there were no errors)
+  - **modules** *(array)* - array of *module object (JSON)*
 
-**returns** an array of *module object* for all the modules found
+**returns** an array of *module object (JSON)* for all the modules found
 
 #### readMemory(address, dataType[, callback])
 ---
@@ -187,11 +195,13 @@ reads the memory at a given address
 
 - **address** *(int)* - the address in memory to read from
 - **dataType** *(string)* - the data type to read into (definitions can be found at the top of this section)
-- **callback** *(function)* - has one parameter (the value)
+- **callback** *(function)* - has two parameters:
+  - **err** *(string)* - error message (empty if there were no errors)
+  - **value** *(any data type)* - the value stored at the given address in memory
 
 **returns** the value that has been read from memory
 
-#### writeMemory(address, value, dataType)
+#### writeMemory(address, value, dataType[, callback])
 ---
 
 writes to an address in memory
@@ -199,3 +209,5 @@ writes to an address in memory
 - **address** *(int)* - the address in memory to write to
 - **value** *(any data type)* - the data type of value must be either `number`, `string` or `boolean` and is the value that will be written to the address in memory
 - **dataType** *(string)* the data type of the value (definitions can be found at the top of this section)
+- **callback** *(function)* - has one parameter:
+  - **err** *(string)* - error message (empty if there were no errors)

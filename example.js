@@ -7,31 +7,31 @@ var offset = 0x00A9D44C;
 var process = memoryjs.openProcess(processName);
 
 // open a process (async)
-memoryjs.openProcess(processName, function (process) {
-    console.log(JSON.stringify(process, null, 3));
-    if (process.szExeFile) {
-        console.log("Successfully opened handle on", processName);
+memoryjs.openProcess(processName, function(err, process) {
+  console.log(JSON.stringify(process, null, 3));
+  if (process.szExeFile) {
+    console.log("Successfully opened handle on", processName);
 
-        memoryjs.closeProcess(process.handle);
-        console.log("Closed handle on", processName)
-    } else {
-        console.log("Unable to open handle on", processName);
-    }
+    memoryjs.closeProcess(process.handle);
+    console.log("Closed handle on", processName)
+  } else {
+    console.log("Unable to open handle on", processName);
+  }
 });
 
 // get all processes (sync)
 var processes = memoryjs.getProcesses();
 console.log("\nGetting all processes (sync)\n---\n");
 for (var i = 0; i < processes.length; i++) {
-    console.log(processes[i].szExeFile);
+  console.log(processes[i].szExeFile);
 }
 
 // get all processes (async)
 console.log("\nGetting all processes (async)\n---\n");
-memoryjs.getProcesses(function(processes){
-    for (var i = 0; i < processes.length; i++) {
-        console.log(processes[i].szExeFile);
-    }
+memoryjs.getProcesses(function(err, processes){
+  for (var i = 0; i < processes.length; i++) {
+    console.log(processes[i].szExeFile);
+  }
 });
 
 /* process =
@@ -45,18 +45,18 @@ memoryjs.getProcesses(function(processes){
 console.log("\nGetting all modules (sync)\n---\n");
 var modules = memoryjs.getModules(process.th32ProcessID);
 for (var i = 0; i < modules.length; i++) {
-    console.log(modules[i].szExePath);
+  console.log(modules[i].szExePath);
 }
 
 // get all modules (async)
 console.log("\nGetting all modules (async)\n---\n");
-memoryjs.getModules(process.th32ProcessID, function (modules) {
-    for (var i = 0; i < modules.length; i++) {
-        console.log(modules[i].szModule);
-    }
+memoryjs.getModules(process.th32ProcessID, function(err, modules) {
+  for (var i = 0; i < modules.length; i++) {
+    console.log(modules[i].szModule);
+  }
 });
 
-memoryjs.getModules(process.th32ProcessID, function(modules){
+memoryjs.getModules(process.th32ProcessID, function(err, modules){
   for(var i = 0; i < modules.length; i++){
     //console.log(JSON.stringify(modules, null, 3));
   }
@@ -68,9 +68,9 @@ console.log(memoryjs.findModule("client.dll", process.th32ProcessID));
 
 // find a module associated with a process (async)
 console.log("\nFinding module \"client.dll\" (async)\n---\n");
-memoryjs.findModule("client.dll", process.th32ProcessID, function (module) {
-    console.log(module.szModule);
-    processModule = module;
+memoryjs.findModule("client.dll", process.th32ProcessID, function(err, module) {
+  console.log(module.szModule);
+  processModule = module;
 });
 
 /* module =
@@ -86,8 +86,8 @@ var value = processModule.modBaseAddr + offset;
 console.log("value of " + value + ": " + memoryjs.readMemory(value, "int"));
 
 // read memory (async)
-memoryjs.readMemory(value, "int", function (result) {
-    console.log("value of " + value + ": " + result);
+memoryjs.readMemory(value, "int", function(err, result) {
+  console.log("value of " + value + ": " + result);
 });
 
 // write memory

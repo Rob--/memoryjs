@@ -26,7 +26,8 @@ module.exports = {
     else memoryjs.readMemory(address, dataType, callback);
   },
 
-  writeMemory: function(address, value, dataType){
-    memoryjs.writeMemory(address, value, dataType);
+  writeMemory: function(address, value, dataType, callback){
+    if(arguments.length == 3) return memoryjs.writeMemory(address, value, dataType);
+    else memoryjs.writeMemory(address, value, dataType, callback);
   }
 };
