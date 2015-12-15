@@ -36,12 +36,12 @@ var processName = "chrome.exe";
 
 Open a process (sync):
 ``` javascript
-var process = memoryjs.openProcess(processName);
+var processObject = memoryjs.openProcess(processName);
 ```
 
 Open a process (async):
 ``` javascript
-memoryjs.openProcess(processName, function(process){
+memoryjs.openProcess(processName, function(processObject){
 
 });
 ```
@@ -141,7 +141,7 @@ Module object:
 opens a process to be able to read from and write to it
 
 - **processName** *(string)* - the name of the process to open
-- **callback** *(function)* - has one parameter (process)
+- **callback** *(function)* - has one parameter (processObject)
 
 **returns** *process object* either directly or via the callback
 
