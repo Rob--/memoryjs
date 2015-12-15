@@ -40,6 +40,10 @@ PROCESSENTRY32 process::openProcess(const char* processName, char** errorMessage
 		}
 	}
 
+	if (hProcess == NULL) {
+		*errorMessage = "unable to find process";
+	}
+
 	return process;
 }
 
