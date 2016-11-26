@@ -80,15 +80,15 @@ memoryjs.findModule("client.dll", processObject.th32ProcessID, function(err, mod
   szModule: 'client.dll',
   th32ProcessID: 10316 } */
 
-var value = processModule.modBaseAddr + offset;
+var address = processModule.modBaseAddr + offset;
 
 // read memory (sync)
-console.log("value of " + value + ": " + memoryjs.readMemory(value, "int"));
+console.log("value of 0x" + address.toString(16) + ": " + memoryjs.readMemory(address, memoryjs.INT));
 
 // read memory (async)
-memoryjs.readMemory(value, "int", function(err, result) {
-  console.log("value of " + value + ": " + result);
+memoryjs.readMemory(address, "int", function (err, result) {
+    console.log("value of 0x" + address.toString(16) + ": " + result);
 });
 
 // write memory
-memoryjs.writeMemory(value, 1, "int");
+memoryjs.writeMemory(address, 1, memoryjs.INT);

@@ -1,7 +1,18 @@
 var memoryjs = require('./build/Release/memoryjs');
 
 module.exports = {
-  openProcess: function(processName, callback){
+
+  INT: 'int',
+  DWORD: 'dword',
+  LONG: 'long',
+  FLOAT: 'float',
+  DOUBLE: 'double',
+  BOOL: 'bool',
+  BOOLEAN: 'boolean',
+  STR: 'str',
+  STRING: 'string',
+
+  openProcess: function (processName, callback) {
     if(arguments.length == 1) return memoryjs.openProcess(processName);
     else memoryjs.openProcess(processName, callback);
   },

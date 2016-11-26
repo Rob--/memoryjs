@@ -13,6 +13,7 @@ Node add-on for memory reading and writing! (finally!)
 
 TODO:
 - pattern scanning
+- adjust node-gyp script to compile for 32/64 bit dependant on system
 
 # Install
 
@@ -21,6 +22,15 @@ This is a Node add-on (for `v0.12.x`) and therefore requires [node-gyp](https://
 You may also need to [follow these steps](https://github.com/nodejs/node-gyp#user-content-installation).
 
 `npm install memoryjs`
+
+When using memoryjs, the target process should match the platform architecture of the Node version running.
+For example if you want to target a 64 bit process, you should try and use a 64 bit version of Node.
+
+You also need to recompile the library and target the platform you want. Head to the memoryjs node module directory, open up a terminal and to run the compile scripts, type:
+
+`npm run build32` if you want to target 32 bit processes
+
+`npm run build64` if you want to target 64 bit processes
 
 # Usage
 
@@ -129,14 +139,17 @@ Module object:
   th32ProcessID: 10316 }
   ```
 
-  When using the write or read functions, the data type parameter must be a string and be one of the following:
+  When using the write or read functions, the data type (dataType) parameter can either be a string and be one of the following:
 
   `"int", "dword", "long", "float", "double", "bool", "boolean", "str", "string"`
+
+  or can reference constants from within the library:
+
+  `memoryjs.INT, memoryjs.DWORD, memoryjs.LONG, memoryjs.FLOAT, memoryjs.DOUBLE, memoryjs.BOOL, memoryjs.BOOLEAN, memoryjs.STR, memoryjs.STRING`
 
   This is simply used to denote the type of data being read or written.
 
 #### openProcess(processName[, callback])
----
 
 opens a process to be able to read from and write to it
 
@@ -147,13 +160,15 @@ opens a process to be able to read from and write to it
 
 **returns** *process object (JSON)* either directly or via the callback
 
-#### closeProcess()
 ---
+
+#### closeProcess()
 
 closes the handle on the opened process
 
-#### getProcesses([callback])
 ---
+
+#### getProcesses([callback])
 
 collects information about all the running processes
 
@@ -163,8 +178,9 @@ collects information about all the running processes
 
 **returns** an array of *process object (JSON)* for all the running processes
 
-#### findModule(moduleName, processId[, callback])
 ---
+
+#### findModule(moduleName, processId[, callback])
 
 finds a module associated with a given process
 
@@ -176,8 +192,9 @@ finds a module associated with a given process
 
 **returns** *module object (JSON)* either directly or via the callback
 
-#### getModules(processId[, callback])
 ---
+
+#### getModules(processId[, callback])
 
 gets all modules associated with a given process
 
@@ -188,8 +205,9 @@ gets all modules associated with a given process
 
 **returns** an array of *module object (JSON)* for all the modules found
 
-#### readMemory(address, dataType[, callback])
 ---
+
+#### readMemory(address, dataType[, callback])
 
 reads the memory at a given address
 
@@ -201,8 +219,9 @@ reads the memory at a given address
 
 **returns** the value that has been read from memory
 
-#### writeMemory(address, value, dataType[, callback])
 ---
+
+#### writeMemory(address, value, dataType[, callback])
 
 writes to an address in memory
 
