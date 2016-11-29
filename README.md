@@ -10,14 +10,14 @@ Node add-on for memory reading and writing! (finally!)
 - find a certain module associated with a process
 - read memory
 - write to memory
+- pattern scanning
 
 TODO:
-- pattern scanning
-- adjust node-gyp script to compile for 32/64 bit dependant on system
+- nothing (suggestions welcome)
 
 # Install
 
-This is a Node add-on (for `v0.12.x`) and therefore requires [node-gyp](https://github.com/nodejs/node-gyp) to use.
+This is a Node add-on (last tested to be working on `v6.9.1`) and therefore requires [node-gyp](https://github.com/nodejs/node-gyp) to use.
 
 You may also need to [follow these steps](https://github.com/nodejs/node-gyp#user-content-installation).
 
@@ -34,12 +34,12 @@ You also need to recompile the library and target the platform you want. Head to
 
 # Usage
 
-For a complete example, view `index.js`.
+For a complete example, view `index.js` and `example.js`.
 
 Initialise:
 ``` javascript
 var memoryjs = require('memoryjs');
-var processName = "chrome.exe";
+var processName = "csgo.exe";
 ```
 
 ### Processes
@@ -119,9 +119,23 @@ memoryjs.writeMemory(address, value, dataType);
 
 See the [Documentation](#user-content-documentation) section of this README to see what values `dataType` can be.
 
+### Pattern scanning
+
+Pattern scanning (sync):
+``` javascript
+var offset = memoryjs.findPattern(moduleName, signature, signatureType, patternOffset, addressOffset);
+```
+
+Pattern scanning (async):
+``` javascript
+memoryjs.findPattern(moduleName, signature, signatureType, patternOffset, addressOffset, function(err, offset){
+
+})
+```
+
 # Documentation
 
-Process object:
+### Process object:
 ``` javascript
 {  cntThreads: 47,
    szExeFile: "csgo.exe",
@@ -130,7 +144,7 @@ Process object:
    pcPriClassBase: 8 }
 ```
 
-Module object:
+### Module object:
 ``` javascript
 { modBaseAddr: 468123648,
   modBaseSize: 80302080,
@@ -139,15 +153,31 @@ Module object:
   th32ProcessID: 10316 }
   ```
 
-  When using the write or read functions, the data type (dataType) parameter can either be a string and be one of the following:
+### Data Type:
 
-  `"int", "dword", "long", "float", "double", "bool", "boolean", "str", "string"`
+When using the write or read functions, the data type (dataType) parameter can either be a string and be one of the following:
 
-  or can reference constants from within the library:
+`"int", "dword", "long", "float", "double", "bool", "boolean", "str", "string"`
 
-  `memoryjs.INT, memoryjs.DWORD, memoryjs.LONG, memoryjs.FLOAT, memoryjs.DOUBLE, memoryjs.BOOL, memoryjs.BOOLEAN, memoryjs.STR, memoryjs.STRING`
+or can reference constants from within the library:
 
-  This is simply used to denote the type of data being read or written.
+`memoryjs.INT, memoryjs.DWORD, memoryjs.LONG, memoryjs.FLOAT, memoryjs.DOUBLE, memoryjs.BOOL, memoryjs.BOOLEAN, memoryjs.STR, memoryjs.STRING`
+
+This is simply used to denote the type of data being read or written.
+
+### Signature Type:
+
+When pattern scanning, flags need to be raised for the signature types. The signature type parameter needs to be one of the following:
+
+`0x0` or `memoryjs.NORMAL` which denotes a normal signature.
+
+`0x1` or `memoryjs.READ` which will read the memory at the address.
+
+`0x2` or `memoryjs.SUBSTRACT` which will subtract the image base from the address.
+
+To raise multiple flags, use the bitwise OR operator: `memoryjs.READ | memoryjs.SUBTRACT`.
+
+---
 
 #### openProcess(processName[, callback])
 
@@ -230,3 +260,20 @@ writes to an address in memory
 - **dataType** *(string)* the data type of the value (definitions can be found at the top of this section)
 - **callback** *(function)* - has one parameter:
   - **err** *(string)* - error message (empty if there were no errors)
+
+---
+
+#### findPattern(moduleName, signature, signatureType, patternOffset, addressOffset[, callback])
+
+pattern scans memory to find an offset
+
+- **moduleName** *(string)* - the name of the module to pattern scan (module.szModule)
+- **signature** *(string)* - the actual signature mask (in the form `A9 ? ? ? A3 ?`)
+- **signatureType** *(int)* - flags for [signature types](#user-content-signature-type) (definitions can be found at the top of this section)
+- **patternOffset** *(int)* - offset will be added to the address (before reading, if `memoryjs.READ` is raised)
+- **addressOffset** *(int)* - offset will be added to the address returned
+- **callback** *(function)* - has two parameters:
+  - **err** *(string)* - error message (empty if there were no errors)
+  - **offset** *(int)* - value of the offset found
+
+**returns** the value of the offset found

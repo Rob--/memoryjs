@@ -1,6 +1,6 @@
 var memoryjs = require('./build/Release/memoryjs');
 var processName = "csgo.exe";
-var processModule;
+var clientModule;
 var offset = 0x00A9D44C;
 
 // open a process (sync)
@@ -70,7 +70,7 @@ console.log(memoryjs.findModule("client.dll", processObject.th32ProcessID));
 console.log("\nFinding module \"client.dll\" (async)\n---\n");
 memoryjs.findModule("client.dll", processObject.th32ProcessID, function(err, module) {
   console.log(module.szModule);
-  processModule = module;
+  clientModule = module;
 });
 
 /* module =
@@ -80,7 +80,7 @@ memoryjs.findModule("client.dll", processObject.th32ProcessID, function(err, mod
   szModule: 'client.dll',
   th32ProcessID: 10316 } */
 
-var address = processModule.modBaseAddr + offset;
+var address = clientModule.modBaseAddr + offset;
 
 // read memory (sync)
 console.log("value of 0x" + address.toString(16) + ": " + memoryjs.readMemory(address, memoryjs.INT));
@@ -92,3 +92,11 @@ memoryjs.readMemory(address, "int", function (err, result) {
 
 // write memory
 memoryjs.writeMemory(address, 1, memoryjs.INT);
+
+// pattern reading
+var signature = "A3 ? ? ? ? C7 05 ? ? ? ? ? ? ? ? E8 ? ? ? ? 59 C3 6A";
+var signatureTypes = memoryjs.READ | memoryjs.SUBTRACT;
+var patternOffset = 0x1;
+var addressOffset = 0x10;
+var dwLocalPlayer = memoryjs.findPattern(clientModule.szModule, signature, signatureTypes, patternOffset, addressOffse);
+console.log("value of dwLocalPlayer: 0x" + dwLocalPlayer.toString(16));

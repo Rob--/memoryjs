@@ -12,7 +12,6 @@ using v8::Isolate;
 class memory {
 
 public:
-
 	template <class dataType>
 	dataType readMemory(HANDLE hProcess, DWORD dwAddress) {
 		dataType cRead;

@@ -2,6 +2,7 @@ var memoryjs = require('./build/Release/memoryjs');
 
 module.exports = {
 
+  /* data type constants */
   INT: 'int',
   DWORD: 'dword',
   LONG: 'long',
@@ -11,6 +12,11 @@ module.exports = {
   BOOLEAN: 'boolean',
   STR: 'str',
   STRING: 'string',
+
+  /* signature type constants */
+  NORMAL: 0x0,
+  READ: 0x1,
+  SUBTRACT: 0x2,
 
   openProcess: function (processName, callback) {
     if(arguments.length == 1) return memoryjs.openProcess(processName);
@@ -40,5 +46,10 @@ module.exports = {
   writeMemory: function(address, value, dataType, callback){
     if(arguments.length == 3) return memoryjs.writeMemory(address, value, dataType);
     else memoryjs.writeMemory(address, value, dataType, callback);
+  },
+
+  findPattern: function (moduleName, signature, signatureType, patternOffset, addressOffset, callback) {
+      if (arguments.length == 5) return memoryjs.findPattern(moduleName, signature, signatureType, patternOffset, addressOffset);
+      else memoryjs.findPattern(moduleName, signature, signatureType, patternOffset, addressOffset, callback);
   }
 };

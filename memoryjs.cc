@@ -6,6 +6,7 @@
 #include "process.h"
 #include "memoryjs.h"
 #include "memory.h"
+#include "pattern.h"
 
 using v8::Exception;
 using v8::Function;
@@ -23,6 +24,7 @@ using v8::Boolean;
 process Process;
 module Module;
 memory Memory;
+pattern Pattern;
 
 void memoryjs::throwError(char* error, Isolate* isolate) {
   isolate->ThrowException(
@@ -286,6 +288,7 @@ void findModule(const FunctionCallbackInfo<Value>& args) {
   moduleInfo->Set(String::NewFromUtf8(isolate, "szExePath"), String::NewFromUtf8(isolate, module.szExePath));
   moduleInfo->Set(String::NewFromUtf8(isolate, "szModule"), String::NewFromUtf8(isolate, module.szModule));
   moduleInfo->Set(String::NewFromUtf8(isolate, "th32ProcessID"), Number::New(isolate, (int)module.th32ProcessID));
+  moduleInfo->Set(String::NewFromUtf8(isolate, "hModule"), Number::New(isolate, (int)module.hModule));
 
   /* findModule can either take one or two arguments,
      three arguments for asychronous use (third argument is the callback) */
@@ -460,6 +463,65 @@ void writeMemory(const FunctionCallbackInfo<Value>& args) {
   if (args.Length() == 1) callback->Call(Null(isolate), argc, argv);
 }
 
+void findPattern(const FunctionCallbackInfo<Value>& args) {
+	Isolate* isolate = args.GetIsolate();
+
+	/* If there is not 5 arguments, or 6 incl. callback, throw an error */
+	if (args.Length() != 5 && args.Length() != 6) {
+		memoryjs::throwError("requires 5 arguments, or 6 arguments if a callback is being used", isolate);
+		return;
+	}
+
+	/* If the argument we've been given is not a string and the
+	third argument we've been given is not a string, throw an error */
+	if (!args[0]->IsNumber() && !args[1]->IsString() && !args[2]->IsNumber() && !args[3]->IsNumber() && !args[4]->IsNumber()) {
+		memoryjs::throwError("first argument must be a number, the remaining arguments must be numbers apart from the callback", isolate);
+		return;
+	}
+
+	/* If there is a sixth argument and it's not a function, throw an error */
+	if (args.Length() == 6 && !args[5]->IsFunction()) {
+		memoryjs::throwError("sixth argument must be a function", isolate);
+		return;
+	}
+
+	/* Address of findPattern result */
+	uintptr_t address = 0;
+
+	for (std::vector<MODULEENTRY32>::size_type i = 0; i != Module.moduleEntries.size(); i++) {
+
+		/* Convert the module name to C++ string to find the module we want */
+		v8::String::Utf8Value moduleName(args[0]);
+		if (!strcmp(Module.moduleEntries[i].szModule, std::string(*moduleName).c_str())) {
+
+			/* Convert the signature to a C++ string */
+			v8::String::Utf8Value signature(args[1]->ToString());
+
+			/* Pattern scan for the address */
+			address = Pattern.findPattern(Module.moduleEntries[i], std::string(*signature).c_str(), args[2]->Uint32Value(), args[3]->Uint32Value(), args[4]->Uint32Value());
+			break;
+		}
+	}
+
+	char* errorMessage = "";
+
+	/* If address is still zero (as we set it), it probably means we couldn't find the module */
+	if (address == 0) errorMessage = "unable to find module";
+
+	/* findPattern can be asynchronous */
+	if (args.Length() == 6) {
+		/* Callback to let the user handle with the information */
+		Local<Function> callback = Local<Function>::Cast(args[5]);
+		const unsigned argc = 2;
+		Local<Value> argv[argc] = { String::NewFromUtf8(isolate, errorMessage), Number::New(isolate, address) };
+		callback->Call(Null(isolate), argc, argv);
+	}
+	else {
+		/* return JSON */
+		args.GetReturnValue().Set(Number::New(isolate, address));
+	}
+}
+
 void init(Local<Object> exports) {
   NODE_SET_METHOD(exports, "openProcess", openProcess);
   NODE_SET_METHOD(exports, "closeProcess", closeProcess);
@@ -468,6 +530,7 @@ void init(Local<Object> exports) {
   NODE_SET_METHOD(exports, "findModule", findModule);
   NODE_SET_METHOD(exports, "readMemory", readMemory);
   NODE_SET_METHOD(exports, "writeMemory", writeMemory);
+  NODE_SET_METHOD(exports, "findPattern", findPattern);
 }
 
 NODE_MODULE(memoryjs, init)

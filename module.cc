@@ -17,16 +17,15 @@ using v8::String;
 MODULEENTRY32 module::findModule(const char* moduleName, DWORD processId, char** errorMessage) {
 	MODULEENTRY32 module;
 
-	// A list of modules (MODULEENTRY32)
-	std::vector<MODULEENTRY32> modules = getModules(processId, errorMessage);
+	// A list of modules (MODULEENTRY32), saved so we can access this when pattern scanning
+	moduleEntries = getModules(processId, errorMessage);
 
 	// Loop over every module
-	for (std::vector<MODULEENTRY32>::size_type i = 0; i != modules.size(); i++) {
+	for (std::vector<MODULEENTRY32>::size_type i = 0; i != moduleEntries.size(); i++) {
 		// Check to see if this is the module we want.
-		if (!strcmp(modules[i].szModule, moduleName)) {
+		if (!strcmp(moduleEntries[i].szModule, moduleName)) {
 			// module is returned and moduleEntry is used internally for reading/writing to memory
-			module = moduleEntry = modules[i];
-
+			module = moduleEntries[i];
 			break;
 		}
 	}
