@@ -274,6 +274,6 @@ pattern scans memory to find an offset
 - **addressOffset** *(int)* - offset will be added to the address returned
 - **callback** *(function)* - has two parameters:
   - **err** *(string)* - error message (empty if there were no errors)
-  - **offset** *(int)* - value of the offset found
+  - **offset** *(int)* - value of the offset found (will return -1 if the module was not found, -2 if the pattern found no address)
 
 **returns** the value of the offset found

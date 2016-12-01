@@ -41,6 +41,10 @@ uintptr_t pattern::findPattern(MODULEENTRY32 module, const char* pattern, short 
 			return address + addressOffset;
 		}
 	}
+
+	/* the method that calls this will check to see if the value is -2
+	   and throw a 'no match' error */
+	return -2;
 };
 
 bool pattern::compareBytes(const unsigned char* bytes, const char* pattern) {

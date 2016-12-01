@@ -1,6 +1,6 @@
 {
   "name": "memoryjs",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "Node add-on for memory reading and writing!",
   "main": "index.js",
   "scripts": {

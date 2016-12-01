@@ -486,7 +486,7 @@ void findPattern(const FunctionCallbackInfo<Value>& args) {
 	}
 
 	/* Address of findPattern result */
-	uintptr_t address = 0;
+	uintptr_t address = -1;
 
 	for (std::vector<MODULEENTRY32>::size_type i = 0; i != Module.moduleEntries.size(); i++) {
 
@@ -505,8 +505,10 @@ void findPattern(const FunctionCallbackInfo<Value>& args) {
 
 	char* errorMessage = "";
 
-	/* If address is still zero (as we set it), it probably means we couldn't find the module */
-	if (address == 0) errorMessage = "unable to find module";
+	/* If address is still the value we set it as, it probably means we couldn't find the module */
+	if (address == -1) errorMessage = "unable to find module";
+	/* If it's -2 this means there was no match to the pattern */
+	if (address == -2) errorMessage = "no match found";
 
 	/* findPattern can be asynchronous */
 	if (args.Length() == 6) {

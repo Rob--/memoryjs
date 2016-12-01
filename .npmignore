@@ -1,0 +1,4 @@
+build
+test.js
+npm-debug.log
+/.npmignore
