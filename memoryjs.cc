@@ -386,7 +386,7 @@ void readMemory(const FunctionCallbackInfo<Value>& args) {
 	  if (args.Length() == 3) argv[0] = String::NewFromUtf8(isolate, result);
 	  else args.GetReturnValue().Set(String::NewFromUtf8(isolate, result));
 
-  } else if (!strcmp(dataType, "vector3") || !strcmp(dataType, "vec3") {
+  } else if (!strcmp(dataType, "vector3") || !strcmp(dataType, "vec3")) {
 
 	  Vector3 result = Memory.readMemory<Vector3>(process::hProcess, args[0]->Uint32Value());
 	  Local<Object> moduleInfo = Object::New(isolate);
@@ -467,7 +467,7 @@ void writeMemory(const FunctionCallbackInfo<Value>& args) {
 	  v8::String::Utf8Value valueParam(args[1]->ToString());
 	  Memory.writeMemory<std::string>(process::hProcess, args[0]->Uint32Value(), std::string(*valueParam));
 
-  } else if (!strcmp(dataType, "vector3") || !strcmp(dataType, "vec3") {
+  } else if (!strcmp(dataType, "vector3") || !strcmp(dataType, "vec3")) {
 
 	  Handle<Object> value = Handle<Object>::Cast(args[1]);
 	  Vector3 vector = {
