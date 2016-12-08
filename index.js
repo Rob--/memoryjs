@@ -12,6 +12,8 @@ module.exports = {
   BOOLEAN: 'boolean',
   STR: 'str',
   STRING: 'string',
+  VEC3: 'vec3',
+  VECTOR3: 'vector3',
 
   /* signature type constants */
   NORMAL: 0x0,
@@ -39,17 +41,17 @@ module.exports = {
   },
 
   readMemory: function(address, dataType, callback){
-    if(arguments.length == 2) return memoryjs.readMemory(address, dataType);
-    else memoryjs.readMemory(address, dataType, callback);
+    if(arguments.length == 2) return memoryjs.readMemory(address, dataType.toLowerCase());
+    else memoryjs.readMemory(address, dataType.toLowerCase(), callback);
   },
 
   writeMemory: function(address, value, dataType, callback){
-    if(arguments.length == 3) return memoryjs.writeMemory(address, value, dataType);
-    else memoryjs.writeMemory(address, value, dataType, callback);
+    if (arguments.length == 3) return memoryjs.writeMemory(address, value, dataType.toLowerCase());
+    else memoryjs.writeMemory(address, value, dataType.toLowerCase(), callback);
   },
 
   findPattern: function (moduleName, signature, signatureType, patternOffset, addressOffset, callback) {
-      if (arguments.length == 5) return memoryjs.findPattern(moduleName, signature, signatureType, patternOffset, addressOffset);
-      else memoryjs.findPattern(moduleName, signature, signatureType, patternOffset, addressOffset, callback);
+    if (arguments.length == 5) return memoryjs.findPattern(moduleName, signature, signatureType, patternOffset, addressOffset);
+    else memoryjs.findPattern(moduleName, signature, signatureType, patternOffset, addressOffset, callback);
   }
 };

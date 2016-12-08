@@ -157,13 +157,20 @@ memoryjs.findPattern(moduleName, signature, signatureType, patternOffset, addres
 
 When using the write or read functions, the data type (dataType) parameter can either be a string and be one of the following:
 
-`"int", "dword", "long", "float", "double", "bool", "boolean", "str", "string"`
+`"int", "dword", "long", "float", "double", "bool", "boolean", "str", "string", "vec3", "vector3"`
 
 or can reference constants from within the library:
 
-`memoryjs.INT, memoryjs.DWORD, memoryjs.LONG, memoryjs.FLOAT, memoryjs.DOUBLE, memoryjs.BOOL, memoryjs.BOOLEAN, memoryjs.STR, memoryjs.STRING`
+`memoryjs.INT, memoryjs.DWORD, memoryjs.LONG, memoryjs.FLOAT, memoryjs.DOUBLE, memoryjs.BOOL, memoryjs.BOOLEAN, memoryjs.STR, memoryjs.STRING, memoryjs.VEC3, memoryjs.VECTOR3`
 
 This is simply used to denote the type of data being read or written.
+
+Vector3 is a data structure of three floats:
+
+``` javascript
+var vector = { x: 0.0, y: 0.0, z: 0.0 };
+memoryjs.writeMemory(address, vector);
+```
 
 ### Signature Type:
 
