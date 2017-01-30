@@ -98,5 +98,5 @@ var signature = "A3 ? ? ? ? C7 05 ? ? ? ? ? ? ? ? E8 ? ? ? ? 59 C3 6A";
 var signatureTypes = memoryjs.READ | memoryjs.SUBTRACT;
 var patternOffset = 0x1;
 var addressOffset = 0x10;
-var dwLocalPlayer = memoryjs.findPattern(clientModule.szModule, signature, signatureTypes, patternOffset, addressOffse);
+var dwLocalPlayer = memoryjs.findPattern(clientModule.szModule, signature, signatureTypes, patternOffset, addressOffset);
 console.log("value of dwLocalPlayer: 0x" + dwLocalPlayer.toString(16));
