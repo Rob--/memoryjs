@@ -12,9 +12,12 @@ module.exports = {
   BOOLEAN: 'boolean',
   STR: 'str',
   STRING: 'string',
+  VEC2: 'vec2',
   VEC3: 'vec3',
+  VEC4: 'vec4',
+  VECTOR2: 'vector2',
   VECTOR3: 'vector3',
-
+  VECTOR4: 'vector4',
   /* signature type constants */
   NORMAL: 0x0,
   READ: 0x1,
