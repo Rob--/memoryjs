@@ -25,11 +25,15 @@ process Process;
 module Module;
 memory Memory;
 pattern Pattern;
-
+struct Vector2 {
+	float x, y;
+};
 struct Vector3 {
 	float x, y, z;
 };
-
+struct Vector4 {
+	float x, y, z, w;
+};
 void memoryjs::throwError(char* error, Isolate* isolate) {
   isolate->ThrowException(
     Exception::TypeError(String::NewFromUtf8(isolate, error))
@@ -386,6 +390,14 @@ void readMemory(const FunctionCallbackInfo<Value>& args) {
 	  if (args.Length() == 3) argv[0] = String::NewFromUtf8(isolate, result);
 	  else args.GetReturnValue().Set(String::NewFromUtf8(isolate, result));
 
+  } else if (!strcmp(dataType, "vector2") || !strcmp(dataType, "vec2")) {
+
+	  Vector2 result = Memory.readMemory<Vector2>(process::hProcess, args[0]->Uint32Value());
+	  Local<Object> moduleInfo = Object::New(isolate);
+	  moduleInfo->Set(String::NewFromUtf8(isolate, "x"), Number::New(isolate, result.x));
+	  moduleInfo->Set(String::NewFromUtf8(isolate, "y"), Number::New(isolate, result.y));
+	  if (args.Length() == 3) argv[0] = moduleInfo;
+	  else args.GetReturnValue().Set(moduleInfo);
   } else if (!strcmp(dataType, "vector3") || !strcmp(dataType, "vec3")) {
 
 	  Vector3 result = Memory.readMemory<Vector3>(process::hProcess, args[0]->Uint32Value());
@@ -393,6 +405,16 @@ void readMemory(const FunctionCallbackInfo<Value>& args) {
 	  moduleInfo->Set(String::NewFromUtf8(isolate, "x"), Number::New(isolate, result.x));
 	  moduleInfo->Set(String::NewFromUtf8(isolate, "y"), Number::New(isolate, result.y));
 	  moduleInfo->Set(String::NewFromUtf8(isolate, "z"), Number::New(isolate, result.z));
+	  if (args.Length() == 3) argv[0] = moduleInfo;
+	  else args.GetReturnValue().Set(moduleInfo);
+ } else if (!strcmp(dataType, "vector4") || !strcmp(dataType, "vec4")) {
+
+	  Vector2 result = Memory.readMemory<Vector2>(process::hProcess, args[0]->Uint32Value());
+	  Local<Object> moduleInfo = Object::New(isolate);
+	  moduleInfo->Set(String::NewFromUtf8(isolate, "x"), Number::New(isolate, result.x));
+	  moduleInfo->Set(String::NewFromUtf8(isolate, "y"), Number::New(isolate, result.y));
+	  moduleInfo->Set(String::NewFromUtf8(isolate, "z"), Number::New(isolate, result.z));
+	  moduleInfo->Set(String::NewFromUtf8(isolate, "w"), Number::New(isolate, result.w));
 	  if (args.Length() == 3) argv[0] = moduleInfo;
 	  else args.GetReturnValue().Set(moduleInfo);
 
