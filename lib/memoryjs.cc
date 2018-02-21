@@ -95,6 +95,7 @@ void openProcess(const FunctionCallbackInfo<Value>& args) {
   processInfo->Set(String::NewFromUtf8(isolate, "th32ProcessID"), Number::New(isolate, (int)process.th32ProcessID));
   processInfo->Set(String::NewFromUtf8(isolate, "th32ParentProcessID"), Number::New(isolate, (int)process.th32ParentProcessID));
   processInfo->Set(String::NewFromUtf8(isolate, "pcPriClassBase"), Number::New(isolate, (int)process.pcPriClassBase));
+  processInfo->Set(String::NewFromUtf8(isolate, "handle"), Number::New(isolate, (int)Process.hProcess));
 
   DWORD base = Module.getBaseAddress((char*) *(processName), process.th32ProcessID);
   processInfo->Set(String::NewFromUtf8(isolate, "modBaseAddr"), Number::New(isolate, (int)base));
@@ -416,29 +417,29 @@ void readMemory(const FunctionCallbackInfo<Value>& args) {
       std::string str(chars.begin(), chars.end());
 
       if (args.Length() == 3) argv[0] = String::NewFromUtf8(isolate, str.c_str());
-	    else args.GetReturnValue().Set(String::NewFromUtf8(isolate, str.c_str()));
+      else args.GetReturnValue().Set(String::NewFromUtf8(isolate, str.c_str()));
     }
 
   } else if (!strcmp(dataType, "vector3") || !strcmp(dataType, "vec3")) {
 
-	  Vector3 result = Memory.readMemory<Vector3>(process::hProcess, args[0]->Uint32Value());
-	  Local<Object> moduleInfo = Object::New(isolate);
-	  moduleInfo->Set(String::NewFromUtf8(isolate, "x"), Number::New(isolate, result.x));
-	  moduleInfo->Set(String::NewFromUtf8(isolate, "y"), Number::New(isolate, result.y));
-	  moduleInfo->Set(String::NewFromUtf8(isolate, "z"), Number::New(isolate, result.z));
-	  if (args.Length() == 3) argv[0] = moduleInfo;
-	  else args.GetReturnValue().Set(moduleInfo);
+    Vector3 result = Memory.readMemory<Vector3>(process::hProcess, args[0]->Uint32Value());
+    Local<Object> moduleInfo = Object::New(isolate);
+    moduleInfo->Set(String::NewFromUtf8(isolate, "x"), Number::New(isolate, result.x));
+    moduleInfo->Set(String::NewFromUtf8(isolate, "y"), Number::New(isolate, result.y));
+    moduleInfo->Set(String::NewFromUtf8(isolate, "z"), Number::New(isolate, result.z));
+    if (args.Length() == 3) argv[0] = moduleInfo;
+    else args.GetReturnValue().Set(moduleInfo);
 
   } else if (!strcmp(dataType, "vector4") || !strcmp(dataType, "vec4")) {
     
     Vector4 result = Memory.readMemory<Vector4>(process::hProcess, args[0]->Uint32Value());
-	  Local<Object> moduleInfo = Object::New(isolate);
-	  moduleInfo->Set(String::NewFromUtf8(isolate, "w"), Number::New(isolate, result.w));
-	  moduleInfo->Set(String::NewFromUtf8(isolate, "x"), Number::New(isolate, result.x));
-	  moduleInfo->Set(String::NewFromUtf8(isolate, "y"), Number::New(isolate, result.y));
+    Local<Object> moduleInfo = Object::New(isolate);
+    moduleInfo->Set(String::NewFromUtf8(isolate, "w"), Number::New(isolate, result.w));
+    moduleInfo->Set(String::NewFromUtf8(isolate, "x"), Number::New(isolate, result.x));
+    moduleInfo->Set(String::NewFromUtf8(isolate, "y"), Number::New(isolate, result.y));
     moduleInfo->Set(String::NewFromUtf8(isolate, "z"), Number::New(isolate, result.z));
-	  if (args.Length() == 3) argv[0] = moduleInfo;
-	  else args.GetReturnValue().Set(moduleInfo);
+    if (args.Length() == 3) argv[0] = moduleInfo;
+    else args.GetReturnValue().Set(moduleInfo);
 
   } else {
 
@@ -519,23 +520,23 @@ void writeMemory(const FunctionCallbackInfo<Value>& args) {
   } else if (!strcmp(dataType, "vector3") || !strcmp(dataType, "vec3")) {
 
 	  Handle<Object> value = Handle<Object>::Cast(args[1]);
-	  Vector3 vector = {
-		  value->Get(String::NewFromUtf8(isolate, "x"))->NumberValue(),
-		  value->Get(String::NewFromUtf8(isolate, "y"))->NumberValue(),
-		  value->Get(String::NewFromUtf8(isolate, "z"))->NumberValue()
-	  };
-	  Memory.writeMemory<Vector3>(process::hProcess, args[0]->Uint32Value(), vector);
+    Vector3 vector = {
+      value->Get(String::NewFromUtf8(isolate, "x"))->NumberValue(),
+      value->Get(String::NewFromUtf8(isolate, "y"))->NumberValue(),
+      value->Get(String::NewFromUtf8(isolate, "z"))->NumberValue()
+    };
+    Memory.writeMemory<Vector3>(process::hProcess, args[0]->Uint32Value(), vector);
 
   } else if (!strcmp(dataType, "vector4") || !strcmp(dataType, "vec4")) {
 
-	  Handle<Object> value = Handle<Object>::Cast(args[1]);
-	  Vector4 vector = {
+    Handle<Object> value = Handle<Object>::Cast(args[1]);
+    Vector4 vector = {
       value->Get(String::NewFromUtf8(isolate, "w"))->NumberValue(),
-		  value->Get(String::NewFromUtf8(isolate, "x"))->NumberValue(),
-		  value->Get(String::NewFromUtf8(isolate, "y"))->NumberValue(),
-		  value->Get(String::NewFromUtf8(isolate, "z"))->NumberValue()
-	  };
-	  Memory.writeMemory<Vector4>(process::hProcess, args[0]->Uint32Value(), vector);
+      value->Get(String::NewFromUtf8(isolate, "x"))->NumberValue(),
+      value->Get(String::NewFromUtf8(isolate, "y"))->NumberValue(),
+      value->Get(String::NewFromUtf8(isolate, "z"))->NumberValue()
+    };
+    Memory.writeMemory<Vector4>(process::hProcess, args[0]->Uint32Value(), vector);
 
   } else {
 

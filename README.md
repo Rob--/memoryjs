@@ -141,8 +141,12 @@ memoryjs.findPattern(moduleName, signature, signatureType, patternOffset, addres
    szExeFile: "csgo.exe",
    th32ProcessID: 10316,
    th32ParentProcessID: 7804,
-   pcPriClassBase: 8 }
+   pcPriClassBase: 8,
+   handle: 808,
+   modBaseAddr: 1673789440 }
 ```
+
+The `handle` and `modBaseAddr` properties are only available when opening a process and not when listing processes.
 
 ### Module object:
 ``` javascript
