@@ -1,3 +1,5 @@
 build
 test.js
 npm-debug.log
+.vscode
+node_modules

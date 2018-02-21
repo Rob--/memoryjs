@@ -38,32 +38,32 @@ For a complete example, view `index.js` and `example.js`.
 
 Initialise:
 ``` javascript
-var memoryjs = require('memoryjs');
-var processName = "csgo.exe";
+const memoryjs = require('memoryjs');
+const processName = "csgo.exe";
 ```
 
 ### Processes
 
 Open a process (sync):
 ``` javascript
-var processObject = memoryjs.openProcess(processName);
+const processObject = memoryjs.openProcess(processName);
 ```
 
 Open a process (async):
 ``` javascript
-memoryjs.openProcess(processName, function(err, processObject){
+memoryjs.openProcess(processName, (error, processObject) => {
 
 });
 ```
 
 Get all processes (sync):
 ``` javascript
-var processes = memoryjs.getProcesses();
+const processes = memoryjs.getProcesses();
 ```
 
 Get all processes (async):
 ``` javascript
-memoryjs.getProcesses(function(err, processes){
+memoryjs.getProcesses((error, processes) => {
 
 });
 ```
@@ -74,24 +74,24 @@ See the [Documentation](#user-content-documentation) section of this README to s
 
 Find a module (sync):
 ``` javascript
-var module = memoryjs.findModule(moduleName, processId);
+const module = memoryjs.findModule(moduleName, processId);
 ```
 
 Find a module (async):
 ``` javascript
-memoryjs.findModule(moduleName, processId, function(err, module){
+memoryjs.findModule(moduleName, processId, (error, module) => {
 
 });
 ```
 
 Get all modules (sync):
 ``` javascript
-var modules = memoryjs.getModules(processId);
+const modules = memoryjs.getModules(processId);
 ```
 
 Get all modules (async):
 ``` javascript
-memoryjs.getModules(processId, function(err, modules){
+memoryjs.getModules(processId, (error, modules) => {
 
 });
 ```
@@ -102,12 +102,12 @@ See the [Documentation](#user-content-documentation) section of this README to s
 
 Read from memory (sync):
 ``` javascript
-memoryjs.readMemory(address, dataType);
+const value = memoryjs.readMemory(address, dataType);
 ```
 
 Read from memory (async):
 ``` javascript
-memoryjs.readMemory(address, dataType, function(err, result){
+memoryjs.readMemory(address, dataType, (error, result) => {
 
 });
 ```
@@ -123,12 +123,12 @@ See the [Documentation](#user-content-documentation) section of this README to s
 
 Pattern scanning (sync):
 ``` javascript
-var offset = memoryjs.findPattern(moduleName, signature, signatureType, patternOffset, addressOffset);
+const offset = memoryjs.findPattern(moduleName, signature, signatureType, patternOffset, addressOffset);
 ```
 
 Pattern scanning (async):
 ``` javascript
-memoryjs.findPattern(moduleName, signature, signatureType, patternOffset, addressOffset, function(err, offset){
+memoryjs.findPattern(moduleName, signature, signatureType, patternOffset, addressOffset, (error, offset) => {
 
 })
 ```
@@ -157,20 +157,50 @@ memoryjs.findPattern(moduleName, signature, signatureType, patternOffset, addres
 
 When using the write or read functions, the data type (dataType) parameter can either be a string and be one of the following:
 
-`"int", "dword", "long", "float", "double", "bool", "boolean", "str", "string", "vec3", "vector3"`
+`"int", "dword", "long", "float", "double", "bool", "boolean", "str", "string", "vec3", "vector3", "vec4", "vector4"`
 
 or can reference constants from within the library:
 
-`memoryjs.INT, memoryjs.DWORD, memoryjs.LONG, memoryjs.FLOAT, memoryjs.DOUBLE, memoryjs.BOOL, memoryjs.BOOLEAN, memoryjs.STR, memoryjs.STRING, memoryjs.VEC3, memoryjs.VECTOR3`
+`memoryjs.INT, memoryjs.DWORD, memoryjs.LONG, memoryjs.FLOAT, memoryjs.DOUBLE, memoryjs.BOOL, memoryjs.BOOLEAN, memoryjs.STR, memoryjs.STRING, memoryjs.VEC3, memoryjs.VECTOR3, memoryjs.VEC4, memoryjs.VECTOR4`
 
 This is simply used to denote the type of data being read or written.
 
 Vector3 is a data structure of three floats:
 
 ``` javascript
-var vector = { x: 0.0, y: 0.0, z: 0.0 };
-memoryjs.writeMemory(address, vector);
+const vector3 = { x: 0.0, y: 0.0, z: 0.0 };
+memoryjs.writeMemory(address, vector3);
 ```
+
+Vector4 is a data structure of four floats:
+
+```javascript
+const vector4 = { w: 0.0, x: 0.0, y: 0.0, z: 0.0 };
+memoryjs.writeMemory(address, vector4);
+```
+
+### Strings
+
+You can use this library to read either a "string", or "char*" and to write a string.
+
+In both cases you want to get the address of the char array:
+
+```c++
+std::string str1 = "hello";
+std::cout << "Address: 0x" << hex << (DWORD) str1.c_str() << dec << std::endl;
+
+char* str2 = "hello";
+std::cout << "Address: 0x" << hex << (DWORD) str2 << dec << std::endl;
+```
+
+From here you can simply use this address to write and read memory.
+
+There is one caveat when reading a string in memory however, due to the fact that the library does not know
+how long the string is, it will continue reading until it finds the first null-terminator. To prevent an
+infinite loop, it will stop reading if it has not found a null-terminator after 1 million characters.
+
+One way to bypass this limitation in the future would be to allow a parameter to let users set the maximum
+character count.
 
 ### Signature Type:
 

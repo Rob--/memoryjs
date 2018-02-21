@@ -1,6 +1,6 @@
 {
   "name": "memoryjs",
-  "version": "2.0.1",
+  "version": "2.1.0",
   "description": "Node add-on for memory reading and writing!",
   "main": "index.js",
   "scripts": {
@@ -26,5 +26,10 @@
   "bugs": {
     "url": "https://github.com/Rob--/memoryjs/issues"
   },
-  "homepage": "https://github.com/Rob--/memoryjs#readme"
+  "homepage": "https://github.com/Rob--/memoryjs#readme",
+  "dependencies": {
+    "eslint": "^4.18.1",
+    "eslint-config-airbnb-base": "^12.1.0",
+    "eslint-plugin-import": "^2.8.0"
+  }
 }

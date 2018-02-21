@@ -2,6 +2,7 @@
 #include <windows.h>
 #include <TlHelp32.h>
 #include <string>
+#include <vector>
 #include "module.h"
 #include "process.h"
 #include "memoryjs.h"
@@ -28,6 +29,10 @@ pattern Pattern;
 
 struct Vector3 {
 	float x, y, z;
+};
+
+struct Vector4 {
+  float w, x, y, z;
 };
 
 void memoryjs::throwError(char* error, Isolate* isolate) {
@@ -90,6 +95,9 @@ void openProcess(const FunctionCallbackInfo<Value>& args) {
   processInfo->Set(String::NewFromUtf8(isolate, "th32ProcessID"), Number::New(isolate, (int)process.th32ProcessID));
   processInfo->Set(String::NewFromUtf8(isolate, "th32ParentProcessID"), Number::New(isolate, (int)process.th32ParentProcessID));
   processInfo->Set(String::NewFromUtf8(isolate, "pcPriClassBase"), Number::New(isolate, (int)process.pcPriClassBase));
+
+  DWORD base = Module.getBaseAddress((char*) *(processName), process.th32ProcessID);
+  processInfo->Set(String::NewFromUtf8(isolate, "modBaseAddr"), Number::New(isolate, (int)base));
 
   /* openProcess can either take one argument or can take
      two arguments for asychronous use (second argument is the callback) */
@@ -379,12 +387,37 @@ void readMemory(const FunctionCallbackInfo<Value>& args) {
     if (args.Length() == 3) argv[0] = Boolean::New(isolate, result);
     else args.GetReturnValue().Set(Boolean::New(isolate, result));
 
-  }
-  else if (!strcmp(dataType, "string") || !strcmp(dataType, "str")) {
+  } else if (!strcmp(dataType, "string") || !strcmp(dataType, "str")) {
 
-	  char* result = Memory.readMemory<char*>(process::hProcess, args[0]->Uint32Value());
-	  if (args.Length() == 3) argv[0] = String::NewFromUtf8(isolate, result);
-	  else args.GetReturnValue().Set(String::NewFromUtf8(isolate, result));
+    std::vector<char> chars;
+    int offset = 0x0;
+    while (true) {
+      char c = Memory.readMemoryChar(process::hProcess, args[0]->IntegerValue() + offset);
+      chars.push_back(c);
+
+      // break at 1 million chars
+      if (offset == (sizeof(char) * 1000000)) {
+        chars.clear();
+        break;
+      }
+
+      // break at terminator
+      if (c == '\0') {
+        break;
+      }
+
+      offset += sizeof(char);
+    }
+
+    if (chars.size() == 0) {
+      if (args.Length() == 3) argv[1] = String::NewFromUtf8(isolate, "unable to read string (no null-terminator found after 1 million chars)");
+      else return memoryjs::throwError("unable to read string (no null-terminator found after 1 million chars)", isolate);
+    } else {
+      std::string str(chars.begin(), chars.end());
+
+      if (args.Length() == 3) argv[0] = String::NewFromUtf8(isolate, str.c_str());
+	    else args.GetReturnValue().Set(String::NewFromUtf8(isolate, str.c_str()));
+    }
 
   } else if (!strcmp(dataType, "vector3") || !strcmp(dataType, "vec3")) {
 
@@ -393,6 +426,17 @@ void readMemory(const FunctionCallbackInfo<Value>& args) {
 	  moduleInfo->Set(String::NewFromUtf8(isolate, "x"), Number::New(isolate, result.x));
 	  moduleInfo->Set(String::NewFromUtf8(isolate, "y"), Number::New(isolate, result.y));
 	  moduleInfo->Set(String::NewFromUtf8(isolate, "z"), Number::New(isolate, result.z));
+	  if (args.Length() == 3) argv[0] = moduleInfo;
+	  else args.GetReturnValue().Set(moduleInfo);
+
+  } else if (!strcmp(dataType, "vector4") || !strcmp(dataType, "vec4")) {
+    
+    Vector4 result = Memory.readMemory<Vector4>(process::hProcess, args[0]->Uint32Value());
+	  Local<Object> moduleInfo = Object::New(isolate);
+	  moduleInfo->Set(String::NewFromUtf8(isolate, "w"), Number::New(isolate, result.w));
+	  moduleInfo->Set(String::NewFromUtf8(isolate, "x"), Number::New(isolate, result.x));
+	  moduleInfo->Set(String::NewFromUtf8(isolate, "y"), Number::New(isolate, result.y));
+    moduleInfo->Set(String::NewFromUtf8(isolate, "z"), Number::New(isolate, result.z));
 	  if (args.Length() == 3) argv[0] = moduleInfo;
 	  else args.GetReturnValue().Set(moduleInfo);
 
@@ -465,8 +509,13 @@ void writeMemory(const FunctionCallbackInfo<Value>& args) {
   } else if (!strcmp(dataType, "string") || !strcmp(dataType, "str")) {
 
 	  v8::String::Utf8Value valueParam(args[1]->ToString());
-	  Memory.writeMemory<std::string>(process::hProcess, args[0]->Uint32Value(), std::string(*valueParam));
+    
+    // Write String, Method 1
+    //Memory.writeMemory<std::string>(process::hProcess, args[0]->Uint32Value(), std::string(*valueParam));
 
+    // Write String, Method 2
+    Memory.writeMemory(process::hProcess, args[0]->Uint32Value(), *valueParam, valueParam.length());
+    
   } else if (!strcmp(dataType, "vector3") || !strcmp(dataType, "vec3")) {
 
 	  Handle<Object> value = Handle<Object>::Cast(args[1]);
@@ -476,6 +525,17 @@ void writeMemory(const FunctionCallbackInfo<Value>& args) {
 		  value->Get(String::NewFromUtf8(isolate, "z"))->NumberValue()
 	  };
 	  Memory.writeMemory<Vector3>(process::hProcess, args[0]->Uint32Value(), vector);
+
+  } else if (!strcmp(dataType, "vector4") || !strcmp(dataType, "vec4")) {
+
+	  Handle<Object> value = Handle<Object>::Cast(args[1]);
+	  Vector4 vector = {
+      value->Get(String::NewFromUtf8(isolate, "w"))->NumberValue(),
+		  value->Get(String::NewFromUtf8(isolate, "x"))->NumberValue(),
+		  value->Get(String::NewFromUtf8(isolate, "y"))->NumberValue(),
+		  value->Get(String::NewFromUtf8(isolate, "z"))->NumberValue()
+	  };
+	  Memory.writeMemory<Vector4>(process::hProcess, args[0]->Uint32Value(), vector);
 
   } else {
 
