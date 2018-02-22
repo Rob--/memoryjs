@@ -183,7 +183,7 @@ const vector4 = { w: 0.0, x: 0.0, y: 0.0, z: 0.0 };
 memoryjs.writeMemory(address, vector4);
 ```
 
-### Strings
+### Strings:
 
 You can use this library to read either a "string", or "char*" and to write a string.
 
