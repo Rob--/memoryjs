@@ -90,7 +90,7 @@ void openProcess(const FunctionCallbackInfo<Value>& args) {
   processInfo->Set(String::NewFromUtf8(isolate, "handle"), Number::New(isolate, (int)Process.hProcess));
 
   DWORD base = Module.getBaseAddress((char*) *(processName), process.th32ProcessID);
-  processInfo->Set(String::NewFromUtf8(isolate, "modBaseAddr"), Number::New(isolate, (int)base));
+  processInfo->Set(String::NewFromUtf8(isolate, "modBaseAddr"), Number::New(isolate, (uintptr_t)base));
 
   /* openProcess can either take one argument or can take
      two arguments for asychronous use (second argument is the callback) */
@@ -207,7 +207,7 @@ void getModules(const FunctionCallbackInfo<Value>& args) {
     //  Create a v8 object to store the current module's information
     Local<Object> module = Object::New(isolate);
 
-    module->Set(String::NewFromUtf8(isolate, "modBaseAddr"), Number::New(isolate, (int)moduleEntries[i].modBaseAddr));
+    module->Set(String::NewFromUtf8(isolate, "modBaseAddr"), Number::New(isolate, (uintptr_t)moduleEntries[i].modBaseAddr));
     module->Set(String::NewFromUtf8(isolate, "modBaseSize"), Number::New(isolate, (int)moduleEntries[i].modBaseSize));
     module->Set(String::NewFromUtf8(isolate, "szExePath"), String::NewFromUtf8(isolate, moduleEntries[i].szExePath));
     module->Set(String::NewFromUtf8(isolate, "szModule"), String::NewFromUtf8(isolate, moduleEntries[i].szModule));
@@ -271,12 +271,12 @@ void findModule(const FunctionCallbackInfo<Value>& args) {
   // Create a v8 Object (JSON) to store the process information
   Local<Object> moduleInfo = Object::New(isolate);
 
-  moduleInfo->Set(String::NewFromUtf8(isolate, "modBaseAddr"), Number::New(isolate, (int)module.modBaseAddr));
+  moduleInfo->Set(String::NewFromUtf8(isolate, "modBaseAddr"), Number::New(isolate, (uintptr_t)module.modBaseAddr));
   moduleInfo->Set(String::NewFromUtf8(isolate, "modBaseSize"), Number::New(isolate, (int)module.modBaseSize));
   moduleInfo->Set(String::NewFromUtf8(isolate, "szExePath"), String::NewFromUtf8(isolate, module.szExePath));
   moduleInfo->Set(String::NewFromUtf8(isolate, "szModule"), String::NewFromUtf8(isolate, module.szModule));
   moduleInfo->Set(String::NewFromUtf8(isolate, "th32ProcessID"), Number::New(isolate, (int)module.th32ProcessID));
-  moduleInfo->Set(String::NewFromUtf8(isolate, "hModule"), Number::New(isolate, (int)module.hModule));
+  moduleInfo->Set(String::NewFromUtf8(isolate, "hModule"), Number::New(isolate, (uintptr_t)module.hModule));
 
   /* findModule can either take one or two arguments,
      three arguments for asychronous use (third argument is the callback) */
