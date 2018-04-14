@@ -353,6 +353,13 @@ void readMemory(const FunctionCallbackInfo<Value>& args) {
     if (args.Length() == 3) argv[1] = Number::New(isolate, result);
     else args.GetReturnValue().Set(Number::New(isolate, result));
 
+  }
+  else if (!strcmp(dataType, "ptr") || !strcmp(dataType, "pointer")) {
+
+	  intptr_t result = Memory.readMemory<intptr_t>(process::hProcess, args[0]->Uint32Value());
+	  if (args.Length() == 3) argv[1] = Number::New(isolate, result);
+	  else args.GetReturnValue().Set(Number::New(isolate, result));
+
   } else if (!strcmp(dataType, "bool") || !strcmp(dataType, "boolean")) {
 
     bool result = Memory.readMemory<bool>(process::hProcess, args[0]->Uint32Value());

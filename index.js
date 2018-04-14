@@ -10,6 +10,8 @@ module.exports = {
   DOUBLE: 'double',
   BOOL: 'bool',
   BOOLEAN: 'boolean',
+  PTR: 'ptr',
+  POINTER: 'pointer',
   STR: 'str',
   STRING: 'string',
   VEC3: 'vec3',
