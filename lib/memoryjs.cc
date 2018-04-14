@@ -319,44 +319,44 @@ void readMemory(const FunctionCallbackInfo<Value>& args) {
   Local<Value> argv[argc];
 
   // Define the error message that will be set if no data type is recognised
-  argv[1] = String::NewFromUtf8(isolate, "");
+  argv[0] = String::NewFromUtf8(isolate, "");
 
   /* following if statements find the data type to read and then return the correct data type
      args[0] -> Uint32Value() is the address to read, unsigned int is used because address needs to be positive */
   if (!strcmp(dataType, "int")) {
 
     int result = Memory.readMemory<int>(process::hProcess, args[0]->Uint32Value());
-    if (args.Length() == 3) argv[0] = Number::New(isolate, result);
+    if (args.Length() == 3) argv[1] = Number::New(isolate, result);
     else args.GetReturnValue().Set(Number::New(isolate, result));
 
   } else if (!strcmp(dataType, "dword")) {
 
     DWORD result = Memory.readMemory<DWORD>(process::hProcess, args[0]->Uint32Value());
-    if (args.Length() == 3) argv[0] = Number::New(isolate, result);
+    if (args.Length() == 3) argv[1] = Number::New(isolate, result);
     else args.GetReturnValue().Set(Number::New(isolate, result));
 
   } else if (!strcmp(dataType, "long")) {
 
     long result = Memory.readMemory<long>(process::hProcess, args[0]->Uint32Value());
-    if (args.Length() == 3) argv[0] = Number::New(isolate, result);
+    if (args.Length() == 3) argv[1] = Number::New(isolate, result);
     else args.GetReturnValue().Set(Number::New(isolate, result));
 
   } else if (!strcmp(dataType, "float")) {
 
     float result = Memory.readMemory<float>(process::hProcess, args[0]->Uint32Value());
-    if (args.Length() == 3) argv[0] = Number::New(isolate, result);
+    if (args.Length() == 3) argv[1] = Number::New(isolate, result);
     else args.GetReturnValue().Set(Number::New(isolate, result));
 
   } else if (!strcmp(dataType, "double")) {
 		
     double result = Memory.readMemory<double>(process::hProcess, args[0]->Uint32Value());
-    if (args.Length() == 3) argv[0] = Number::New(isolate, result);
+    if (args.Length() == 3) argv[1] = Number::New(isolate, result);
     else args.GetReturnValue().Set(Number::New(isolate, result));
 
   } else if (!strcmp(dataType, "bool") || !strcmp(dataType, "boolean")) {
 
     bool result = Memory.readMemory<bool>(process::hProcess, args[0]->Uint32Value());
-    if (args.Length() == 3) argv[0] = Boolean::New(isolate, result);
+    if (args.Length() == 3) argv[1] = Boolean::New(isolate, result);
     else args.GetReturnValue().Set(Boolean::New(isolate, result));
 
   } else if (!strcmp(dataType, "string") || !strcmp(dataType, "str")) {
@@ -382,13 +382,13 @@ void readMemory(const FunctionCallbackInfo<Value>& args) {
     }
 
     if (chars.size() == 0) {
-      if (args.Length() == 3) argv[1] = String::NewFromUtf8(isolate, "unable to read string (no null-terminator found after 1 million chars)");
+      if (args.Length() == 3) argv[0] = String::NewFromUtf8(isolate, "unable to read string (no null-terminator found after 1 million chars)");
       else return memoryjs::throwError("unable to read string (no null-terminator found after 1 million chars)", isolate);
     } else {
       // vector -> string
       std::string str(chars.begin(), chars.end());
 
-      if (args.Length() == 3) argv[0] = String::NewFromUtf8(isolate, str.c_str());
+      if (args.Length() == 3) argv[1] = String::NewFromUtf8(isolate, str.c_str());
       else args.GetReturnValue().Set(String::NewFromUtf8(isolate, str.c_str()));
     }
 
@@ -400,7 +400,7 @@ void readMemory(const FunctionCallbackInfo<Value>& args) {
     moduleInfo->Set(String::NewFromUtf8(isolate, "y"), Number::New(isolate, result.y));
     moduleInfo->Set(String::NewFromUtf8(isolate, "z"), Number::New(isolate, result.z));
 
-    if (args.Length() == 3) argv[0] = moduleInfo;
+    if (args.Length() == 3) argv[1] = moduleInfo;
     else args.GetReturnValue().Set(moduleInfo);
 
   } else if (!strcmp(dataType, "vector4") || !strcmp(dataType, "vec4")) {
@@ -412,12 +412,12 @@ void readMemory(const FunctionCallbackInfo<Value>& args) {
     moduleInfo->Set(String::NewFromUtf8(isolate, "y"), Number::New(isolate, result.y));
     moduleInfo->Set(String::NewFromUtf8(isolate, "z"), Number::New(isolate, result.z));
 
-    if (args.Length() == 3) argv[0] = moduleInfo;
+    if (args.Length() == 3) argv[1] = moduleInfo;
     else args.GetReturnValue().Set(moduleInfo);
 
   } else {
 
-    if (args.Length() == 3) argv[1] = String::NewFromUtf8(isolate, "unexpected data type");
+    if (args.Length() == 3) argv[0] = String::NewFromUtf8(isolate, "unexpected data type");
     else return memoryjs::throwError("unexpected data type", isolate);
 
   }
