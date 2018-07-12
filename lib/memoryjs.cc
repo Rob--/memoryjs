@@ -320,6 +320,8 @@ void findModule(const FunctionCallbackInfo<Value>& args) {
 void readMemory(const FunctionCallbackInfo<Value>& args) {
   Isolate* isolate = args.GetIsolate();
 
+  std::cout<< args.Length() << std::endl;
+
   if (args.Length() != 3 && args.Length() != 4) {
     memoryjs::throwError("requires 3 arguments, or 4 arguments if a callback is being used", isolate);
     return;

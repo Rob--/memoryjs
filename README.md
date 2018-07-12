@@ -1,6 +1,10 @@
 # memoryjs
 Node add-on for memory reading and writing! (finally!)
 
+NOTE: version 3 of this library introduces breaking changes that are incompatible with previous versions.
+The notable change is that when reading memory, writing memory and pattern scanning you are required to pass the handle
+through for the process (that is given when doing memoryjs.openProcess). This allows for multi-process support.
+
 # Features
 
 - open a process
