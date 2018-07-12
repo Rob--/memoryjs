@@ -22,6 +22,7 @@ public:
 	~process();
 
 	PROCESSENTRY32 openProcess(const char* processName, char** errorMessage);
+  PROCESSENTRY32 openProcess(DWORD processId, char** errorMessage);
 	void closeProcess();
 	std::vector<PROCESSENTRY32> getProcesses(char** errorMessage);
 

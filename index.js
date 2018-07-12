@@ -24,12 +24,12 @@ module.exports = {
   READ: 0x1,
   SUBTRACT: 0x2,
 
-  openProcess(processName, callback) {
+  openProcess(processIdentifier, callback) {
     if (arguments.length === 1) {
-      return memoryjs.openProcess(processName);
+      return memoryjs.openProcess(processIdentifier);
     }
 
-    memoryjs.openProcess(processName, callback);
+    memoryjs.openProcess(processIdentifier, callback);
   },
 
   getProcesses(callback) {

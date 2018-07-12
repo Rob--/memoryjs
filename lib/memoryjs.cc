@@ -3,6 +3,7 @@
 #include <TlHelp32.h>
 #include <string>
 #include <vector>
+#include <iostream>
 #include "module.h"
 #include "process.h"
 #include "memoryjs.h"
@@ -50,8 +51,8 @@ void openProcess(const FunctionCallbackInfo<Value>& args) {
     return;
   }
 
-  if(!args[0]->IsString()){
-    memoryjs::throwError("first argument must be a string", isolate);
+  if(!args[0]->IsString() && !args[0]->IsNumber()){
+    memoryjs::throwError("first argument must be a string or a number", isolate);
     return;
   }
 
@@ -59,18 +60,30 @@ void openProcess(const FunctionCallbackInfo<Value>& args) {
     memoryjs::throwError("second argument must be a function", isolate);
     return;
   }
-  
-  v8::String::Utf8Value processName(args[0]);
 
   // Define error message that may be set by the function that opens the process
   char* errorMessage = "";
 
-  PROCESSENTRY32 process = Process.openProcess((char*) *(processName), &errorMessage);
+  PROCESSENTRY32 process;
 
-  // In case it failed to open, let's keep retrying
-  while(!strcmp(process.szExeFile, "")) {
+  if (args[0]->IsString()) {
+    v8::String::Utf8Value processName(args[0]);  
     process = Process.openProcess((char*) *(processName), &errorMessage);
-  };
+
+    // In case it failed to open, let's keep retrying
+    // while(!strcmp(process.szExeFile, "")) {
+    //   process = Process.openProcess((char*) *(processName), &errorMessage);
+    // };
+  }
+
+  if (args[0]->IsNumber()) {
+    process = Process.openProcess(args[0]->Uint32Value(), &errorMessage);
+
+    // In case it failed to open, let's keep retrying
+    // while(!strcmp(process.szExeFile, "")) {
+    //   process = Process.openProcess(args[0]->Uint32Value(), &errorMessage);
+    // };
+  }
 
   /* If an error message was returned from the function that opens the process, throw the error.
      Only throw an error if there is no callback (if there's a callback, the error is passed there). */
@@ -82,14 +95,15 @@ void openProcess(const FunctionCallbackInfo<Value>& args) {
   // Create a v8 Object (JSON) to store the process information
   Local<Object> processInfo = Object::New(isolate);
 
-  processInfo->Set(String::NewFromUtf8(isolate, "cntThreads"), Number::New(isolate, (int)process.cntThreads));
-  processInfo->Set(String::NewFromUtf8(isolate, "szExeFile"), String::NewFromUtf8(isolate, process.szExeFile));
+  processInfo->Set(String::NewFromUtf8(isolate, "dwSize"), Number::New(isolate, (int)process.dwSize));
   processInfo->Set(String::NewFromUtf8(isolate, "th32ProcessID"), Number::New(isolate, (int)process.th32ProcessID));
+  processInfo->Set(String::NewFromUtf8(isolate, "cntThreads"), Number::New(isolate, (int)process.cntThreads));
   processInfo->Set(String::NewFromUtf8(isolate, "th32ParentProcessID"), Number::New(isolate, (int)process.th32ParentProcessID));
   processInfo->Set(String::NewFromUtf8(isolate, "pcPriClassBase"), Number::New(isolate, (int)process.pcPriClassBase));
+  processInfo->Set(String::NewFromUtf8(isolate, "szExeFile"), String::NewFromUtf8(isolate, process.szExeFile));
   processInfo->Set(String::NewFromUtf8(isolate, "handle"), Number::New(isolate, (int)Process.hProcess));
 
-  DWORD base = Module.getBaseAddress((char*) *(processName), process.th32ProcessID);
+  DWORD base = Module.getBaseAddress(process.szExeFile, process.th32ProcessID);
   processInfo->Set(String::NewFromUtf8(isolate, "modBaseAddr"), Number::New(isolate, (uintptr_t)base));
 
   /* openProcess can either take one argument or can take
@@ -353,8 +367,7 @@ void readMemory(const FunctionCallbackInfo<Value>& args) {
     if (args.Length() == 3) argv[1] = Number::New(isolate, result);
     else args.GetReturnValue().Set(Number::New(isolate, result));
 
-  }
-  else if (!strcmp(dataType, "ptr") || !strcmp(dataType, "pointer")) {
+  } else if (!strcmp(dataType, "ptr") || !strcmp(dataType, "pointer")) {
 
 	  intptr_t result = Memory.readMemory<intptr_t>(process::hProcess, args[0]->Uint32Value());
 	  if (args.Length() == 3) argv[1] = Number::New(isolate, result);

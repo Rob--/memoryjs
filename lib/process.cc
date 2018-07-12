@@ -47,6 +47,35 @@ PROCESSENTRY32 process::openProcess(const char* processName, char** errorMessage
 	return process;
 }
 
+PROCESSENTRY32 process::openProcess(DWORD processId, char** errorMessage) {
+  PROCESSENTRY32 process;
+
+	// A list of processes (PROCESSENTRY32)
+	std::vector<PROCESSENTRY32> processes = getProcesses(errorMessage);
+
+	for(std::vector<PROCESSENTRY32>::size_type i = 0; i != processes.size(); i++){
+		// Check to see if this is the process we want.
+		if (processId == processes[i].th32ProcessID) {
+			// Store the process handle and process ID internally
+			// for reading/writing to memory
+			process::hProcess = OpenProcess(PROCESS_ALL_ACCESS, FALSE, processes[i].th32ProcessID);
+
+			// Store the handle (just for reference to close the handle later)
+			// process is returned and processEntry is used internally for reading/writing to memory
+			handle = (int) process::hProcess;
+			process = processEntry = processes[i];
+
+			break;
+		}
+	}
+
+	if (hProcess == NULL) {
+		*errorMessage = "unable to find process";
+	}
+
+	return process;
+}
+
 void process::closeProcess(){
 	CloseHandle(process::hProcess);
 }
