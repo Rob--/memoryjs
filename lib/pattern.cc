@@ -17,12 +17,12 @@ pattern::~pattern() {}
 using v8::Object;
 
 /* based off Y3t1y3t's implementation */
-uintptr_t pattern::findPattern(MODULEENTRY32 module, const char* pattern, short sigType, uintptr_t patternOffset, uintptr_t addressOffset) { 
+uintptr_t pattern::findPattern(HANDLE handle, MODULEENTRY32 module, const char* pattern, short sigType, uintptr_t patternOffset, uintptr_t addressOffset) { 
   auto moduleSize = uintptr_t(module.modBaseSize);
   auto moduleBase = uintptr_t(module.hModule);
 
   auto moduleBytes = std::vector<unsigned char>(moduleSize);
-  ReadProcessMemory(process::hProcess, LPCVOID(moduleBase), &moduleBytes[0], moduleSize, nullptr);
+  ReadProcessMemory(handle, LPCVOID(moduleBase), &moduleBytes[0], moduleSize, nullptr);
 
   auto byteBase = const_cast<unsigned char*>(&moduleBytes.at(0));
   auto maxOffset = moduleSize - 0x1000;
@@ -32,7 +32,7 @@ uintptr_t pattern::findPattern(MODULEENTRY32 module, const char* pattern, short 
       auto address = moduleBase + offset + patternOffset;
 
       /* read memory at pattern if flag is raised*/
-      if (sigType & ST_READ) ReadProcessMemory(process::hProcess, LPCVOID(address), &address, sizeof(uintptr_t), nullptr);
+      if (sigType & ST_READ) ReadProcessMemory(handle, LPCVOID(address), &address, sizeof(uintptr_t), nullptr);
 
       /* subtract image base if flag is raised */
       if (sigType & ST_SUBTRACT) address -= moduleBase;

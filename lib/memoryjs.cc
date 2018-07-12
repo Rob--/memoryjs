@@ -64,11 +64,11 @@ void openProcess(const FunctionCallbackInfo<Value>& args) {
   // Define error message that may be set by the function that opens the process
   char* errorMessage = "";
 
-  PROCESSENTRY32 process;
+  process::Pair pair;
 
   if (args[0]->IsString()) {
     v8::String::Utf8Value processName(args[0]);  
-    process = Process.openProcess((char*) *(processName), &errorMessage);
+    pair = Process.openProcess((char*) *(processName), &errorMessage);
 
     // In case it failed to open, let's keep retrying
     // while(!strcmp(process.szExeFile, "")) {
@@ -77,7 +77,7 @@ void openProcess(const FunctionCallbackInfo<Value>& args) {
   }
 
   if (args[0]->IsNumber()) {
-    process = Process.openProcess(args[0]->Uint32Value(), &errorMessage);
+    pair = Process.openProcess(args[0]->Uint32Value(), &errorMessage);
 
     // In case it failed to open, let's keep retrying
     // while(!strcmp(process.szExeFile, "")) {
@@ -95,15 +95,15 @@ void openProcess(const FunctionCallbackInfo<Value>& args) {
   // Create a v8 Object (JSON) to store the process information
   Local<Object> processInfo = Object::New(isolate);
 
-  processInfo->Set(String::NewFromUtf8(isolate, "dwSize"), Number::New(isolate, (int)process.dwSize));
-  processInfo->Set(String::NewFromUtf8(isolate, "th32ProcessID"), Number::New(isolate, (int)process.th32ProcessID));
-  processInfo->Set(String::NewFromUtf8(isolate, "cntThreads"), Number::New(isolate, (int)process.cntThreads));
-  processInfo->Set(String::NewFromUtf8(isolate, "th32ParentProcessID"), Number::New(isolate, (int)process.th32ParentProcessID));
-  processInfo->Set(String::NewFromUtf8(isolate, "pcPriClassBase"), Number::New(isolate, (int)process.pcPriClassBase));
-  processInfo->Set(String::NewFromUtf8(isolate, "szExeFile"), String::NewFromUtf8(isolate, process.szExeFile));
-  processInfo->Set(String::NewFromUtf8(isolate, "handle"), Number::New(isolate, (int)Process.hProcess));
+  processInfo->Set(String::NewFromUtf8(isolate, "dwSize"), Number::New(isolate, (int)pair.process.dwSize));
+  processInfo->Set(String::NewFromUtf8(isolate, "th32ProcessID"), Number::New(isolate, (int)pair.process.th32ProcessID));
+  processInfo->Set(String::NewFromUtf8(isolate, "cntThreads"), Number::New(isolate, (int)pair.process.cntThreads));
+  processInfo->Set(String::NewFromUtf8(isolate, "th32ParentProcessID"), Number::New(isolate, (int)pair.process.th32ParentProcessID));
+  processInfo->Set(String::NewFromUtf8(isolate, "pcPriClassBase"), Number::New(isolate, (int)pair.process.pcPriClassBase));
+  processInfo->Set(String::NewFromUtf8(isolate, "szExeFile"), String::NewFromUtf8(isolate, pair.process.szExeFile));
+  processInfo->Set(String::NewFromUtf8(isolate, "handle"), Number::New(isolate, (int)pair.handle));
 
-  DWORD base = Module.getBaseAddress(process.szExeFile, process.th32ProcessID);
+  DWORD base = Module.getBaseAddress(pair.process.szExeFile, pair.process.th32ProcessID);
   processInfo->Set(String::NewFromUtf8(isolate, "modBaseAddr"), Number::New(isolate, (uintptr_t)base));
 
   // openProcess can either take one argument or can take
@@ -122,7 +122,18 @@ void openProcess(const FunctionCallbackInfo<Value>& args) {
 
 void closeProcess(const FunctionCallbackInfo<Value>& args) {
   Isolate* isolate = args.GetIsolate();
-  Process.closeProcess();
+
+  if (args.Length() != 1) {
+    memoryjs::throwError("requires 1 argument", isolate);
+    return;
+  }
+
+  if (!args[0]->IsNumber()) {
+    memoryjs::throwError("first argument must be a number", isolate);
+    return;
+  }
+
+  Process.closeProcess((HANDLE)args[0]->Int32Value());
 }
 
 void getProcesses(const FunctionCallbackInfo<Value>& args) {
@@ -309,26 +320,26 @@ void findModule(const FunctionCallbackInfo<Value>& args) {
 void readMemory(const FunctionCallbackInfo<Value>& args) {
   Isolate* isolate = args.GetIsolate();
 
-  if (args.Length() != 2 && args.Length() != 3) {
-    memoryjs::throwError("requires 2 arguments, or 3 arguments if a callback is being used", isolate);
+  if (args.Length() != 3 && args.Length() != 4) {
+    memoryjs::throwError("requires 3 arguments, or 4 arguments if a callback is being used", isolate);
     return;
   }
 
-  if (!args[0]->IsNumber() && !args[1]->IsString()) {
-    memoryjs::throwError("first argument must be a number, second argument must be a string", isolate);
+  if (!args[0]->IsNumber() && !args[1]->IsNumber() && !args[2]->IsString()) {
+    memoryjs::throwError("first and second argument must be a number, third argument must be a string", isolate);
     return;
   }
 
-  if (args.Length() == 3 && !args[2]->IsFunction()) {
-    memoryjs::throwError("third argument must be a function", isolate);
+  if (args.Length() == 4 && !args[3]->IsFunction()) {
+    memoryjs::throwError("fourth argument must be a function", isolate);
     return;
   }
 
-  v8::String::Utf8Value dataTypeArg(args[1]);
+  v8::String::Utf8Value dataTypeArg(args[2]);
   char* dataType = (char*) *(dataTypeArg);
 
   // Set callback variables in the case the a callback parameter has been passed
-  Local<Function> callback = Local<Function>::Cast(args[2]);
+  Local<Function> callback = Local<Function>::Cast(args[3]);
   const unsigned argc = 2;
   Local<Value> argv[argc];
 
@@ -336,47 +347,48 @@ void readMemory(const FunctionCallbackInfo<Value>& args) {
   argv[0] = String::NewFromUtf8(isolate, "");
 
   // following if statements find the data type to read and then return the correct data type
-  // args[0] -> Uint32Value() is the address to read, unsigned int is used because address needs to be positive
+  // args[0] -> Uint32Value() is the handle of the process
+  // args[1] -> Uint32Value() is the address to read
   if (!strcmp(dataType, "int")) {
 
-    int result = Memory.readMemory<int>(process::hProcess, args[0]->Uint32Value());
-    if (args.Length() == 3) argv[1] = Number::New(isolate, result);
+    int result = Memory.readMemory<int>((HANDLE)args[0]->Uint32Value(), args[1]->Uint32Value());
+    if (args.Length() == 4) argv[1] = Number::New(isolate, result);
     else args.GetReturnValue().Set(Number::New(isolate, result));
 
   } else if (!strcmp(dataType, "dword")) {
 
-    DWORD result = Memory.readMemory<DWORD>(process::hProcess, args[0]->Uint32Value());
-    if (args.Length() == 3) argv[1] = Number::New(isolate, result);
+    DWORD result = Memory.readMemory<DWORD>((HANDLE)args[0]->Uint32Value(), args[1]->Uint32Value());
+    if (args.Length() == 4) argv[1] = Number::New(isolate, result);
     else args.GetReturnValue().Set(Number::New(isolate, result));
 
   } else if (!strcmp(dataType, "long")) {
 
-    long result = Memory.readMemory<long>(process::hProcess, args[0]->Uint32Value());
-    if (args.Length() == 3) argv[1] = Number::New(isolate, result);
+    long result = Memory.readMemory<long>((HANDLE)args[0]->Uint32Value(), args[1]->Uint32Value());
+    if (args.Length() == 4) argv[1] = Number::New(isolate, result);
     else args.GetReturnValue().Set(Number::New(isolate, result));
 
   } else if (!strcmp(dataType, "float")) {
 
-    float result = Memory.readMemory<float>(process::hProcess, args[0]->Uint32Value());
-    if (args.Length() == 3) argv[1] = Number::New(isolate, result);
+    float result = Memory.readMemory<float>((HANDLE)args[0]->Uint32Value(), args[1]->Uint32Value());
+    if (args.Length() == 4) argv[1] = Number::New(isolate, result);
     else args.GetReturnValue().Set(Number::New(isolate, result));
 
   } else if (!strcmp(dataType, "double")) {
 		
-    double result = Memory.readMemory<double>(process::hProcess, args[0]->Uint32Value());
-    if (args.Length() == 3) argv[1] = Number::New(isolate, result);
+    double result = Memory.readMemory<double>((HANDLE)args[0]->Uint32Value(), args[1]->Uint32Value());
+    if (args.Length() == 4) argv[1] = Number::New(isolate, result);
     else args.GetReturnValue().Set(Number::New(isolate, result));
 
   } else if (!strcmp(dataType, "ptr") || !strcmp(dataType, "pointer")) {
 
-    intptr_t result = Memory.readMemory<intptr_t>(process::hProcess, args[0]->Uint32Value());
-    if (args.Length() == 3) argv[1] = Number::New(isolate, result);
+    intptr_t result = Memory.readMemory<intptr_t>((HANDLE)args[0]->Uint32Value(), args[1]->Uint32Value());
+    if (args.Length() == 4) argv[1] = Number::New(isolate, result);
     else args.GetReturnValue().Set(Number::New(isolate, result));
 
   } else if (!strcmp(dataType, "bool") || !strcmp(dataType, "boolean")) {
 
-    bool result = Memory.readMemory<bool>(process::hProcess, args[0]->Uint32Value());
-    if (args.Length() == 3) argv[1] = Boolean::New(isolate, result);
+    bool result = Memory.readMemory<bool>((HANDLE)args[0]->Uint32Value(), args[1]->Uint32Value());
+    if (args.Length() == 4) argv[1] = Boolean::New(isolate, result);
     else args.GetReturnValue().Set(Boolean::New(isolate, result));
 
   } else if (!strcmp(dataType, "string") || !strcmp(dataType, "str")) {
@@ -384,7 +396,7 @@ void readMemory(const FunctionCallbackInfo<Value>& args) {
     std::vector<char> chars;
     int offset = 0x0;
     while (true) {
-      char c = Memory.readMemoryChar(process::hProcess, args[0]->IntegerValue() + offset);
+      char c = Memory.readMemoryChar((HANDLE)args[0]->Uint32Value(), args[1]->IntegerValue() + offset);
       chars.push_back(c);
 
       // break at 1 million chars
@@ -403,71 +415,71 @@ void readMemory(const FunctionCallbackInfo<Value>& args) {
 
     if (chars.size() == 0) {
     
-      if (args.Length() == 3) argv[0] = String::NewFromUtf8(isolate, "unable to read string (no null-terminator found after 1 million chars)");
+      if (args.Length() == 4) argv[0] = String::NewFromUtf8(isolate, "unable to read string (no null-terminator found after 1 million chars)");
       else return memoryjs::throwError("unable to read string (no null-terminator found after 1 million chars)", isolate);
     
     } else {
       // vector -> string
       std::string str(chars.begin(), chars.end());
 
-      if (args.Length() == 3) argv[1] = String::NewFromUtf8(isolate, str.c_str());
+      if (args.Length() == 4) argv[1] = String::NewFromUtf8(isolate, str.c_str());
       else args.GetReturnValue().Set(String::NewFromUtf8(isolate, str.c_str()));
     
     }
 
   } else if (!strcmp(dataType, "vector3") || !strcmp(dataType, "vec3")) {
 
-    Vector3 result = Memory.readMemory<Vector3>(process::hProcess, args[0]->Uint32Value());
+    Vector3 result = Memory.readMemory<Vector3>((HANDLE)args[0]->Uint32Value(), args[1]->Uint32Value());
     Local<Object> moduleInfo = Object::New(isolate);
     moduleInfo->Set(String::NewFromUtf8(isolate, "x"), Number::New(isolate, result.x));
     moduleInfo->Set(String::NewFromUtf8(isolate, "y"), Number::New(isolate, result.y));
     moduleInfo->Set(String::NewFromUtf8(isolate, "z"), Number::New(isolate, result.z));
 
-    if (args.Length() == 3) argv[1] = moduleInfo;
+    if (args.Length() == 4) argv[1] = moduleInfo;
     else args.GetReturnValue().Set(moduleInfo);
 
   } else if (!strcmp(dataType, "vector4") || !strcmp(dataType, "vec4")) {
     
-    Vector4 result = Memory.readMemory<Vector4>(process::hProcess, args[0]->Uint32Value());
+    Vector4 result = Memory.readMemory<Vector4>((HANDLE)args[0]->Uint32Value(), args[1]->Uint32Value());
     Local<Object> moduleInfo = Object::New(isolate);
     moduleInfo->Set(String::NewFromUtf8(isolate, "w"), Number::New(isolate, result.w));
     moduleInfo->Set(String::NewFromUtf8(isolate, "x"), Number::New(isolate, result.x));
     moduleInfo->Set(String::NewFromUtf8(isolate, "y"), Number::New(isolate, result.y));
     moduleInfo->Set(String::NewFromUtf8(isolate, "z"), Number::New(isolate, result.z));
 
-    if (args.Length() == 3) argv[1] = moduleInfo;
+    if (args.Length() == 4) argv[1] = moduleInfo;
     else args.GetReturnValue().Set(moduleInfo);
 
   } else {
 
-    if (args.Length() == 3) argv[0] = String::NewFromUtf8(isolate, "unexpected data type");
+    if (args.Length() == 4) argv[0] = String::NewFromUtf8(isolate, "unexpected data type");
     else return memoryjs::throwError("unexpected data type", isolate);
 
   }
 
   // We check if there is three arguments and if the third argument is a function earlier on
   // now we check again if we must call the function passed on
-  if (args.Length() == 3) callback->Call(Null(isolate), argc, argv);
+  if (args.Length() == 4) callback->Call(Null(isolate), argc, argv);
 }
 
 void writeMemory(const FunctionCallbackInfo<Value>& args) {
   Isolate* isolate = args.GetIsolate();
 
-  if (args.Length() != 3) {
-    memoryjs::throwError("requires 3 arguments", isolate);
+  if (args.Length() != 4) {
+    memoryjs::throwError("requires 4 arguments", isolate);
     return;
   }
 
-  if (!args[0]->IsNumber() && !args[2]->IsString()) {
-    memoryjs::throwError("first argument must be a number, second argument must be a string", isolate);
+  if (!args[0]->IsNumber() && !args[1]->IsNumber() && !args[3]->IsString()) {
+    memoryjs::throwError("first and second argument must be a number, third argument must be a string", isolate);
     return;
   }
 
-  v8::String::Utf8Value dataTypeArg(args[2]);
+  v8::String::Utf8Value dataTypeArg(args[3]);
   char* dataType = (char*)*(dataTypeArg);
 
   // Set callback variables in the case the a callback parameter has been passed
-  Local<Function> callback = Local<Function>::Cast(args[2]);
+  Local<Function> callback = Local<Function>::Cast(args[4]);
   const unsigned argc = 1;
   Local<Value> argv[argc];
 
@@ -479,111 +491,123 @@ void writeMemory(const FunctionCallbackInfo<Value>& args) {
   // args[1] -> value is the value to write to the address
   if (!strcmp(dataType, "int")) {
 
-    Memory.writeMemory<int>(process::hProcess, args[0]->Uint32Value(), args[1]->NumberValue());
+    Memory.writeMemory<int>((HANDLE)args[0]->Uint32Value(), args[1]->Uint32Value(), args[2]->NumberValue());
 
   } else if (!strcmp(dataType, "dword")) {
 
-    Memory.writeMemory<DWORD>(process::hProcess, args[0]->Uint32Value(), args[1]->NumberValue());
+    Memory.writeMemory<DWORD>((HANDLE)args[0]->Uint32Value(), args[1]->Uint32Value(), args[2]->NumberValue());
 
   } else if (!strcmp(dataType, "long")) {
 
-    Memory.writeMemory<long>(process::hProcess, args[0]->Uint32Value(), args[1]->NumberValue());
+    Memory.writeMemory<long>((HANDLE)args[0]->Uint32Value(), args[1]->Uint32Value(), args[2]->NumberValue());
 
   } else if (!strcmp(dataType, "float")) {
 
-    Memory.writeMemory<float>(process::hProcess, args[0]->Uint32Value(), args[1]->NumberValue());
+    Memory.writeMemory<float>((HANDLE)args[0]->Uint32Value(), args[1]->Uint32Value(), args[2]->NumberValue());
 
   } else if (!strcmp(dataType, "double")) {
 
-    Memory.writeMemory<double>(process::hProcess, args[0]->Uint32Value(), args[1]->NumberValue());
+    Memory.writeMemory<double>((HANDLE)args[0]->Uint32Value(), args[1]->Uint32Value(), args[2]->NumberValue());
 
   } else if (!strcmp(dataType, "bool") || !strcmp(dataType, "boolean")) {
 
-    Memory.writeMemory<bool>(process::hProcess, args[0]->Uint32Value(), args[1]->BooleanValue());
+    Memory.writeMemory<bool>((HANDLE)args[0]->Uint32Value(), args[1]->Uint32Value(), args[2]->BooleanValue());
 
   } else if (!strcmp(dataType, "string") || !strcmp(dataType, "str")) {
 
-    v8::String::Utf8Value valueParam(args[1]->ToString());
+    v8::String::Utf8Value valueParam(args[2]->ToString());
     
     // Write String, Method 1
-    //Memory.writeMemory<std::string>(process::hProcess, args[0]->Uint32Value(), std::string(*valueParam));
+    //Memory.writeMemory<std::string>((HANDLE)args[0]->Uint32Value(), args[1]->Uint32Value(), std::string(*valueParam));
 
     // Write String, Method 2
-    Memory.writeMemory(process::hProcess, args[0]->Uint32Value(), *valueParam, valueParam.length());
+    Memory.writeMemory((HANDLE)args[0]->Uint32Value(), args[1]->Uint32Value(), *valueParam, valueParam.length());
     
   } else if (!strcmp(dataType, "vector3") || !strcmp(dataType, "vec3")) {
 
-    Handle<Object> value = Handle<Object>::Cast(args[1]);
+    Handle<Object> value = Handle<Object>::Cast(args[2]);
     Vector3 vector = {
       value->Get(String::NewFromUtf8(isolate, "x"))->NumberValue(),
       value->Get(String::NewFromUtf8(isolate, "y"))->NumberValue(),
       value->Get(String::NewFromUtf8(isolate, "z"))->NumberValue()
     };
-    Memory.writeMemory<Vector3>(process::hProcess, args[0]->Uint32Value(), vector);
+    Memory.writeMemory<Vector3>((HANDLE)args[0]->Uint32Value(), args[1]->Uint32Value(), vector);
 
   } else if (!strcmp(dataType, "vector4") || !strcmp(dataType, "vec4")) {
 
-    Handle<Object> value = Handle<Object>::Cast(args[1]);
+    Handle<Object> value = Handle<Object>::Cast(args[2]);
     Vector4 vector = {
       value->Get(String::NewFromUtf8(isolate, "w"))->NumberValue(),
       value->Get(String::NewFromUtf8(isolate, "x"))->NumberValue(),
       value->Get(String::NewFromUtf8(isolate, "y"))->NumberValue(),
       value->Get(String::NewFromUtf8(isolate, "z"))->NumberValue()
     };
-    Memory.writeMemory<Vector4>(process::hProcess, args[0]->Uint32Value(), vector);
+    Memory.writeMemory<Vector4>((HANDLE)args[0]->Uint32Value(), args[1]->Uint32Value(), vector);
 
   } else {
 
-    if (args.Length() == 1) argv[0] = String::NewFromUtf8(isolate, "unexpected data type");
+    if (args.Length() == 5) argv[0] = String::NewFromUtf8(isolate, "unexpected data type");
     else return memoryjs::throwError("unexpected data type", isolate);
 
   }
 
   // If there is a callback, return the error message (blank if no error)
-  if (args.Length() == 1) callback->Call(Null(isolate), argc, argv);
+  if (args.Length() == 5) callback->Call(Null(isolate), argc, argv);
 }
 
 void findPattern(const FunctionCallbackInfo<Value>& args) {
   Isolate* isolate = args.GetIsolate();
 
-  if (args.Length() != 5 && args.Length() != 6) {
-    memoryjs::throwError("requires 5 arguments, or 6 arguments if a callback is being used", isolate);
-    return;
-  }
+  // if (args.Length() != 5 && args.Length() != 6) {
+  //   memoryjs::throwError("requires 5 arguments, or 6 arguments if a callback is being used", isolate);
+  //   return;
+  // }
 
-  if (!args[0]->IsNumber() && !args[1]->IsString() && !args[2]->IsNumber() && !args[3]->IsNumber() && !args[4]->IsNumber()) {
-    memoryjs::throwError("first argument must be a number, the remaining arguments must be numbers apart from the callback", isolate);
-    return;
-  }
+  // if (!args[0]->IsNumber() && !args[1]->IsString() && !args[2]->IsNumber() && !args[3]->IsNumber() && !args[4]->IsNumber()) {
+  //   memoryjs::throwError("first argument must be a number, the remaining arguments must be numbers apart from the callback", isolate);
+  //   return;
+  // }
 
-  if (args.Length() == 6 && !args[5]->IsFunction()) {
-    memoryjs::throwError("sixth argument must be a function", isolate);
-    return;
-  }
+  // if (args.Length() == 6 && !args[5]->IsFunction()) {
+  //   memoryjs::throwError("sixth argument must be a function", isolate);
+  //   return;
+  // }
 
   // Address of findPattern result
   uintptr_t address = -1;
 
-  for (std::vector<MODULEENTRY32>::size_type i = 0; i != Module.moduleEntries.size(); i++) {
-    v8::String::Utf8Value moduleName(args[0]);
+  // Define error message that may be set by the function that gets the modules
+  char* errorMessage = "";
 
-    if (!strcmp(Module.moduleEntries[i].szModule, std::string(*moduleName).c_str())) {
-      v8::String::Utf8Value signature(args[1]->ToString());
-      address = Pattern.findPattern(Module.moduleEntries[i], std::string(*signature).c_str(), args[2]->Uint32Value(), args[3]->Uint32Value(), args[4]->Uint32Value());
+  HANDLE handle = (HANDLE)args[0]->Uint32Value();
+
+  std::vector<MODULEENTRY32> moduleEntries = Module.getModules(GetProcessId(handle), &errorMessage);
+
+  // If an error message was returned from the function getting the modules, throw the error.
+  // Only throw an error if there is no callback (if there's a callback, the error is passed there).
+  if (strcmp(errorMessage, "") && args.Length() != 7) {
+    memoryjs::throwError(errorMessage, isolate);
+    return;
+  }
+
+  for (std::vector<MODULEENTRY32>::size_type i = 0; i != moduleEntries.size(); i++) {
+    v8::String::Utf8Value moduleName(args[1]);
+
+    if (!strcmp(moduleEntries[i].szModule, std::string(*moduleName).c_str())) {
+      v8::String::Utf8Value signature(args[2]->ToString());
+      address = Pattern.findPattern(handle, moduleEntries[i], std::string(*signature).c_str(), args[3]->Uint32Value(), args[4]->Uint32Value(), args[5]->Uint32Value());
       break;
     }
   }
 
-  char* errorMessage = "";
+  // If no error was set by getModules and the address is still the value we set it as, it probably means we couldn't find the module
+  if (strcmp(errorMessage, "") && address == -1) errorMessage = "unable to find module";
 
-  // If address is still the value we set it as, it probably means we couldn't find the module
-  if (address == -1) errorMessage = "unable to find module";
-
-  // If it's -2 this means there was no match to the pattern
-  if (address == -2) errorMessage = "no match found";
+  // If no error was set by getModules and the address is -2 this means there was no match to the pattern
+  if (strcmp(errorMessage, "") && address == -2) errorMessage = "no match found";
 
   // findPattern can be asynchronous
-  if (args.Length() == 6) {
+  if (args.Length() == 7) {
     // Callback to let the user handle with the information
     Local<Function> callback = Local<Function>::Cast(args[5]);
     const unsigned argc = 2;

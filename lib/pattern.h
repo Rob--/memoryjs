@@ -22,7 +22,7 @@ public:
     ST_SUBTRACT = 0x2
   };
 
-  uintptr_t findPattern(MODULEENTRY32 module, const char* pattern, short sigType, uintptr_t patternOffset, uintptr_t addressOffset);
+  uintptr_t findPattern(HANDLE handle, MODULEENTRY32 module, const char* pattern, short sigType, uintptr_t patternOffset, uintptr_t addressOffset);
   bool compareBytes(const unsigned char* bytes, const char* pattern);
 };
 #endif

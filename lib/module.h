@@ -13,9 +13,6 @@ using v8::Isolate;
 class module {
 
 public:
-  MODULEENTRY32 moduleEntry;
-  std::vector<MODULEENTRY32> moduleEntries;
-
   module();
   ~module();
 

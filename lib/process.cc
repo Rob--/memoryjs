@@ -6,20 +6,15 @@
 #include "memoryjs.h"
 
 process::process() {}
-
-process::~process() {
-  CloseHandle(hProcess);
-}
+process::~process() {}
 
 using v8::Exception;
 using v8::Isolate;
 using v8::String;
 
-PROCESSENTRY32 process::processEntry;
-HANDLE process::hProcess;
-
-PROCESSENTRY32 process::openProcess(const char* processName, char** errorMessage){
+process::Pair process::openProcess(const char* processName, char** errorMessage){
   PROCESSENTRY32 process;
+  HANDLE handle;
 
   // A list of processes (PROCESSENTRY32)
   std::vector<PROCESSENTRY32> processes = getProcesses(errorMessage);
@@ -27,28 +22,25 @@ PROCESSENTRY32 process::openProcess(const char* processName, char** errorMessage
   for (std::vector<PROCESSENTRY32>::size_type i = 0; i != processes.size(); i++) {
     // Check to see if this is the process we want.
     if (!strcmp(processes[i].szExeFile, processName)) {
-      // Store the process handle and process ID internally
-      // for reading/writing to memory
-      process::hProcess = OpenProcess(PROCESS_ALL_ACCESS, FALSE, processes[i].th32ProcessID);
-
-      // Store the handle (just for reference to close the handle later)
-      // process is returned and processEntry is used internally for reading/writing to memory
-      handle = (int) process::hProcess;
-      process = processEntry = processes[i];
-
+      handle = OpenProcess(PROCESS_ALL_ACCESS, FALSE, processes[i].th32ProcessID);
+      process = processes[i];
       break;
     }
   }
 
-  if (hProcess == NULL) {
+  if (handle == NULL) {
     *errorMessage = "unable to find process";
   }
 
-  return process;
+  return {
+    handle,
+    process,
+  };
 }
 
-PROCESSENTRY32 process::openProcess(DWORD processId, char** errorMessage) {
+process::Pair process::openProcess(DWORD processId, char** errorMessage) {
   PROCESSENTRY32 process;
+  HANDLE handle;
 
   // A list of processes (PROCESSENTRY32)
   std::vector<PROCESSENTRY32> processes = getProcesses(errorMessage);
@@ -56,28 +48,24 @@ PROCESSENTRY32 process::openProcess(DWORD processId, char** errorMessage) {
   for (std::vector<PROCESSENTRY32>::size_type i = 0; i != processes.size(); i++) {
     // Check to see if this is the process we want.
     if (processId == processes[i].th32ProcessID) {
-      // Store the process handle and process ID internally
-      // for reading/writing to memory
-      process::hProcess = OpenProcess(PROCESS_ALL_ACCESS, FALSE, processes[i].th32ProcessID);
-
-      // Store the handle (just for reference to close the handle later)
-      // process is returned and processEntry is used internally for reading/writing to memory
-      handle = (int) process::hProcess;
-      process = processEntry = processes[i];
-
+      handle = OpenProcess(PROCESS_ALL_ACCESS, FALSE, processes[i].th32ProcessID);
+      process = processes[i];
       break;
     }
   }
 
-  if (hProcess == NULL) {
+  if (handle == NULL) {
     *errorMessage = "unable to find process";
   }
 
-  return process;
+  return {
+    handle,
+    process,
+  };
 }
 
-void process::closeProcess(){
-  CloseHandle(process::hProcess);
+void process::closeProcess(HANDLE hProcess){
+  CloseHandle(hProcess);
 }
 
 std::vector<PROCESSENTRY32> process::getProcesses(char** errorMessage) {

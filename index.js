@@ -2,7 +2,7 @@ const memoryjs = require('./build/Release/memoryjs');
 
 module.exports = {
 
-  /* data type constants */
+  // data type constants
   INT: 'int',
   DWORD: 'dword',
   LONG: 'long',
@@ -19,7 +19,7 @@ module.exports = {
   VEC4: 'vec4',
   VECTOR4: 'vector4',
 
-  /* signature type constants */
+  // signature type constants
   NORMAL: 0x0,
   READ: 0x1,
   SUBTRACT: 0x2,
@@ -56,32 +56,32 @@ module.exports = {
     memoryjs.getModules(processId, callback);
   },
 
-  readMemory(address, dataType, callback) {
+  readMemory(handle, address, dataType, callback) {
     if (arguments.length === 2) {
-      return memoryjs.readMemory(address, dataType.toLowerCase());
+      return memoryjs.readMemory(handle, address, dataType.toLowerCase());
     }
 
-    memoryjs.readMemory(String(address), dataType.toLowerCase(), callback);
+    memoryjs.readMemory(handle, address, dataType.toLowerCase(), callback);
   },
 
-  writeMemory(address, value, dataType, callback) {
+  writeMemory(handle, address, value, dataType, callback) {
     if (dataType === 'str' || dataType === 'string') {
       value = value + '\0'; // add terminator
     }
 
-    if (arguments.length === 3) {
-      return memoryjs.writeMemory(address, value, dataType.toLowerCase());
+    if (arguments.length === 4) {
+      return memoryjs.writeMemory(handle, address, value, dataType.toLowerCase());
     }
 
-    memoryjs.writeMemory(address, value, dataType.toLowerCase(), callback);
+    memoryjs.writeMemory(handle, address, value, dataType.toLowerCase(), callback);
   },
 
-  findPattern(moduleName, signature, signatureType, patternOffset, addressOffset, callback) {
+  findPattern(handle, moduleName, signature, signatureType, patternOffset, addressOffset, callback) {
     if (arguments.length === 5) {
-      return memoryjs.findPattern(moduleName, signature, signatureType, patternOffset, addressOffset);
+      return memoryjs.findPattern(handle, moduleName, signature, signatureType, patternOffset, addressOffset);
     }
 
-    memoryjs.findPattern(moduleName, signature, signatureType, patternOffset, addressOffset, callback);
+    memoryjs.findPattern(handle, moduleName, signature, signatureType, patternOffset, addressOffset, callback);
   },
 
   closeProcess: memoryjs.closeProcess,

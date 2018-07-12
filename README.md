@@ -234,9 +234,11 @@ opens a process to be able to read from and write to it
 
 ---
 
-#### closeProcess()
+#### closeProcess(handle)
 
 closes the handle on the opened process
+
+- **handle** *(int)* - the handle of the process to close
 
 ---
 
@@ -279,10 +281,11 @@ gets all modules associated with a given process
 
 ---
 
-#### readMemory(address, dataType[, callback])
+#### readMemory(handle, address, dataType[, callback])
 
 reads the memory at a given address
 
+- **handle** *(int)* - the handle of the process, given to you by the process object retrieved when opening the process
 - **address** *(int)* - the address in memory to read from
 - **dataType** *(string)* - the data type to read into (definitions can be found at the top of this section)
 - **callback** *(function)* - has two parameters:
@@ -293,10 +296,11 @@ reads the memory at a given address
 
 ---
 
-#### writeMemory(address, value, dataType[, callback])
+#### writeMemory(handle, address, value, dataType[, callback])
 
 writes to an address in memory
 
+- **handle** *(int)* - the handle of the process, given to you by the process object retrieved when opening the process
 - **address** *(int)* - the address in memory to write to
 - **value** *(any data type)* - the data type of value must be either `number`, `string` or `boolean` and is the value that will be written to the address in memory
 - **dataType** *(string)* the data type of the value (definitions can be found at the top of this section)
@@ -305,10 +309,11 @@ writes to an address in memory
 
 ---
 
-#### findPattern(moduleName, signature, signatureType, patternOffset, addressOffset[, callback])
+#### findPattern(handle, moduleName, signature, signatureType, patternOffset, addressOffset[, callback])
 
 pattern scans memory to find an offset
 
+- **handle** *(int)* - the handle of the process, given to you by the process object retrieved when opening the process
 - **moduleName** *(string)* - the name of the module to pattern scan (module.szModule)
 - **signature** *(string)* - the actual signature mask (in the form `A9 ? ? ? A3 ?`)
 - **signatureType** *(int)* - flags for [signature types](#user-content-signature-type) (definitions can be found at the top of this section)

@@ -23,8 +23,7 @@ DWORD module::getBaseAddress(const char* processName, DWORD processId) {
 MODULEENTRY32 module::findModule(const char* moduleName, DWORD processId, char** errorMessage) {
   MODULEENTRY32 module;
 
-  // A list of modules (MODULEENTRY32), saved so we can access this when pattern scanning
-  moduleEntries = getModules(processId, errorMessage);
+  std::vector<MODULEENTRY32> moduleEntries = getModules(processId, errorMessage);
 
   // Loop over every module
   for (std::vector<MODULEENTRY32>::size_type i = 0; i != moduleEntries.size(); i++) {

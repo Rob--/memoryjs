@@ -13,17 +13,17 @@ using v8::Isolate;
 class process {
 
 public:
-  static HANDLE hProcess;
-
-  static PROCESSENTRY32 processEntry;
-  int handle = 0;
+  struct Pair {
+    HANDLE handle;
+    PROCESSENTRY32 process;
+  };
 
   process();
   ~process();
 
-  PROCESSENTRY32 openProcess(const char* processName, char** errorMessage);
-  PROCESSENTRY32 openProcess(DWORD processId, char** errorMessage);
-  void closeProcess();
+  Pair openProcess(const char* processName, char** errorMessage);
+  Pair openProcess(DWORD processId, char** errorMessage);
+  void closeProcess(HANDLE hProcess);
   std::vector<PROCESSENTRY32> getProcesses(char** errorMessage);
 };
 #endif
