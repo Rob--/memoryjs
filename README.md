@@ -46,12 +46,12 @@ const processName = "csgo.exe";
 
 Open a process (sync):
 ``` javascript
-const processObject = memoryjs.openProcess(processName);
+const processObject = memoryjs.openProcess(processIdentifier);
 ```
 
 Open a process (async):
 ``` javascript
-memoryjs.openProcess(processName, (error, processObject) => {
+memoryjs.openProcess(processIdentifier, (error, processObject) => {
 
 });
 ```
@@ -137,13 +137,14 @@ memoryjs.findPattern(moduleName, signature, signatureType, patternOffset, addres
 
 ### Process object:
 ``` javascript
-{  cntThreads: 47,
-   szExeFile: "csgo.exe",
+{  dwSize: 304,
    th32ProcessID: 10316,
+   cntThreads: 47,
    th32ParentProcessID: 7804,
    pcPriClassBase: 8,
-   handle: 808,
-   modBaseAddr: 1673789440 }
+   szExeFile: "csgo.exe",
+   modBaseAddr: 1673789440,
+   handle: 808 }
 ```
 
 The `handle` and `modBaseAddr` properties are only available when opening a process and not when listing processes.
@@ -220,16 +221,16 @@ To raise multiple flags, use the bitwise OR operator: `memoryjs.READ | memoryjs.
 
 ---
 
-#### openProcess(processName[, callback])
+#### openProcess(processIdentifier[, callback])
 
 opens a process to be able to read from and write to it
 
-- **processName** *(string)* - the name of the process to open
+- **processIdentifier** *(string/int)* - the identifier of the process to open, can either be a name ('csgo.exe') or an id (3270)
 - **callback** *(function)* - has two parameters:
   - **err** *(string)* - error message (empty if there were no errors)
-  - **processObject** *(JSON [process object])* - information about the process
+  - **processObject** *(object)* - information about the process
 
-**returns** *process object (JSON)* either directly or via the callback
+**returns** *process object (object)* either directly or via the callback
 
 ---
 
@@ -259,9 +260,9 @@ finds a module associated with a given process
 - **processId** *(int)* - the id of the process in which to find the module
 - **callback** *(function)* - has two parameters:
   - **err** *(string)* - error message (empty if there were no errors)
-  - **module** *(JSON [module object])* - information about the module
+  - **module** *(object)* - information about the module
 
-**returns** *module object (JSON)* either directly or via the callback
+**returns** *module object (object)* either directly or via the callback
 
 ---
 
@@ -274,7 +275,7 @@ gets all modules associated with a given process
   - **err** *(string)* - error message (empty if there were no errors)
   - **modules** *(array)* - array of *module object (JSON)*
 
-**returns** an array of *module object (JSON)* for all the modules found
+**returns** an array of *module object (object)* for all the modules found
 
 ---
 
