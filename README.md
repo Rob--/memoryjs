@@ -106,19 +106,19 @@ See the [Documentation](#user-content-documentation) section of this README to s
 
 Read from memory (sync):
 ``` javascript
-const value = memoryjs.readMemory(address, dataType);
+const value = memoryjs.readMemory(handle, address, dataType);
 ```
 
 Read from memory (async):
 ``` javascript
-memoryjs.readMemory(address, dataType, (error, result) => {
+memoryjs.readMemory(handle, address, dataType, (error, result) => {
 
 });
 ```
 
 Write to memory:
 ``` javascript
-memoryjs.writeMemory(address, value, dataType);
+memoryjs.writeMemory(handle, address, value, dataType);
 ```
 
 See the [Documentation](#user-content-documentation) section of this README to see what values `dataType` can be.
@@ -127,12 +127,12 @@ See the [Documentation](#user-content-documentation) section of this README to s
 
 Pattern scanning (sync):
 ``` javascript
-const offset = memoryjs.findPattern(moduleName, signature, signatureType, patternOffset, addressOffset);
+const offset = memoryjs.findPattern(handle, moduleName, signature, signatureType, patternOffset, addressOffset);
 ```
 
 Pattern scanning (async):
 ``` javascript
-memoryjs.findPattern(moduleName, signature, signatureType, patternOffset, addressOffset, (error, offset) => {
+memoryjs.findPattern(handle, moduleName, signature, signatureType, patternOffset, addressOffset, (error, offset) => {
 
 })
 ```

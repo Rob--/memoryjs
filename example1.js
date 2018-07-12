@@ -83,20 +83,20 @@ memoryjs.findModule('client.dll', processObject.th32ProcessID, (error, module) =
 const address = clientModule.modBaseAddr + offset;
 
 // read memory (sync)
-console.log(`value of 0x${address.toString(16)}: ${memoryjs.readMemory(address, memoryjs.INT)}`);
+console.log(`value of 0x${address.toString(16)}: ${memoryjs.readMemory(processObject.handle, address, memoryjs.INT)}`);
 
 // read memory (async)
-memoryjs.readMemory(address, memoryjs.INT, (error, result) => {
+memoryjs.readMemory(processObject.handle, address, memoryjs.INT, (error, result) => {
   console.log(`value of 0x${address.toString(16)}: ${result}`);
 });
 
 // write memory
-memoryjs.writeMemory(address, 1, memoryjs.INT);
+memoryjs.writeMemory(processObject.handle, address, 1, memoryjs.INT);
 
 // pattern reading
 const signature = 'A3 ? ? ? ? C7 05 ? ? ? ? ? ? ? ? E8 ? ? ? ? 59 C3 6A';
 const signatureTypes = memoryjs.READ | memoryjs.SUBTRACT;
 const patternOffset = 0x1;
 const addressOffset = 0x10;
-const dwLocalPlayer = memoryjs.findPattern(clientModule.szModule, signature, signatureTypes, patternOffset, addressOffset);
+const dwLocalPlayer = memoryjs.findPattern(processObject.handle, clientModule.szModule, signature, signatureTypes, patternOffset, addressOffset);
 console.log(`value of dwLocalPlayer: 0x${dwLocalPlayer.toString(16)}`);
