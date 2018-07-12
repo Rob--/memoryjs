@@ -13,15 +13,15 @@ using v8::Isolate;
 class module {
 
 public:
-	MODULEENTRY32 moduleEntry;
-	std::vector<MODULEENTRY32> moduleEntries;
+  MODULEENTRY32 moduleEntry;
+  std::vector<MODULEENTRY32> moduleEntries;
 
-	module();
-	~module();
+  module();
+  ~module();
 
-	DWORD module::getBaseAddress(const char* processName, DWORD processId);
-	MODULEENTRY32 findModule(const char* moduleName, DWORD processId, char** errorMessage);
-	std::vector<MODULEENTRY32> getModules(DWORD processId, char** errorMessage);
+  DWORD module::getBaseAddress(const char* processName, DWORD processId);
+  MODULEENTRY32 findModule(const char* moduleName, DWORD processId, char** errorMessage);
+  std::vector<MODULEENTRY32> getModules(DWORD processId, char** errorMessage);
 };
 #endif
 #pragma once

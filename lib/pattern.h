@@ -9,21 +9,21 @@
 class pattern {
 
 public:
-	pattern();
-	~pattern();
+  pattern();
+  ~pattern();
 
-	// Signature/pattern types
-	enum {
-		/* normal: normal,
-		read: read memory at pattern,
-		subtract: subtract module base */
-		ST_NORMAL = 0x0,
-		ST_READ = 0x1,
-		ST_SUBTRACT = 0x2
-	};
+  // Signature/pattern types
+  enum {
+    // normal: normal
+    // read: read memory at pattern
+    // subtract: subtract module base
+    ST_NORMAL = 0x0,
+    ST_READ = 0x1,
+    ST_SUBTRACT = 0x2
+  };
 
-	uintptr_t findPattern(MODULEENTRY32 module, const char* pattern, short sigType, uintptr_t patternOffset, uintptr_t addressOffset);
-	bool compareBytes(const unsigned char* bytes, const char* pattern);
+  uintptr_t findPattern(MODULEENTRY32 module, const char* pattern, short sigType, uintptr_t patternOffset, uintptr_t addressOffset);
+  bool compareBytes(const unsigned char* bytes, const char* pattern);
 };
 #endif
 #pragma once

@@ -11,10 +11,10 @@ using v8::Isolate;
 class memoryjs {
 
 public:
-	memoryjs();
-	~memoryjs();
+  memoryjs();
+  ~memoryjs();
 
-	static void throwError(char* error, Isolate* isolate);
+  static void throwError(char* error, Isolate* isolate);
 };
 #endif
 #pragma once

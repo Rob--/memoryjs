@@ -15,57 +15,57 @@ using v8::Isolate;
 using v8::String;
 
 DWORD module::getBaseAddress(const char* processName, DWORD processId) {
-	char* errorMessage = "";
-	MODULEENTRY32 baseModule = module::findModule(processName, processId, &errorMessage);
-	return (DWORD)baseModule.modBaseAddr; 
+  char* errorMessage = "";
+  MODULEENTRY32 baseModule = module::findModule(processName, processId, &errorMessage);
+  return (DWORD)baseModule.modBaseAddr; 
 }
 
 MODULEENTRY32 module::findModule(const char* moduleName, DWORD processId, char** errorMessage) {
-	MODULEENTRY32 module;
+  MODULEENTRY32 module;
 
-	// A list of modules (MODULEENTRY32), saved so we can access this when pattern scanning
-	moduleEntries = getModules(processId, errorMessage);
+  // A list of modules (MODULEENTRY32), saved so we can access this when pattern scanning
+  moduleEntries = getModules(processId, errorMessage);
 
-	// Loop over every module
-	for (std::vector<MODULEENTRY32>::size_type i = 0; i != moduleEntries.size(); i++) {
-		// Check to see if this is the module we want.
-		if (!strcmp(moduleEntries[i].szModule, moduleName)) {
-			// module is returned and moduleEntry is used internally for reading/writing to memory
-			module = moduleEntries[i];
-			break;
-		}
-	}
+  // Loop over every module
+  for (std::vector<MODULEENTRY32>::size_type i = 0; i != moduleEntries.size(); i++) {
+    // Check to see if this is the module we want.
+    if (!strcmp(moduleEntries[i].szModule, moduleName)) {
+      // module is returned and moduleEntry is used internally for reading/writing to memory
+      module = moduleEntries[i];
+      break;
+    }
+  }
 
-	return module;
+  return module;
 } 
 
 std::vector<MODULEENTRY32> module::getModules(DWORD processId, char** errorMessage) {
-	// Take a snapshot of all modules inside a given process.
-	HANDLE hModuleSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPMODULE, processId);
-	MODULEENTRY32 mEntry;
+  // Take a snapshot of all modules inside a given process.
+  HANDLE hModuleSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPMODULE, processId);
+  MODULEENTRY32 mEntry;
 
-	if (hModuleSnapshot == INVALID_HANDLE_VALUE) {
-		*errorMessage = "method failed to take snapshot of the process";
-	}
+  if (hModuleSnapshot == INVALID_HANDLE_VALUE) {
+    *errorMessage = "method failed to take snapshot of the process";
+  }
 
-	// Before use, set the structure size.
-	mEntry.dwSize = sizeof(mEntry);
+  // Before use, set the structure size.
+  mEntry.dwSize = sizeof(mEntry);
 
-	// Exit if unable to find the first module.
-	if (!Module32First(hModuleSnapshot, &mEntry)) {
-		CloseHandle(hModuleSnapshot);
-		*errorMessage = "method failed to retrieve the first module";
-	}
+  // Exit if unable to find the first module.
+  if (!Module32First(hModuleSnapshot, &mEntry)) {
+    CloseHandle(hModuleSnapshot);
+    *errorMessage = "method failed to retrieve the first module";
+  }
 
-	std::vector<MODULEENTRY32> modules;
+  std::vector<MODULEENTRY32> modules;
 
-	// Loop through modules.
-	do {
-		// Add the module to the vector
-		modules.push_back(mEntry);
-	} while (Module32Next(hModuleSnapshot, &mEntry));
+  // Loop through modules.
+  do {
+    // Add the module to the vector
+    modules.push_back(mEntry);
+  } while (Module32Next(hModuleSnapshot, &mEntry));
 
-	CloseHandle(hModuleSnapshot);
+  CloseHandle(hModuleSnapshot);
 
-	return modules;
+  return modules;
 }

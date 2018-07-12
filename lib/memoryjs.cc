@@ -46,12 +46,12 @@ void memoryjs::throwError(char* error, Isolate* isolate) {
 void openProcess(const FunctionCallbackInfo<Value>& args) {
   Isolate* isolate = args.GetIsolate();
   
-  if(args.Length() != 1 && args.Length() != 2){
+  if (args.Length() != 1 && args.Length() != 2) {
     memoryjs::throwError("requires 1 argument, or 2 arguments if a callback is being used", isolate);
     return;
   }
 
-  if(!args[0]->IsString() && !args[0]->IsNumber()){
+  if (!args[0]->IsString() && !args[0]->IsNumber()) {
     memoryjs::throwError("first argument must be a string or a number", isolate);
     return;
   }
@@ -85,8 +85,8 @@ void openProcess(const FunctionCallbackInfo<Value>& args) {
     // };
   }
 
-  /* If an error message was returned from the function that opens the process, throw the error.
-     Only throw an error if there is no callback (if there's a callback, the error is passed there). */
+  // If an error message was returned from the function that opens the process, throw the error.
+  // Only throw an error if there is no callback (if there's a callback, the error is passed there).
   if (strcmp(errorMessage, "") && args.Length() != 2) {
     memoryjs::throwError(errorMessage, isolate);
     return;
@@ -106,9 +106,9 @@ void openProcess(const FunctionCallbackInfo<Value>& args) {
   DWORD base = Module.getBaseAddress(process.szExeFile, process.th32ProcessID);
   processInfo->Set(String::NewFromUtf8(isolate, "modBaseAddr"), Number::New(isolate, (uintptr_t)base));
 
-  /* openProcess can either take one argument or can take
-     two arguments for asychronous use (second argument is the callback) */
-  if(args.Length() == 2){
+  // openProcess can either take one argument or can take
+  // two arguments for asychronous use (second argument is the callback)
+  if (args.Length() == 2) {
     // Callback to let the user handle with the information
     Local<Function> callback = Local<Function>::Cast(args[1]);
     const unsigned argc = 2;
@@ -120,7 +120,7 @@ void openProcess(const FunctionCallbackInfo<Value>& args) {
   }
 }
 
-void closeProcess(const FunctionCallbackInfo<Value>& args){
+void closeProcess(const FunctionCallbackInfo<Value>& args) {
   Isolate* isolate = args.GetIsolate();
   Process.closeProcess();
 }
@@ -143,8 +143,8 @@ void getProcesses(const FunctionCallbackInfo<Value>& args) {
 
   std::vector<PROCESSENTRY32> processEntries = Process.getProcesses(&errorMessage);
 
-  /* If an error message was returned from the function that gets the processes, throw the error.
-     Only throw an error if there is no callback (if there's a callback, the error is passed there). */
+  // If an error message was returned from the function that gets the processes, throw the error.
+  // Only throw an error if there is no callback (if there's a callback, the error is passed there).
   if (strcmp(errorMessage, "") && args.Length() != 1) {
     memoryjs::throwError(errorMessage, isolate);
     return;
@@ -205,15 +205,15 @@ void getModules(const FunctionCallbackInfo<Value>& args) {
 
   std::vector<MODULEENTRY32> moduleEntries = Module.getModules(args[0]->Int32Value(), &errorMessage);
 
-  /* If an error message was returned from the function getting the modules, throw the error.
-     Only throw an error if there is no callback (if there's a callback, the error is passed there). */
+  // If an error message was returned from the function getting the modules, throw the error.
+  // Only throw an error if there is no callback (if there's a callback, the error is passed there).
   if (strcmp(errorMessage, "") && args.Length() != 2) {
     memoryjs::throwError(errorMessage, isolate);
     return;
   }
 
-  /* Creates v8 array with the size being that of the moduleEntries vector
-     modules is an array of JavaScript objects */
+  // Creates v8 array with the size being that of the moduleEntries vector
+  // modules is an array of JavaScript objects
   Handle<Array> modules = Array::New(isolate, moduleEntries.size());
 
   // Loop over all modules found
@@ -231,8 +231,8 @@ void getModules(const FunctionCallbackInfo<Value>& args) {
     modules->Set(i, module);
   }
 
-  /* getModules can either take one argument or two arguments
-     one/two arguments is for asychronous use (the callback) */
+  // getModules can either take one argument or two arguments
+  // one/two arguments is for asychronous use (the callback)
   if (args.Length() == 2) {
     // Callback to let the user handle with the information
     Local<Function> callback = Local<Function>::Cast(args[1]);
@@ -270,8 +270,8 @@ void findModule(const FunctionCallbackInfo<Value>& args) {
 
   MODULEENTRY32 module = Module.findModule((char*) *(moduleName), args[1]->Int32Value(), &errorMessage);
 
-  /* If an error message was returned from the function getting the module, throw the error.
-     Only throw an error if there is no callback (if there's a callback, the error is passed there). */
+  // If an error message was returned from the function getting the module, throw the error.
+  // Only throw an error if there is no callback (if there's a callback, the error is passed there).
   if (strcmp(errorMessage, "") && args.Length() != 3) {
     memoryjs::throwError(errorMessage, isolate);
     return;
@@ -292,8 +292,8 @@ void findModule(const FunctionCallbackInfo<Value>& args) {
   moduleInfo->Set(String::NewFromUtf8(isolate, "th32ProcessID"), Number::New(isolate, (int)module.th32ProcessID));
   moduleInfo->Set(String::NewFromUtf8(isolate, "hModule"), Number::New(isolate, (uintptr_t)module.hModule));
 
-  /* findModule can either take one or two arguments,
-     three arguments for asychronous use (third argument is the callback) */
+  // findModule can either take one or two arguments,
+  // three arguments for asychronous use (third argument is the callback)
   if (args.Length() == 3) {
     // Callback to let the user handle with the information
     Local<Function> callback = Local<Function>::Cast(args[2]);
@@ -335,8 +335,8 @@ void readMemory(const FunctionCallbackInfo<Value>& args) {
   // Define the error message that will be set if no data type is recognised
   argv[0] = String::NewFromUtf8(isolate, "");
 
-  /* following if statements find the data type to read and then return the correct data type
-     args[0] -> Uint32Value() is the address to read, unsigned int is used because address needs to be positive */
+  // following if statements find the data type to read and then return the correct data type
+  // args[0] -> Uint32Value() is the address to read, unsigned int is used because address needs to be positive
   if (!strcmp(dataType, "int")) {
 
     int result = Memory.readMemory<int>(process::hProcess, args[0]->Uint32Value());
@@ -369,9 +369,9 @@ void readMemory(const FunctionCallbackInfo<Value>& args) {
 
   } else if (!strcmp(dataType, "ptr") || !strcmp(dataType, "pointer")) {
 
-	  intptr_t result = Memory.readMemory<intptr_t>(process::hProcess, args[0]->Uint32Value());
-	  if (args.Length() == 3) argv[1] = Number::New(isolate, result);
-	  else args.GetReturnValue().Set(Number::New(isolate, result));
+    intptr_t result = Memory.readMemory<intptr_t>(process::hProcess, args[0]->Uint32Value());
+    if (args.Length() == 3) argv[1] = Number::New(isolate, result);
+    else args.GetReturnValue().Set(Number::New(isolate, result));
 
   } else if (!strcmp(dataType, "bool") || !strcmp(dataType, "boolean")) {
 
@@ -402,14 +402,17 @@ void readMemory(const FunctionCallbackInfo<Value>& args) {
     }
 
     if (chars.size() == 0) {
+    
       if (args.Length() == 3) argv[0] = String::NewFromUtf8(isolate, "unable to read string (no null-terminator found after 1 million chars)");
       else return memoryjs::throwError("unable to read string (no null-terminator found after 1 million chars)", isolate);
+    
     } else {
       // vector -> string
       std::string str(chars.begin(), chars.end());
 
       if (args.Length() == 3) argv[1] = String::NewFromUtf8(isolate, str.c_str());
       else args.GetReturnValue().Set(String::NewFromUtf8(isolate, str.c_str()));
+    
     }
 
   } else if (!strcmp(dataType, "vector3") || !strcmp(dataType, "vec3")) {
@@ -442,8 +445,8 @@ void readMemory(const FunctionCallbackInfo<Value>& args) {
 
   }
 
-  /* We check if there is three arguments and if the third argument is a function earlier on
-     now we check again if we must call the function passed on */
+  // We check if there is three arguments and if the third argument is a function earlier on
+  // now we check again if we must call the function passed on
   if (args.Length() == 3) callback->Call(Null(isolate), argc, argv);
 }
 
@@ -471,9 +474,9 @@ void writeMemory(const FunctionCallbackInfo<Value>& args) {
   // Define the error message that will be set if no data type is recognised
   argv[0] = String::NewFromUtf8(isolate, "");
 
-  /* following if statements find the data type to read and then return the correct data type
-     args[0] -> Uint32Value() is the address to read, unsigned int is used because address needs to be positive
-     args[1] -> value is the value to write to the address */
+  // following if statements find the data type to read and then return the correct data type
+  // args[0] -> Uint32Value() is the address to read, unsigned int is used because address needs to be positive
+  // args[1] -> value is the value to write to the address
   if (!strcmp(dataType, "int")) {
 
     Memory.writeMemory<int>(process::hProcess, args[0]->Uint32Value(), args[1]->NumberValue());
