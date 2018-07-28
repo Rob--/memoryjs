@@ -46,6 +46,11 @@ public:
   void writeMemory(HANDLE hProcess, DWORD64 dwAddress, char* value, SIZE_T size) {
     WriteProcessMemory(hProcess, (LPVOID)dwAddress, value, size, NULL);
   }
+
+  // Set the protection of the memory, returns previous protection.
+  void setProtection(HANDLE hProcess, DWORD64 dwAddress, SIZE_T size, DWORD dwProtection, PDWORD dwOldProtection) {
+	  VirtualProtectEx(hProcess, (LPVOID)dwAddress, size, dwProtection, dwOldProtection);
+  }
 };
 #endif
 #pragma once
