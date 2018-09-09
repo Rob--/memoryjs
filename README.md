@@ -38,7 +38,7 @@ You also need to recompile the library and target the platform you want. Head to
 
 # Node Webkit / Electron
 
-If you are planning this module with Node Webkit or Electron, take a look at [Liam Mitchell](https://github.com/LiamKarlMitchell)'s build notes [here](https://github.com/Rob--/memoryjs/issues/23).
+If you are planning to use this module with Node Webkit or Electron, take a look at [Liam Mitchell](https://github.com/LiamKarlMitchell)'s build notes [here](https://github.com/Rob--/memoryjs/issues/23).
 
 # Usage
 
