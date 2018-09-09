@@ -57,7 +57,7 @@ module.exports = {
   },
 
   readMemory(handle, address, dataType, callback) {
-    if (arguments.length === 2) {
+    if (arguments.length === 3) {
       return memoryjs.readMemory(handle, address, dataType.toLowerCase());
     }
 
@@ -77,7 +77,7 @@ module.exports = {
   },
 
   findPattern(handle, moduleName, signature, signatureType, patternOffset, addressOffset, callback) {
-    if (arguments.length === 5) {
+    if (arguments.length === 6) {
       return memoryjs.findPattern(handle, moduleName, signature, signatureType, patternOffset, addressOffset);
     }
 

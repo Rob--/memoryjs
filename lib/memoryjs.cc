@@ -609,7 +609,7 @@ void findPattern(const FunctionCallbackInfo<Value>& args) {
   // findPattern can be asynchronous
   if (args.Length() == 7) {
     // Callback to let the user handle with the information
-    Local<Function> callback = Local<Function>::Cast(args[5]);
+    Local<Function> callback = Local<Function>::Cast(args[6]);
     const unsigned argc = 2;
     Local<Value> argv[argc] = { String::NewFromUtf8(isolate, errorMessage), Number::New(isolate, address) };
     callback->Call(Null(isolate), argc, argv);
