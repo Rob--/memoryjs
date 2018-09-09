@@ -77,7 +77,7 @@ module.exports = {
   },
 
   findPattern(handle, moduleName, signature, signatureType, patternOffset, addressOffset, callback) {
-    if (arguments.length === 5) {
+    if (arguments.length === 6) {
       return memoryjs.findPattern(handle, moduleName, signature, signatureType, patternOffset, addressOffset);
     }
 
