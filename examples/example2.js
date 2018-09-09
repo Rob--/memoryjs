@@ -5,9 +5,7 @@ const processObject = memoryjs.openProcess(processName);
 console.log(JSON.stringify(processObject, null, 3));
 
 const modules = memoryjs.getModules(processObject.th32ProcessID);
-for (let i = 0; i < modules.length; i += 1) {
-  console.log(modules[i]);
-}
+modules.forEach(module => console.log(module));
 
 /* How to read a "string"
  * C++ code:
@@ -46,4 +44,4 @@ memoryjs.writeMemory(0x000002, vec4, memoryjs.VEC4);
 vec4 = memoryjs.readMemory(0x000002, memoryjs.VEC4); // { w, x, y, z }
 console.log(vec4);
 
-memoryjs.closeProcess();
+memoryjs.closeProcess(processObject.handle);

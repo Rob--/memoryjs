@@ -9,6 +9,7 @@ const processObject = memoryjs.openProcess(processName);
 // open a process (async)
 memoryjs.openProcess(processName, (error, processObject) => {
   console.log(JSON.stringify(processObject, null, 3));
+
   if (process.szExeFile) {
     console.log('Successfully opened handle on', processName);
 
@@ -22,16 +23,12 @@ memoryjs.openProcess(processName, (error, processObject) => {
 // get all processes (sync)
 const processes = memoryjs.getProcesses();
 console.log('\nGetting all processes (sync)\n---\n');
-for (let i = 0; i < processes.length; i += 1) {
-  console.log(processes[i].szExeFile);
-}
+processes.forEach(({ szExeFile }) => console.log(szExeFile));
 
 // get all processes (async)
 console.log('\nGetting all processes (async)\n---\n');
 memoryjs.getProcesses((error, processes) => {
-  for (let i = 0; i < processes.length; i += 1) {
-    console.log(processes[i].szExeFile);
-  }
+  processes.forEach(({ szExeFile }) => console.log(szExeFile));
 });
 
 /* process =
@@ -44,22 +41,12 @@ memoryjs.getProcesses((error, processes) => {
 // get all modules (sync)
 console.log('\nGetting all modules (sync)\n---\n');
 const modules = memoryjs.getModules(processObject.th32ProcessID);
-for (let i = 0; i < modules.length; i += 1) {
-  console.log(modules[i].szExePath);
-}
+modules.forEach(({ szExeFile }) => console.log(szExeFile));
 
 // get all modules (async)
 console.log('\nGetting all modules (async)\n---\n');
 memoryjs.getModules(processObject.th32ProcessID, (error, modules) => {
-  for (let i = 0; i < modules.length; i += 1) {
-    console.log(modules[i].szModule);
-  }
-});
-
-memoryjs.getModules(processObject.th32ProcessID, (error, modules) => {
-  for (let i = 0; i < modules.length; i += 1) {
-    // console.log(JSON.stringify(modules, null, 3));
-  }
+  modules.forEach(({ szExeFile }) => console.log(szExeFile));
 });
 
 // find a module associated with a process (sync)
