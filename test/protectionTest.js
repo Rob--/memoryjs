@@ -1,0 +1,13 @@
+const memoryjs = require('../index');
+const processName = 'TestTarget.exe';
+
+// TODO: Start the TestTarget process, and monitor it's return value.
+
+const processObject = memoryjs.openProcess(processName);
+console.log(processObject);
+
+
+memoryjs.setProtection(processObject.handle, 0x01341046, 4, memoryjs.PAGE_EXECUTE_READWRITE);
+memoryjs.writeMemory(processObject.handle, 0x01341046, 1337, memoryjs.INT);
+
+memoryjs.closeProcess(processObject.handle);

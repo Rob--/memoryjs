@@ -619,6 +619,31 @@ void findPattern(const FunctionCallbackInfo<Value>& args) {
   }
 }
 
+// Arguments:
+//   Process Handle
+//   Address
+//   Size
+//   Protection
+// Returns:
+//   Old Protection as a DWORD (unsigned int).
+void setProtection(const FunctionCallbackInfo<Value>& args) {
+	Isolate* isolate = args.GetIsolate();
+
+	if (args.Length() != 4) {
+		memoryjs::throwError("requires 4 arguments", isolate);
+		return;
+	}
+
+	if (!args[0]->IsNumber() && !args[1]->IsNumber() && !args[2]->IsNumber()) {
+		memoryjs::throwError("All arguments should be numbers.", isolate);
+		return;
+	}
+
+	DWORD result;
+	Memory.setProtection((HANDLE)args[0]->Uint32Value(), args[1]->Uint32Value(), args[2]->Uint32Value(), args[3]->Uint32Value(), &result);
+	args.GetReturnValue().Set(Number::New(isolate, result));
+}
+
 void init(Local<Object> exports) {
   NODE_SET_METHOD(exports, "openProcess", openProcess);
   NODE_SET_METHOD(exports, "closeProcess", closeProcess);
@@ -628,6 +653,7 @@ void init(Local<Object> exports) {
   NODE_SET_METHOD(exports, "readMemory", readMemory);
   NODE_SET_METHOD(exports, "writeMemory", writeMemory);
   NODE_SET_METHOD(exports, "findPattern", findPattern);
+  NODE_SET_METHOD(exports, "setProtection", setProtection);
 }
 
 NODE_MODULE(memoryjs, init)

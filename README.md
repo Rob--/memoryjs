@@ -127,6 +127,14 @@ memoryjs.writeMemory(handle, address, value, dataType);
 
 See the [Documentation](#user-content-documentation) section of this README to see what values `dataType` can be.
 
+Set protection of memory:
+``` javascript
+var oldProtection = memoryjs.setProtection(handle, address, size, protection);
+```
+
+See the [Documentation](#user-content-protection-type) section of this README to see what values `protection` can be.
+
+
 ### Pattern scanning
 
 Pattern scanning (sync):
@@ -187,10 +195,19 @@ memoryjs.writeMemory(address, vector3);
 
 Vector4 is a data structure of four floats:
 
-```javascript
+``` javascript
 const vector4 = { w: 0.0, x: 0.0, y: 0.0, z: 0.0 };
 memoryjs.writeMemory(address, vector4);
 ```
+
+### Protection Type:
+
+Protection type is a bit flag DWORD value.
+
+This parameter should reference a constant from the library:
+
+`memoryjs.PAGE_NOACCESS, memoryjs.PAGE_READONLY, memoryjs.PAGE_READWRITE, memoryjs.PAGE_WRITECOPY, memoryjs.PAGE_EXECUTE, memoryjs.PAGE_EXECUTE_READ, memoryjs.PAGE_EXECUTE_READWRITE, memoryjs.PAGE_EXECUTE_WRITECOPY, memoryjs.PAGE_GUARD, memoryjs.PAGE_NOCACHE, memoryjs.PAGE_WRITECOMBINE, memoryjs.PAGE_ENCLAVE_THREAD_CONTROL, memoryjs.PAGE_TARGETS_NO_UPDATE, memoryjs.PAGE_TARGETS_INVALID, memoryjs.PAGE_ENCLAVE_UNVALIDATED`
+
 
 ### Strings:
 
@@ -332,3 +349,16 @@ pattern scans memory to find an offset
   - **offset** *(int)* - value of the offset found (will return -1 if the module was not found, -2 if the pattern found no address)
 
 **returns** the value of the offset found
+
+---
+
+#### setProtection(handle, address, size, protection)
+
+sets the protection of the memory address
+
+- **handle** *(int)* - the handle of the process, given to you by the process object retrieved when opening the process
+- **address** *(int)* - the address in memory to write to
+- **size** *(int)* - `number` of bytes at the address to change the protection of.
+- **protection** *(int)* the protection type to set this if a bit flag. See [Documentation](#user-content-protection-type)
+
+**returns** old protection value.
