@@ -36,6 +36,10 @@ You also need to recompile the library and target the platform you want. Head to
 
 `npm run build64` if you want to target 64 bit processes
 
+# Node Webkit / Electron
+
+If you are planning this module with Node Webkit or Electron, take a look at [Liam Mitchell](https://github.com/LiamKarlMitchell)'s build notes [here](https://github.com/Rob--/memoryjs/issues/23).
+
 # Usage
 
 For a complete example, view `index.js` and `example.js`.

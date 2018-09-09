@@ -13,7 +13,7 @@ memoryjs.openProcess(processName, (error, processObject) => {
     console.log('Successfully opened handle on', processName);
 
     memoryjs.closeProcess(processObject.handle);
-    console.log('Closed handle on', processName)
+    console.log('Closed handle on', processName);
   } else {
     console.log('Unable to open handle on', processName);
   }
