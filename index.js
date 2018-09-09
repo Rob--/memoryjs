@@ -57,7 +57,7 @@ module.exports = {
   },
 
   readMemory(handle, address, dataType, callback) {
-    if (arguments.length === 2) {
+    if (arguments.length === 3) {
       return memoryjs.readMemory(handle, address, dataType.toLowerCase());
     }
 
