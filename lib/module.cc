@@ -40,7 +40,7 @@ MODULEENTRY32 module::findModule(const char* moduleName, DWORD processId, char**
 
 std::vector<MODULEENTRY32> module::getModules(DWORD processId, char** errorMessage) {
   // Take a snapshot of all modules inside a given process.
-  HANDLE hModuleSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPMODULE, processId);
+  HANDLE hModuleSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPMODULE | TH32CS_SNAPMODULE32, processId);
   MODULEENTRY32 mEntry;
 
   if (hModuleSnapshot == INVALID_HANDLE_VALUE) {
