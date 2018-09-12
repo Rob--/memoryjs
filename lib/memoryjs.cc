@@ -361,6 +361,12 @@ void readMemory(const FunctionCallbackInfo<Value>& args) {
     if (args.Length() == 4) argv[1] = Number::New(isolate, result);
     else args.GetReturnValue().Set(Number::New(isolate, result));
 
+  } else if (!strcmp(dataType, "short")) {
+
+    short result = Memory.readMemory<short>((HANDLE)args[0]->Uint32Value(), args[1]->Uint32Value());
+    if (args.Length() == 4) argv[1] = Number::New(isolate, result);
+    else args.GetReturnValue().Set(Number::New(isolate, result));
+
   } else if (!strcmp(dataType, "long")) {
 
     long result = Memory.readMemory<long>((HANDLE)args[0]->Uint32Value(), args[1]->Uint32Value());
@@ -496,6 +502,10 @@ void writeMemory(const FunctionCallbackInfo<Value>& args) {
   } else if (!strcmp(dataType, "dword")) {
 
     Memory.writeMemory<DWORD>((HANDLE)args[0]->Uint32Value(), args[1]->Uint32Value(), args[2]->NumberValue());
+
+  } else if (!strcmp(dataType, "short")) {
+
+    Memory.writeMemory<short>((HANDLE)args[0]->Uint32Value(), args[1]->Uint32Value(), args[2]->NumberValue());
 
   } else if (!strcmp(dataType, "long")) {
 

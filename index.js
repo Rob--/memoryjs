@@ -5,6 +5,7 @@ module.exports = {
   // data type constants
   INT: 'int',
   DWORD: 'dword',
+  SHORT: 'short',
   LONG: 'long',
   FLOAT: 'float',
   DOUBLE: 'double',
