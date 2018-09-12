@@ -14,7 +14,7 @@ using v8::String;
 
 process::Pair process::openProcess(const char* processName, char** errorMessage){
   PROCESSENTRY32 process;
-  HANDLE handle;
+  HANDLE handle = NULL;
 
   // A list of processes (PROCESSENTRY32)
   std::vector<PROCESSENTRY32> processes = getProcesses(errorMessage);
@@ -40,7 +40,7 @@ process::Pair process::openProcess(const char* processName, char** errorMessage)
 
 process::Pair process::openProcess(DWORD processId, char** errorMessage) {
   PROCESSENTRY32 process;
-  HANDLE handle;
+  HANDLE handle = NULL;
 
   // A list of processes (PROCESSENTRY32)
   std::vector<PROCESSENTRY32> processes = getProcesses(errorMessage);

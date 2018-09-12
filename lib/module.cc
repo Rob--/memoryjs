@@ -22,6 +22,7 @@ DWORD module::getBaseAddress(const char* processName, DWORD processId) {
 
 MODULEENTRY32 module::findModule(const char* moduleName, DWORD processId, char** errorMessage) {
   MODULEENTRY32 module;
+  bool found = false;
 
   std::vector<MODULEENTRY32> moduleEntries = getModules(processId, errorMessage);
 
@@ -31,8 +32,13 @@ MODULEENTRY32 module::findModule(const char* moduleName, DWORD processId, char**
     if (!strcmp(moduleEntries[i].szModule, moduleName)) {
       // module is returned and moduleEntry is used internally for reading/writing to memory
       module = moduleEntries[i];
+      found = true;
       break;
     }
+  }
+
+  if (!found) {
+    *errorMessage = "unable to find module";
   }
 
   return module;
