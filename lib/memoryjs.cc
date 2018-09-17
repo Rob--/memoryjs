@@ -1,4 +1,5 @@
 #include <node.h>
+#include <node_buffer.h>
 #include <windows.h>
 #include <TlHelp32.h>
 #include <string>
@@ -402,7 +403,7 @@ void readMemory(const FunctionCallbackInfo<Value>& args) {
     std::vector<char> chars;
     int offset = 0x0;
     while (true) {
-      char c = Memory.readMemoryChar((HANDLE)args[0]->Uint32Value(), args[1]->IntegerValue() + offset);
+      char c = Memory.readChar((HANDLE)args[0]->Uint32Value(), args[1]->IntegerValue() + offset);
       chars.push_back(c);
 
       // break at 1 million chars
@@ -463,9 +464,46 @@ void readMemory(const FunctionCallbackInfo<Value>& args) {
 
   }
 
-  // We check if there is three arguments and if the third argument is a function earlier on
-  // now we check again if we must call the function passed on
   if (args.Length() == 4) callback->Call(Null(isolate), argc, argv);
+}
+
+void readBuffer(const FunctionCallbackInfo<Value>& args) {
+  Isolate* isolate = args.GetIsolate();
+
+  if (args.Length() != 3 && args.Length() != 4) {
+    memoryjs::throwError("requires 3 arguments, or 4 arguments if a callback is being used", isolate);
+    return;
+  }
+
+  if (!args[0]->IsNumber() && !args[1]->IsNumber() && !args[2]->IsNumber()) {
+    memoryjs::throwError("first, second and third arguments must be a number", isolate);
+    return;
+  }
+
+  if (args.Length() == 4 && !args[3]->IsFunction()) {
+    memoryjs::throwError("fourth argument must be a function", isolate);
+    return;
+  }
+
+  // Set callback variables in the case the a callback parameter has been passed
+  Local<Function> callback = Local<Function>::Cast(args[3]);
+  const unsigned argc = 2;
+  Local<Value> argv[argc];
+
+  // Define the error message that will be set if no data type is recognised
+  argv[0] = String::NewFromUtf8(isolate, "");
+
+  SIZE_T size = args[2]->Uint32Value();
+  char* data = Memory.readBuffer((HANDLE)args[0]->Uint32Value(), args[1]->Uint32Value(), size);
+
+  auto buffer = node::Buffer::New(isolate, data, size).ToLocalChecked();
+
+  if (args.Length() == 4) {
+    argv[1] = buffer;
+    callback->Call(Null(isolate), argc, argv);
+  } else {
+    args.GetReturnValue().Set(buffer);
+  }
 }
 
 void writeMemory(const FunctionCallbackInfo<Value>& args) {
@@ -483,14 +521,6 @@ void writeMemory(const FunctionCallbackInfo<Value>& args) {
 
   v8::String::Utf8Value dataTypeArg(args[3]);
   char* dataType = (char*)*(dataTypeArg);
-
-  // Set callback variables in the case the a callback parameter has been passed
-  Local<Function> callback = Local<Function>::Cast(args[4]);
-  const unsigned argc = 1;
-  Local<Value> argv[argc];
-
-  // Define the error message that will be set if no data type is recognised
-  argv[0] = String::NewFromUtf8(isolate, "");
 
   // following if statements find the data type to read and then return the correct data type
   // args[0] -> Uint32Value() is the address to read, unsigned int is used because address needs to be positive
@@ -555,14 +585,28 @@ void writeMemory(const FunctionCallbackInfo<Value>& args) {
     Memory.writeMemory<Vector4>((HANDLE)args[0]->Uint32Value(), args[1]->Uint32Value(), vector);
 
   } else {
-
-    if (args.Length() == 5) argv[0] = String::NewFromUtf8(isolate, "unexpected data type");
-    else return memoryjs::throwError("unexpected data type", isolate);
+    
+    memoryjs::throwError("unexpected data type", isolate);
 
   }
+}
 
-  // If there is a callback, return the error message (blank if no error)
-  if (args.Length() == 5) callback->Call(Null(isolate), argc, argv);
+void writeBuffer(const FunctionCallbackInfo<Value>& args) {
+  Isolate* isolate = args.GetIsolate();
+
+  if (args.Length() != 3) {
+    memoryjs::throwError("required 3 arguments", isolate);
+    return;
+  }
+
+  if (!args[0]->IsNumber() && !args[1]->IsNumber()) {
+    memoryjs::throwError("first and second argument must be a number", isolate);
+    return;
+  }
+
+  SIZE_T length = node::Buffer::Length(args[2]);
+  char* data = node::Buffer::Data(args[2]);
+  Memory.writeMemory<char*>((HANDLE)args[0]->Uint32Value(), args[1]->Uint32Value(), data, length);
 }
 
 void findPattern(const FunctionCallbackInfo<Value>& args) {
@@ -661,7 +705,9 @@ void init(Local<Object> exports) {
   NODE_SET_METHOD(exports, "getModules", getModules);
   NODE_SET_METHOD(exports, "findModule", findModule);
   NODE_SET_METHOD(exports, "readMemory", readMemory);
+  NODE_SET_METHOD(exports, "readBuffer", readBuffer);
   NODE_SET_METHOD(exports, "writeMemory", writeMemory);
+  NODE_SET_METHOD(exports, "writeBuffer", writeBuffer);
   NODE_SET_METHOD(exports, "findPattern", findPattern);
   NODE_SET_METHOD(exports, "setProtection", setProtection);
 }

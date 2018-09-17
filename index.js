@@ -83,16 +83,24 @@ module.exports = {
     memoryjs.readMemory(handle, address, dataType.toLowerCase(), callback);
   },
 
-  writeMemory(handle, address, value, dataType, callback) {
+  readBuffer(handle, address, size, callback) {
+    if (arguments.length === 3) {
+      return memoryjs.readBuffer(handle, address, size);
+    }
+
+    memoryjs.readBuffer(handle, address, size, callback);
+  },
+
+  writeMemory(handle, address, value, dataType) {
     if (dataType === 'str' || dataType === 'string') {
       value = value + '\0'; // add terminator
     }
 
-    if (arguments.length === 4) {
-      return memoryjs.writeMemory(handle, address, value, dataType.toLowerCase());
-    }
+    return memoryjs.writeMemory(handle, address, value, dataType.toLowerCase());
+  },
 
-    memoryjs.writeMemory(handle, address, value, dataType.toLowerCase(), callback);
+  writeBuffer(handle, address, buffer) {
+    return memoryjs.writeBuffer(handle, address, buffer);
   },
 
   findPattern(handle, moduleName, signature, signatureType, patternOffset, addressOffset, callback) {

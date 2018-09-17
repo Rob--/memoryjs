@@ -14,6 +14,8 @@ through for the process (that is given when doing memoryjs.openProcess). This al
 - find a certain module associated with a process
 - read memory
 - write to memory
+- read/write buffers
+- change memory protection
 - pattern scanning
 
 TODO:
@@ -115,7 +117,19 @@ const value = memoryjs.readMemory(handle, address, dataType);
 
 Read from memory (async):
 ``` javascript
-memoryjs.readMemory(handle, address, dataType, (error, result) => {
+memoryjs.readMemory(handle, address, dataType, (error, value) => {
+
+});
+```
+
+Read buffer from memory (sync):
+``` javascript
+const buffer = memoryjs.readBuffer(handle, address, size);
+```
+
+Read buffer from memory (async):
+``` javascript
+memoryjs.readBuffer(handle, address, size, (error, buffer) => {
 
 });
 ```
@@ -125,7 +139,15 @@ Write to memory:
 memoryjs.writeMemory(handle, address, value, dataType);
 ```
 
+Write buffer to memory:
+``` javascript
+memoryjs.writeBuffer(handle, address, buffer);
+```
+
+
 See the [Documentation](#user-content-documentation) section of this README to see what values `dataType` can be.
+
+### Protection
 
 Set protection of memory:
 ``` javascript
@@ -199,6 +221,17 @@ Vector4 is a data structure of four floats:
 const vector4 = { w: 0.0, x: 0.0, y: 0.0, z: 0.0 };
 memoryjs.writeMemory(address, vector4);
 ```
+
+### Generic Structures:
+
+If you have a structure you want to write to memory, you can use buffers. For an example on how to do this, view the [buffers example](https://github.com/Rob--/memoryjs/blob/master/examples/buffers.js).
+
+To write a structure to memory, you can use the [concentrate](https://github.com/deoxxa/concentrate) library to describe the structure as a buffer
+and then write the buffer to memory using the `writeBuffer` function.
+
+To read a structure from memory, you will need to read a buffer from memory using the `readBuffer` function, and then you can use the [dissolve](https://github.com/deoxxa/dissolve) library to parse the buffer into a structure.
+
+In either case you don't need to use the two libraries mentioned above, they just make it easy to turn your structure into a buffer, and your buffer into a structure.
 
 ### Protection Type:
 
@@ -323,6 +356,21 @@ reads the memory at a given address
 
 ---
 
+#### readBuffer(handle, address, size[, callback])
+
+reads `size` bytes of memory at the given address
+
+- **handle** *(int)* - the handle of the process, given to you by the process object retrieved when opening the process
+- **address** *(int)* - the address in memory to read from
+- **size** *(int)* - the number of bytes to read into the buffer
+- **callback** *(function)* - has two parameters:
+  - **err** *(string)* - error message (empty if there were no errors)
+  - **value** *(buffer)* - the bytes read from memory at the given address in a buffer
+
+**returns** the bytes read from memory at the given address in a buffer
+
+---
+
 #### writeMemory(handle, address, value, dataType[, callback])
 
 writes to an address in memory
@@ -333,6 +381,15 @@ writes to an address in memory
 - **dataType** *(string)* the data type of the value (definitions can be found at the top of this section)
 - **callback** *(function)* - has one parameter:
   - **err** *(string)* - error message (empty if there were no errors)
+
+---
+
+#### writeBuffer(handle, address, buffer)
+
+writes `size` bytes of memory to the given address
+- **handle** *(int)* - the handle of the process, given to you by the process object retrieved when opening the process
+- **address** *(int)* - the address in memory to write to
+- **buffer** *(buffer)* - the buffer to write to memory
 
 ---
 
