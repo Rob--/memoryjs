@@ -44,8 +44,6 @@ If you are planning to use this module with Node Webkit or Electron, take a look
 
 # Usage
 
-For a complete example, view `index.js` and `example.js`.
-
 Initialise:
 ``` javascript
 const memoryjs = require('memoryjs');
@@ -78,7 +76,7 @@ memoryjs.getProcesses((error, processes) => {
 });
 ```
 
-See the [Documentation](#user-content-documentation) section of this README to see what a process object looks like.
+See the [Documentation](#user-content-process-object) section of this README to see what a process object looks like.
 
 ### Modules
 
@@ -106,7 +104,7 @@ memoryjs.getModules(processId, (error, modules) => {
 });
 ```
 
-See the [Documentation](#user-content-documentation) section of this README to see what a module object looks like.
+See the [Documentation](#user-content-module-object) section of this README to see what a module object looks like.
 
 ### Memory
 
@@ -173,7 +171,7 @@ memoryjs.findPattern(handle, moduleName, signature, signatureType, patternOffset
 
 # Documentation
 
-### Process object:
+### Process Object:
 ``` javascript
 {  dwSize: 304,
    th32ProcessID: 10316,
@@ -187,7 +185,7 @@ memoryjs.findPattern(handle, moduleName, signature, signatureType, patternOffset
 
 The `handle` and `modBaseAddr` properties are only available when opening a process and not when listing processes.
 
-### Module object:
+### Module Object:
 ``` javascript
 { modBaseAddr: 468123648,
   modBaseSize: 80302080,
@@ -242,7 +240,6 @@ This parameter should reference a constant from the library:
 `memoryjs.PAGE_NOACCESS, memoryjs.PAGE_READONLY, memoryjs.PAGE_READWRITE, memoryjs.PAGE_WRITECOPY, memoryjs.PAGE_EXECUTE, memoryjs.PAGE_EXECUTE_READ, memoryjs.PAGE_EXECUTE_READWRITE, memoryjs.PAGE_EXECUTE_WRITECOPY, memoryjs.PAGE_GUARD, memoryjs.PAGE_NOCACHE, memoryjs.PAGE_WRITECOMBINE, memoryjs.PAGE_ENCLAVE_THREAD_CONTROL, memoryjs.PAGE_TARGETS_NO_UPDATE, memoryjs.PAGE_TARGETS_INVALID, memoryjs.PAGE_ENCLAVE_UNVALIDATED`
 
 Refer to MSDN's [Memory Protection Constants](https://docs.microsoft.com/en-gb/windows/desktop/Memory/memory-protection-constants) for more information.
-
 
 ### Strings:
 
