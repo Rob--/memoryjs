@@ -347,54 +347,54 @@ void readMemory(const FunctionCallbackInfo<Value>& args) {
   // Define the error message that will be set if no data type is recognised
   argv[0] = String::NewFromUtf8(isolate, "");
 
-  // following if statements find the data type to read and then return the correct data type
-  // args[0] -> Uint32Value() is the handle of the process
-  // args[1] -> Uint32Value() is the address to read
+  HANDLE handle = (HANDLE)args[0]->IntegerValue();
+  DWORD64 address = args[1]->IntegerValue();
+
   if (!strcmp(dataType, "int")) {
 
-    int result = Memory.readMemory<int>((HANDLE)args[0]->Uint32Value(), args[1]->Uint32Value());
+    int result = Memory.readMemory<int>(handle, address);
     if (args.Length() == 4) argv[1] = Number::New(isolate, result);
     else args.GetReturnValue().Set(Number::New(isolate, result));
 
   } else if (!strcmp(dataType, "dword")) {
 
-    DWORD result = Memory.readMemory<DWORD>((HANDLE)args[0]->Uint32Value(), args[1]->Uint32Value());
+    DWORD result = Memory.readMemory<DWORD>(handle, address);
     if (args.Length() == 4) argv[1] = Number::New(isolate, result);
     else args.GetReturnValue().Set(Number::New(isolate, result));
 
   } else if (!strcmp(dataType, "short")) {
 
-    short result = Memory.readMemory<short>((HANDLE)args[0]->Uint32Value(), args[1]->Uint32Value());
+    short result = Memory.readMemory<short>(handle, address);
     if (args.Length() == 4) argv[1] = Number::New(isolate, result);
     else args.GetReturnValue().Set(Number::New(isolate, result));
 
   } else if (!strcmp(dataType, "long")) {
 
-    long result = Memory.readMemory<long>((HANDLE)args[0]->Uint32Value(), args[1]->Uint32Value());
+    long result = Memory.readMemory<long>(handle, address);
     if (args.Length() == 4) argv[1] = Number::New(isolate, result);
     else args.GetReturnValue().Set(Number::New(isolate, result));
 
   } else if (!strcmp(dataType, "float")) {
 
-    float result = Memory.readMemory<float>((HANDLE)args[0]->Uint32Value(), args[1]->Uint32Value());
+    float result = Memory.readMemory<float>(handle, address);
     if (args.Length() == 4) argv[1] = Number::New(isolate, result);
     else args.GetReturnValue().Set(Number::New(isolate, result));
 
   } else if (!strcmp(dataType, "double")) {
 		
-    double result = Memory.readMemory<double>((HANDLE)args[0]->Uint32Value(), args[1]->Uint32Value());
+    double result = Memory.readMemory<double>(handle, address);
     if (args.Length() == 4) argv[1] = Number::New(isolate, result);
     else args.GetReturnValue().Set(Number::New(isolate, result));
 
   } else if (!strcmp(dataType, "ptr") || !strcmp(dataType, "pointer")) {
 
-    intptr_t result = Memory.readMemory<intptr_t>((HANDLE)args[0]->Uint32Value(), args[1]->Uint32Value());
+    intptr_t result = Memory.readMemory<intptr_t>(handle, address);
     if (args.Length() == 4) argv[1] = Number::New(isolate, result);
     else args.GetReturnValue().Set(Number::New(isolate, result));
 
   } else if (!strcmp(dataType, "bool") || !strcmp(dataType, "boolean")) {
 
-    bool result = Memory.readMemory<bool>((HANDLE)args[0]->Uint32Value(), args[1]->Uint32Value());
+    bool result = Memory.readMemory<bool>(handle, address);
     if (args.Length() == 4) argv[1] = Boolean::New(isolate, result);
     else args.GetReturnValue().Set(Boolean::New(isolate, result));
 
@@ -403,7 +403,7 @@ void readMemory(const FunctionCallbackInfo<Value>& args) {
     std::vector<char> chars;
     int offset = 0x0;
     while (true) {
-      char c = Memory.readChar((HANDLE)args[0]->Uint32Value(), args[1]->IntegerValue() + offset);
+      char c = Memory.readChar(handle, address + offset);
       chars.push_back(c);
 
       // break at 1 million chars
@@ -412,11 +412,12 @@ void readMemory(const FunctionCallbackInfo<Value>& args) {
         break;
       }
 
-      // break at terminator
+      // break at terminator (end of string)
       if (c == '\0') {
         break;
       }
 
+	  // go to next char
       offset += sizeof(char);
     }
 
@@ -436,7 +437,7 @@ void readMemory(const FunctionCallbackInfo<Value>& args) {
 
   } else if (!strcmp(dataType, "vector3") || !strcmp(dataType, "vec3")) {
 
-    Vector3 result = Memory.readMemory<Vector3>((HANDLE)args[0]->Uint32Value(), args[1]->Uint32Value());
+    Vector3 result = Memory.readMemory<Vector3>(handle, address);
     Local<Object> moduleInfo = Object::New(isolate);
     moduleInfo->Set(String::NewFromUtf8(isolate, "x"), Number::New(isolate, result.x));
     moduleInfo->Set(String::NewFromUtf8(isolate, "y"), Number::New(isolate, result.y));
@@ -447,7 +448,7 @@ void readMemory(const FunctionCallbackInfo<Value>& args) {
 
   } else if (!strcmp(dataType, "vector4") || !strcmp(dataType, "vec4")) {
     
-    Vector4 result = Memory.readMemory<Vector4>((HANDLE)args[0]->Uint32Value(), args[1]->Uint32Value());
+    Vector4 result = Memory.readMemory<Vector4>(handle, address);
     Local<Object> moduleInfo = Object::New(isolate);
     moduleInfo->Set(String::NewFromUtf8(isolate, "w"), Number::New(isolate, result.w));
     moduleInfo->Set(String::NewFromUtf8(isolate, "x"), Number::New(isolate, result.x));
@@ -493,8 +494,10 @@ void readBuffer(const FunctionCallbackInfo<Value>& args) {
   // Define the error message that will be set if no data type is recognised
   argv[0] = String::NewFromUtf8(isolate, "");
 
-  SIZE_T size = args[2]->Uint32Value();
-  char* data = Memory.readBuffer((HANDLE)args[0]->Uint32Value(), args[1]->Uint32Value(), size);
+  HANDLE handle = (HANDLE)args[0]->IntegerValue();
+  DWORD64 address = args[1]->IntegerValue();
+  SIZE_T size = args[2]->IntegerValue();
+  char* data = Memory.readBuffer(handle, address, size);
 
   auto buffer = node::Buffer::New(isolate, data, size).ToLocalChecked();
 
@@ -522,46 +525,46 @@ void writeMemory(const FunctionCallbackInfo<Value>& args) {
   v8::String::Utf8Value dataTypeArg(args[3]);
   char* dataType = (char*)*(dataTypeArg);
 
-  // following if statements find the data type to read and then return the correct data type
-  // args[0] -> Uint32Value() is the address to read, unsigned int is used because address needs to be positive
-  // args[1] -> value is the value to write to the address
+  HANDLE handle = (HANDLE)args[0]->IntegerValue();
+  DWORD64 address = args[1]->IntegerValue();
+
   if (!strcmp(dataType, "int")) {
 
-    Memory.writeMemory<int>((HANDLE)args[0]->Uint32Value(), args[1]->Uint32Value(), args[2]->NumberValue());
+    Memory.writeMemory<int>(handle, address, args[2]->NumberValue());
 
   } else if (!strcmp(dataType, "dword")) {
 
-    Memory.writeMemory<DWORD>((HANDLE)args[0]->Uint32Value(), args[1]->Uint32Value(), args[2]->NumberValue());
+    Memory.writeMemory<DWORD>(handle, address, args[2]->NumberValue());
 
   } else if (!strcmp(dataType, "short")) {
 
-    Memory.writeMemory<short>((HANDLE)args[0]->Uint32Value(), args[1]->Uint32Value(), args[2]->NumberValue());
+    Memory.writeMemory<short>(handle, address, args[2]->NumberValue());
 
   } else if (!strcmp(dataType, "long")) {
 
-    Memory.writeMemory<long>((HANDLE)args[0]->Uint32Value(), args[1]->Uint32Value(), args[2]->NumberValue());
+    Memory.writeMemory<long>(handle, address, args[2]->NumberValue());
 
   } else if (!strcmp(dataType, "float")) {
 
-    Memory.writeMemory<float>((HANDLE)args[0]->Uint32Value(), args[1]->Uint32Value(), args[2]->NumberValue());
+    Memory.writeMemory<float>(handle, address, args[2]->NumberValue());
 
   } else if (!strcmp(dataType, "double")) {
 
-    Memory.writeMemory<double>((HANDLE)args[0]->Uint32Value(), args[1]->Uint32Value(), args[2]->NumberValue());
+    Memory.writeMemory<double>(handle, address, args[2]->NumberValue());
 
   } else if (!strcmp(dataType, "bool") || !strcmp(dataType, "boolean")) {
 
-    Memory.writeMemory<bool>((HANDLE)args[0]->Uint32Value(), args[1]->Uint32Value(), args[2]->BooleanValue());
+    Memory.writeMemory<bool>(handle, address, args[2]->BooleanValue());
 
   } else if (!strcmp(dataType, "string") || !strcmp(dataType, "str")) {
 
     v8::String::Utf8Value valueParam(args[2]->ToString());
     
     // Write String, Method 1
-    //Memory.writeMemory<std::string>((HANDLE)args[0]->Uint32Value(), args[1]->Uint32Value(), std::string(*valueParam));
+    //Memory.writeMemory<std::string>(handle, address, std::string(*valueParam));
 
     // Write String, Method 2
-    Memory.writeMemory((HANDLE)args[0]->Uint32Value(), args[1]->Uint32Value(), *valueParam, valueParam.length());
+    Memory.writeMemory(handle, address, *valueParam, valueParam.length());
     
   } else if (!strcmp(dataType, "vector3") || !strcmp(dataType, "vec3")) {
 
@@ -571,7 +574,7 @@ void writeMemory(const FunctionCallbackInfo<Value>& args) {
       value->Get(String::NewFromUtf8(isolate, "y"))->NumberValue(),
       value->Get(String::NewFromUtf8(isolate, "z"))->NumberValue()
     };
-    Memory.writeMemory<Vector3>((HANDLE)args[0]->Uint32Value(), args[1]->Uint32Value(), vector);
+    Memory.writeMemory<Vector3>(handle, address, vector);
 
   } else if (!strcmp(dataType, "vector4") || !strcmp(dataType, "vec4")) {
 
@@ -582,7 +585,7 @@ void writeMemory(const FunctionCallbackInfo<Value>& args) {
       value->Get(String::NewFromUtf8(isolate, "y"))->NumberValue(),
       value->Get(String::NewFromUtf8(isolate, "z"))->NumberValue()
     };
-    Memory.writeMemory<Vector4>((HANDLE)args[0]->Uint32Value(), args[1]->Uint32Value(), vector);
+    Memory.writeMemory<Vector4>(handle, address, vector);
 
   } else {
     
@@ -604,9 +607,11 @@ void writeBuffer(const FunctionCallbackInfo<Value>& args) {
     return;
   }
 
+  HANDLE handle = (HANDLE)args[0]->IntegerValue();
+  DWORD64 address = args[1]->IntegerValue();
   SIZE_T length = node::Buffer::Length(args[2]);
   char* data = node::Buffer::Data(args[2]);
-  Memory.writeMemory<char*>((HANDLE)args[0]->Uint32Value(), args[1]->Uint32Value(), data, length);
+  Memory.writeMemory<char*>(handle, address, data, length);
 }
 
 void findPattern(const FunctionCallbackInfo<Value>& args) {
@@ -633,7 +638,7 @@ void findPattern(const FunctionCallbackInfo<Value>& args) {
   // Define error message that may be set by the function that gets the modules
   char* errorMessage = "";
 
-  HANDLE handle = (HANDLE)args[0]->Uint32Value();
+  HANDLE handle = (HANDLE)args[0]->IntegerValue();
 
   std::vector<MODULEENTRY32> moduleEntries = Module.getModules(GetProcessId(handle), &errorMessage);
 
@@ -649,7 +654,13 @@ void findPattern(const FunctionCallbackInfo<Value>& args) {
 
     if (!strcmp(moduleEntries[i].szModule, std::string(*moduleName).c_str())) {
       v8::String::Utf8Value signature(args[2]->ToString());
-      address = Pattern.findPattern(handle, moduleEntries[i], std::string(*signature).c_str(), args[3]->Uint32Value(), args[4]->Uint32Value(), args[5]->Uint32Value());
+
+      const char* pattern = std::string(*signature).c_str();
+      short sigType = args[3]->Uint32Value();
+      uint32_t patternOffset = args[4]->Uint32Value();
+      uint32_t addressOffset = args[5]->Uint32Value();
+
+      address = Pattern.findPattern(handle, moduleEntries[i], pattern, sigType, patternOffset, addressOffset);
       break;
     }
   }
@@ -681,21 +692,26 @@ void findPattern(const FunctionCallbackInfo<Value>& args) {
 // Returns:
 //   Old Protection as a DWORD (unsigned int).
 void setProtection(const FunctionCallbackInfo<Value>& args) {
-	Isolate* isolate = args.GetIsolate();
+  Isolate* isolate = args.GetIsolate();
 
-	if (args.Length() != 4) {
-		memoryjs::throwError("requires 4 arguments", isolate);
-		return;
-	}
+  if (args.Length() != 4) {
+    memoryjs::throwError("requires 4 arguments", isolate);
+    return;
+  }
 
-	if (!args[0]->IsNumber() && !args[1]->IsNumber() && !args[2]->IsNumber()) {
-		memoryjs::throwError("All arguments should be numbers.", isolate);
-		return;
-	}
+  if (!args[0]->IsNumber() && !args[1]->IsNumber() && !args[2]->IsNumber()) {
+    memoryjs::throwError("All arguments should be numbers.", isolate);
+    return;
+  }
 
-	DWORD result;
-	Memory.setProtection((HANDLE)args[0]->Uint32Value(), args[1]->Uint32Value(), args[2]->Uint32Value(), args[3]->Uint32Value(), &result);
-	args.GetReturnValue().Set(Number::New(isolate, result));
+  DWORD result;
+  HANDLE handle = (HANDLE)args[0]->IntegerValue();
+  DWORD64 address = args[1]->IntegerValue();
+  SIZE_T size = args[2]->IntegerValue();
+  DWORD protection = args[3]->Uint32Value();
+
+  Memory.setProtection(handle, address, size, protection, &result);
+  args.GetReturnValue().Set(Number::New(isolate, result));
 }
 
 void init(Local<Object> exports) {
