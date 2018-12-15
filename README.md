@@ -19,7 +19,9 @@ through for the process (that is given when doing memoryjs.openProcess). This al
 - pattern scanning
 
 TODO:
-- nothing (suggestions welcome)
+- WriteFile support (for driver interactions)
+- DLL injections
+- Remote function calling/execution
 
 # Install
 
