@@ -356,6 +356,30 @@ void readMemory(const FunctionCallbackInfo<Value>& args) {
     if (args.Length() == 4) argv[1] = Number::New(isolate, result);
     else args.GetReturnValue().Set(Number::New(isolate, result));
 
+  } else if (!strcmp(dataType, "int32")) {
+
+    int32_t result = Memory.readMemory<int32_t>(handle, address);
+    if (args.Length() == 4) argv[1] = Number::New(isolate, result);
+    else args.GetReturnValue().Set(Number::New(isolate, result));
+
+  } else if (!strcmp(dataType, "uint32")) {
+
+    uint32_t result = Memory.readMemory<uint32_t>(handle, address);
+    if (args.Length() == 4) argv[1] = Number::New(isolate, result);
+    else args.GetReturnValue().Set(Number::New(isolate, result));
+
+  } else if (!strcmp(dataType, "int64")) {
+
+    int64_t result = Memory.readMemory<int64_t>(handle, address);
+    if (args.Length() == 4) argv[1] = Number::New(isolate, result);
+    else args.GetReturnValue().Set(Number::New(isolate, result));
+
+  } else if (!strcmp(dataType, "uint64")) {
+
+    uint64_t result = Memory.readMemory<uint64_t>(handle, address);
+    if (args.Length() == 4) argv[1] = Number::New(isolate, result);
+    else args.GetReturnValue().Set(Number::New(isolate, result));
+
   } else if (!strcmp(dataType, "dword")) {
 
     DWORD result = Memory.readMemory<DWORD>(handle, address);
@@ -531,6 +555,22 @@ void writeMemory(const FunctionCallbackInfo<Value>& args) {
   if (!strcmp(dataType, "int")) {
 
     Memory.writeMemory<int>(handle, address, args[2]->NumberValue());
+
+  } else if (!strcmp(dataType, "int32")) {
+
+    Memory.writeMemory<int32_t>(handle, address, args[2]->NumberValue());
+
+  } else if (!strcmp(dataType, "uint32")) {
+
+    Memory.writeMemory<uint32_t>(handle, address, args[2]->NumberValue());
+
+  } else if (!strcmp(dataType, "int64")) {
+
+    Memory.writeMemory<int64_t>(handle, address, args[2]->NumberValue());
+
+  } else if (!strcmp(dataType, "uint64")) {
+
+    Memory.writeMemory<uint64_t>(handle, address, args[2]->NumberValue());
 
   } else if (!strcmp(dataType, "dword")) {
 

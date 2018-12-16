@@ -4,6 +4,10 @@ module.exports = {
 
   // data type constants
   INT: 'int',
+  INT32: 'int32',
+  UINT32: 'uint32',
+  INT64: 'int64',
+  UINT64: 'uint64',
   DWORD: 'dword',
   SHORT: 'short',
   LONG: 'long',

@@ -12,7 +12,6 @@ int main()
   int _int = -2147483647;
   cout << "int\t0x" << hex << &_int << dec << "\t" << _int << endl;
 
-
   DWORD _dword = 2147483647;
   cout << "dword\t0x" << hex << &_dword << dec << "\t" << _dword << endl;
 
