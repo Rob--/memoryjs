@@ -30,13 +30,13 @@ module.exports = {
   SUBTRACT: 0x2,
 
   // function data type constants
-  T_VOID = 0x0,
-  T_STRING = 0x1,
-  T_CHAR = 0x2,
-  T_BOOL = 0x3,
-  T_INT = 0x4,
-  T_DOUBLE = 0x5,
-  T_FLOAT = 0x6,
+  T_VOID: 0x0,
+  T_STRING: 0x1,
+  T_CHAR: 0x2,
+  T_BOOL: 0x3,
+  T_INT: 0x4,
+  T_DOUBLE: 0x5,
+  T_FLOAT: 0x6,
 
   // Memory access types.
   // See: https://docs.microsoft.com/en-gb/windows/desktop/Memory/memory-protection-constants

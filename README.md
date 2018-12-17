@@ -22,7 +22,6 @@ through for the process (that is given when doing memoryjs.openProcess). This al
 TODO:
 - WriteFile support (for driver interactions)
 - DLL injections
-- Remote function calling/execution
 
 # Install
 
@@ -53,7 +52,7 @@ const memoryjs = require('memoryjs');
 const processName = "csgo.exe";
 ```
 
-### Processes
+### Processes:
 
 Open a process (sync):
 ``` javascript
@@ -81,7 +80,7 @@ memoryjs.getProcesses((error, processes) => {
 
 See the [Documentation](#user-content-process-object) section of this README to see what a process object looks like.
 
-### Modules
+### Modules: 
 
 Find a module (sync):
 ``` javascript
@@ -109,7 +108,7 @@ memoryjs.getModules(processId, (error, modules) => {
 
 See the [Documentation](#user-content-module-object) section of this README to see what a module object looks like.
 
-### Memory
+### Memory:
 
 Read from memory (sync):
 ``` javascript
@@ -148,17 +147,17 @@ memoryjs.writeBuffer(handle, address, buffer);
 
 See the [Documentation](#user-content-documentation) section of this README to see what values `dataType` can be.
 
-### Protection
+### Protection:
 
 Set protection of memory:
 ``` javascript
-var oldProtection = memoryjs.setProtection(handle, address, size, protection);
+const oldProtection = memoryjs.setProtection(handle, address, size, protection);
 ```
 
 See the [Documentation](#user-content-protection-type) section of this README to see what values `protection` can be.
 
 
-### Pattern scanning
+### Pattern Scanning:
 
 Pattern scanning (sync):
 ``` javascript
@@ -172,7 +171,7 @@ memoryjs.findPattern(handle, moduleName, signature, signatureType, patternOffset
 })
 ```
 
-### Function execution
+### Function Execution:
 
 Function execution (sync):
 ``` javascript
@@ -185,6 +184,9 @@ memoryjs.callFunction(handle, args, returnType, address, (error, result) => {
 
 });
 ```
+
+Click [here](#user-content-result-object) to see what a result object looks like.
+Clicklick [here](#user-content-function-execution-1) for details about how to format the arguments and the return type.
 
 # Documentation
 
@@ -350,6 +352,8 @@ const returnType = T_INT;
 { returnValue: 7, exitCode: 7 }
 ```
 
+See the [result object documentation](user-content-result-object) for details on what `callFunction` returns.
+
 Notes: currently passing a `double` as an argument is not supported, but returning one is.
 
 Much thanks to the [various contributors](https://github.com/Rob--/memoryjs/issues/6) that made this feature possible.
@@ -366,7 +370,7 @@ opens a process to be able to read from and write to it
   - **err** *(string)* - error message (empty if there were no errors)
   - **processObject** *(object)* - information about the process
 
-**returns** *process object (object)* either directly or via the callback
+**returns** [*process object (object)*](#user-content-process-object) either directly or via the callback
 
 ---
 
@@ -386,7 +390,7 @@ collects information about all the running processes
   - **err** *(string)* - error message (empty if there were no errors)
   - **processes** *(array)* - array of *process object (JSON)*
 
-**returns** an array of *process object (JSON)* for all the running processes
+**returns** an array of [*process object (object)*](#user-content-process-object) for all the running processes
 
 ---
 
@@ -400,7 +404,7 @@ finds a module associated with a given process
   - **err** *(string)* - error message (empty if there were no errors)
   - **module** *(object)* - information about the module
 
-**returns** *module object (object)* either directly or via the callback
+**returns** [*module object (object)*](#user-content-module-object) either directly or via the callback
 
 ---
 
@@ -413,7 +417,7 @@ gets all modules associated with a given process
   - **err** *(string)* - error message (empty if there were no errors)
   - **modules** *(array)* - array of *module object (JSON)*
 
-**returns** an array of *module object (object)* for all the modules found
+**returns** an array of [*module object (object)*](#user-content-module-object) for all the modules found
 
 ---
 
@@ -493,10 +497,10 @@ sets the protection of the memory address
 
 - **handle** *(int)* - the handle of the process, given to you by the process object retrieved when opening the process
 - **address** *(int)* - the address in memory to write to
-- **size** *(int)* - `number` of bytes at the address to change the protection of.
-- **protection** *(int)* the protection type to set this if a bit flag. See [Documentation](#user-content-protection-type)
+- **size** *(int)* - number of bytes at the address to change the protection of
+- **protection** *(int)* the [protection type](#user-content-protection-type) to set this if a bit flag
 
-**returns** old protection value.
+**returns** old protection value
 
 ---
 
@@ -511,3 +515,5 @@ calls a function at the given address with the given arguments
 - **callback** *(function)* - has two parameters:
   - **err** *(string)* - error message (empty if there were no errors)
   - **result** *(object)* - result of the function call
+  
+ **returns** [*result object (object)*](#user-content-result-object) either directly or via the callback
