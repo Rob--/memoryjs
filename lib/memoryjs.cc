@@ -820,7 +820,8 @@ void callFunction(const FunctionCallbackInfo<Value>& args) {
   Type returnType = (Type) args[2]->Uint32Value();
   DWORD64 address = args[3]->NumberValue();
 
-  Call data = functions::call<int>(handle, parsedArgs, returnType, address);
+  char* errorMessage = "";
+  Call data = functions::call<int>(handle, parsedArgs, returnType, address, &errorMessage);
 
   // Free all the memory we allocated
   for (auto &memory : heap) {
@@ -865,7 +866,6 @@ void callFunction(const FunctionCallbackInfo<Value>& args) {
     // Callback to let the user handle with the information
     Local<Function> callback = Local<Function>::Cast(args[2]);
     const unsigned argc = 2;
-    char* errorMessage = "";
     Local<Value> argv[argc] = { String::NewFromUtf8(isolate, errorMessage), info };
     callback->Call(Null(isolate), argc, argv);
   } else {
