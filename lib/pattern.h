@@ -6,8 +6,8 @@
 #include <node.h>
 #include <windows.h>
 #include <TlHelp32.h>
-class pattern {
 
+class pattern {
 public:
   pattern();
   ~pattern();
@@ -25,5 +25,6 @@ public:
   uintptr_t findPattern(HANDLE handle, MODULEENTRY32 module, const char* pattern, short sigType, uintptr_t patternOffset, uintptr_t addressOffset);
   bool compareBytes(const unsigned char* bytes, const char* pattern);
 };
+
 #endif
 #pragma once

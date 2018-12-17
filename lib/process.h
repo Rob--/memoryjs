@@ -11,7 +11,6 @@
 using v8::Isolate;
 
 class process {
-
 public:
   struct Pair {
     HANDLE handle;
@@ -26,5 +25,6 @@ public:
   void closeProcess(HANDLE hProcess);
   std::vector<PROCESSENTRY32> getProcesses(char** errorMessage);
 };
+
 #endif
 #pragma once

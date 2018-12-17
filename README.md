@@ -17,6 +17,7 @@ through for the process (that is given when doing memoryjs.openProcess). This al
 - read/write buffers
 - change memory protection
 - pattern scanning
+- execute a function
 
 TODO:
 - WriteFile support (for driver interactions)
@@ -171,18 +172,32 @@ memoryjs.findPattern(handle, moduleName, signature, signatureType, patternOffset
 })
 ```
 
+### Function execution
+
+Function execution (sync):
+``` javascript
+const result = memoryjs.callFunction(handle, args, returnType, address);
+```
+
+Function execution (async):
+``` javascript
+memoryjs.callFunction(handle, args, returnType, address, (error, result) => {
+
+});
+```
+
 # Documentation
 
 ### Process Object:
 ``` javascript
-{  dwSize: 304,
-   th32ProcessID: 10316,
-   cntThreads: 47,
-   th32ParentProcessID: 7804,
-   pcPriClassBase: 8,
-   szExeFile: "csgo.exe",
-   modBaseAddr: 1673789440,
-   handle: 808 }
+{ dwSize: 304,
+  th32ProcessID: 10316,
+  cntThreads: 47,
+  th32ParentProcessID: 7804,
+  pcPriClassBase: 8,
+  szExeFile: "csgo.exe",
+  modBaseAddr: 1673789440,
+  handle: 808 }
 ```
 
 The `handle` and `modBaseAddr` properties are only available when opening a process and not when listing processes.
@@ -195,6 +210,14 @@ The `handle` and `modBaseAddr` properties are only available when opening a proc
   szModule: 'client.dll',
   th32ProcessID: 10316 }
   ```
+
+### Result Object:
+``` javascript
+{ returnValue: 1.23,
+  exitCode: 2 }
+```
+
+The `returnValue` is the value returned from the function that was called. `exitCode` is the termination status of the thread.
 
 ### Data Type:
 
@@ -277,6 +300,60 @@ When pattern scanning, flags need to be raised for the signature types. The sign
 `0x2` or `memoryjs.SUBSTRACT` which will subtract the image base from the address.
 
 To raise multiple flags, use the bitwise OR operator: `memoryjs.READ | memoryjs.SUBTRACT`.
+
+### Function Execution:
+
+Remote function execution works by building an array of arguments and dynamically generating shellcode that is injected into the target process and executed, for this reason crashes may occur.
+
+To call a function in a process, the `callFunction` function can be used. The library supports passing arguments to the function and need to be in the following format:
+
+```javascript
+[{ type: T_INT, value: 4 }]
+```
+
+The library expects the arguments to be an array of objects where each object has a `type` which denotes the data type of the argument, and a `value` which is the actual value of the argument. The various supported data types can be found below.
+
+
+``` javascript
+memoryjs.T_VOID = 0x0,
+memoryjs.T_STRING = 0x1,
+memoryjs.T_CHAR = 0x2,
+memoryjs.T_BOOL = 0x3,
+memoryjs.T_INT = 0x4,
+memoryjs.T_DOUBLE = 0x5,
+memoryjs.T_FLOAT = 0x6,
+```
+
+When using `callFunction`, you also need to supply the return type of the function, which again needs to be one of the above values.
+
+For example, given the following C++ function:
+
+``` c++
+int add(int a, int b) {
+    return a + b;
+}
+```
+
+You would call this function as so:
+
+```javascript
+const args = [{
+    type: memoryjs.T_INT,
+    value: 2,
+}, {
+    type: memoryjs.T_INT,
+    value: 5,
+}];
+const returnType = T_INT;
+
+> memoryjs.callFunction(handle, args, returnType, address);
+{ returnValue: 7, exitCode: 7 }
+```
+
+Notes: currently passing a `double` as an argument is not supported, but returning one is.
+
+Much thanks to the [various contributors](https://github.com/Rob--/memoryjs/issues/6) that made this feature possible.
+
 
 ---
 
@@ -420,3 +497,17 @@ sets the protection of the memory address
 - **protection** *(int)* the protection type to set this if a bit flag. See [Documentation](#user-content-protection-type)
 
 **returns** old protection value.
+
+---
+
+#### callFunction(handle, args, returnType, address[, callback])
+
+calls a function at the given address with the given arguments
+
+- **handle** *(int)* - the handle of the process in which the function lies
+- **args** *(array of objects)* - the arguments being supplied to the function
+- **returnType** *(int)* - the return type of the function
+- **address** *(int)* - the absolute of the address of the function
+- **callback** *(function)* - has two parameters:
+  - **err** *(string)* - error message (empty if there were no errors)
+  - **result** *(object)* - result of the function call

@@ -10,6 +10,7 @@
 #include "memoryjs.h"
 #include "memory.h"
 #include "pattern.h"
+#include "functions.h"
 
 using v8::Exception;
 using v8::Function;
@@ -28,6 +29,7 @@ process Process;
 module Module;
 memory Memory;
 pattern Pattern;
+// functions Functions;
 
 struct Vector3 {
   float x, y, z;
@@ -754,6 +756,125 @@ void setProtection(const FunctionCallbackInfo<Value>& args) {
   args.GetReturnValue().Set(Number::New(isolate, result));
 }
 
+void callFunction(const FunctionCallbackInfo<Value>& args) {
+  Isolate* isolate = args.GetIsolate();
+
+  if (args.Length() != 4 && args.Length() != 5) {
+    memoryjs::throwError("requires 4 arguments, 5 with callback", isolate);
+    return;
+  }
+
+  if (!args[0]->IsNumber() && !args[1]->IsObject() && !args[2]->IsNumber() && !args[3]->IsNumber()) {
+    memoryjs::throwError("invalid arguments", isolate);
+    return;
+  }
+
+  // TODO: temp (?) solution to forcing variables onto the heap
+  // to ensure consistent addresses. copy everything to a vector, and use the
+  // vector's instances of the variables as the addresses being passed to `functions.call()`.
+  // Another solution: do `int x = new int(4)` and then use `&x` for the address
+  std::vector<LPVOID> heap;
+
+  std::vector<Arg> parsedArgs;
+  Handle<Array> arguments = Handle<Array>::Cast(args[1]);
+  for (unsigned int i = 0; i < arguments->Length(); i++) {
+    Handle<Object> argument = Handle<Object>::Cast(arguments->Get(i));
+
+    Type type = (Type) argument->Get(String::NewFromUtf8(isolate, "type"))->Uint32Value();
+    
+    if (type == T_STRING) {
+      Handle<Value> data = argument->Get(String::NewFromUtf8(isolate, "value"));
+      v8::String::Utf8Value stringValueUtf(data->ToString());
+      std::string stringValue = std::string(*stringValueUtf);
+      printf("Address: %d\n", &stringValue);
+      parsedArgs.push_back({ type, &stringValue });
+    }
+
+    if (type == T_INT) {
+      int data = argument->Get(String::NewFromUtf8(isolate, "value"))->NumberValue();
+
+      // As we only pass the addresses of the variable to the `call` function and not a copy
+      // of the variable itself, we need to ensure that the variable stays alive and in a unique
+      // memory location until the `call` function has been executed. So manually allocate memory,
+      // track it, and then free it once the function has been called.
+      // TODO: find a better solution?
+      int* memory = (int*) malloc(sizeof(int));
+      *memory = data;
+      heap.push_back(memory);
+
+      parsedArgs.push_back({ type, memory });
+    }
+
+    if (type == T_FLOAT) {
+      float data = argument->Get(String::NewFromUtf8(isolate, "value"))->NumberValue();
+
+      float* memory = (float*) malloc(sizeof(float));
+      *memory = data;
+      heap.push_back(memory);
+
+      parsedArgs.push_back({ type, memory });
+    }
+  }
+
+  HANDLE handle = (HANDLE)args[0]->IntegerValue();
+  Type returnType = (Type) args[2]->Uint32Value();
+  DWORD64 address = args[3]->NumberValue();
+
+  Call data = functions::call<int>(handle, parsedArgs, returnType, address);
+
+  // Free all the memory we allocated
+  for (auto &memory : heap) {
+    free(memory);
+  }
+
+  heap.clear();
+
+  Local<Object> info = Object::New(isolate);
+
+  Local<String> keyString = String::NewFromUtf8(isolate, "returnValue");
+  
+  if (returnType == T_STRING) {
+    info->Set(keyString, String::NewFromUtf8(isolate, data.returnString.c_str()));
+  }
+  
+  if (returnType == T_CHAR) {
+    info->Set(keyString, Number::New(isolate, (char) data.returnValue));
+  }
+
+  if (returnType == T_BOOL) {
+    info->Set(keyString, Number::New(isolate, (bool) data.returnValue));
+  }
+
+  if (returnType == T_INT) {
+    info->Set(keyString, Number::New(isolate, (int) data.returnValue));
+  }
+
+  if (returnType == T_FLOAT) {
+    float value = *(float *)&data.returnValue;
+    info->Set(keyString, Number::New(isolate, value));
+  }
+
+  if (returnType == T_DOUBLE) {
+    double value = *(double *)&data.returnValue;
+    info->Set(keyString, Number::New(isolate, value));
+  }
+
+  info->Set(String::NewFromUtf8(isolate, "exitCode"), Number::New(isolate, data.exitCode));
+
+  if (args.Length() == 5) {
+    // Callback to let the user handle with the information
+    Local<Function> callback = Local<Function>::Cast(args[2]);
+    const unsigned argc = 2;
+    char* errorMessage = "";
+    Local<Value> argv[argc] = { String::NewFromUtf8(isolate, errorMessage), info };
+    callback->Call(Null(isolate), argc, argv);
+  } else {
+    // return JSON
+    args.GetReturnValue().Set(info);
+  }
+  
+}
+
 void init(Local<Object> exports) {
   NODE_SET_METHOD(exports, "openProcess", openProcess);
   NODE_SET_METHOD(exports, "closeProcess", closeProcess);
@@ -766,6 +887,7 @@ void init(Local<Object> exports) {
   NODE_SET_METHOD(exports, "writeBuffer", writeBuffer);
   NODE_SET_METHOD(exports, "findPattern", findPattern);
   NODE_SET_METHOD(exports, "setProtection", setProtection);
+  NODE_SET_METHOD(exports, "callFunction", callFunction);
 }
 
 NODE_MODULE(memoryjs, init)
