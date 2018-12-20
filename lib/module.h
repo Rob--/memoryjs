@@ -16,7 +16,7 @@ public:
   module();
   ~module();
 
-  DWORD module::getBaseAddress(const char* processName, DWORD processId);
+  DWORD64 module::getBaseAddress(const char* processName, DWORD processId);
   MODULEENTRY32 findModule(const char* moduleName, DWORD processId, char** errorMessage);
   std::vector<MODULEENTRY32> getModules(DWORD processId, char** errorMessage);
 };

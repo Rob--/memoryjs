@@ -106,7 +106,7 @@ void openProcess(const FunctionCallbackInfo<Value>& args) {
   processInfo->Set(String::NewFromUtf8(isolate, "szExeFile"), String::NewFromUtf8(isolate, pair.process.szExeFile));
   processInfo->Set(String::NewFromUtf8(isolate, "handle"), Number::New(isolate, (int)pair.handle));
 
-  DWORD base = Module.getBaseAddress(pair.process.szExeFile, pair.process.th32ProcessID);
+  DWORD64 base = Module.getBaseAddress(pair.process.szExeFile, pair.process.th32ProcessID);
   processInfo->Set(String::NewFromUtf8(isolate, "modBaseAddr"), Number::New(isolate, (uintptr_t)base));
 
   // openProcess can either take one argument or can take
@@ -786,7 +786,6 @@ void callFunction(const FunctionCallbackInfo<Value>& args) {
       Handle<Value> data = argument->Get(String::NewFromUtf8(isolate, "value"));
       v8::String::Utf8Value stringValueUtf(data->ToString());
       std::string stringValue = std::string(*stringValueUtf);
-      printf("Address: %d\n", &stringValue);
       parsedArgs.push_back({ type, &stringValue });
     }
 

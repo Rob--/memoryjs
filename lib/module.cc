@@ -14,10 +14,10 @@ using v8::Exception;
 using v8::Isolate;
 using v8::String;
 
-DWORD module::getBaseAddress(const char* processName, DWORD processId) {
+DWORD64 module::getBaseAddress(const char* processName, DWORD processId) {
   char* errorMessage = "";
   MODULEENTRY32 baseModule = module::findModule(processName, processId, &errorMessage);
-  return (DWORD)baseModule.modBaseAddr; 
+  return (DWORD64)baseModule.modBaseAddr; 
 }
 
 MODULEENTRY32 module::findModule(const char* moduleName, DWORD processId, char** errorMessage) {
