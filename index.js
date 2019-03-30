@@ -3,6 +3,7 @@ const memoryjs = require('./build/Release/memoryjs');
 module.exports = {
 
   // data type constants
+  BYTE: 'byte',
   INT: 'int',
   INT32: 'int32',
   UINT32: 'uint32',

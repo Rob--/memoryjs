@@ -352,7 +352,13 @@ void readMemory(const FunctionCallbackInfo<Value>& args) {
   HANDLE handle = (HANDLE)args[0]->IntegerValue();
   DWORD64 address = args[1]->IntegerValue();
 
-  if (!strcmp(dataType, "int")) {
+  if (!strcmp(dataType, "byte")) {
+
+    unsigned char result = Memory.readMemory<unsigned char>(handle, address);
+    if (args.Length() == 4) argv[1] = Number::New(isolate, result);
+    else args.GetReturnValue().Set(Number::New(isolate, result));
+
+  } else if (!strcmp(dataType, "int")) {
 
     int result = Memory.readMemory<int>(handle, address);
     if (args.Length() == 4) argv[1] = Number::New(isolate, result);
@@ -554,21 +560,25 @@ void writeMemory(const FunctionCallbackInfo<Value>& args) {
   HANDLE handle = (HANDLE)args[0]->IntegerValue();
   DWORD64 address = args[1]->IntegerValue();
 
-  if (!strcmp(dataType, "int")) {
+  if (!strcmp(dataType, "byte")) {
+  
+    Memory.writeMemory<unsigned char>(handle, address, args[2]->Uint32Value());
+  
+  } else if (!strcmp(dataType, "int")) {
 
     Memory.writeMemory<int>(handle, address, args[2]->NumberValue());
 
   } else if (!strcmp(dataType, "int32")) {
 
-    Memory.writeMemory<int32_t>(handle, address, args[2]->NumberValue());
+    Memory.writeMemory<int32_t>(handle, address, args[2]->Int32Value());
 
   } else if (!strcmp(dataType, "uint32")) {
 
-    Memory.writeMemory<uint32_t>(handle, address, args[2]->NumberValue());
+    Memory.writeMemory<uint32_t>(handle, address, args[2]->Uint32Value());
 
   } else if (!strcmp(dataType, "int64")) {
 
-    Memory.writeMemory<int64_t>(handle, address, args[2]->NumberValue());
+    Memory.writeMemory<int64_t>(handle, address, args[2]->IntegerValue());
 
   } else if (!strcmp(dataType, "uint64")) {
 
