@@ -884,6 +884,96 @@ void callFunction(const FunctionCallbackInfo<Value>& args) {
   
 }
 
+void virtualAllocEx(const FunctionCallbackInfo<Value>& args) {
+  Isolate* isolate = args.GetIsolate();
+
+  if (args.Length() != 5 && args.Length() != 6) {
+    memoryjs::throwError("requires 5 arguments, 6 with callback", isolate);
+    return;
+  }
+
+  if (!args[0]->IsNumber() || !args[2]->IsNumber() || !args[3]->IsNumber() || !args[4]->IsNumber()) {
+    memoryjs::throwError("invalid arguments: arguments 0, 2, 3 and 4 need to be numbers", isolate);
+    return;
+  }
+
+  if (args.Length() == 6 && !args[5]->IsFunction()) {
+    memoryjs::throwError("callback needs to be a function", isolate);
+    return;
+  }
+
+  HANDLE handle = (HANDLE)args[0]->IntegerValue();
+  SIZE_T size = args[2]->IntegerValue();
+  DWORD allocationType = args[3]->Uint32Value();
+  DWORD protection = args[4]->Uint32Value();
+  LPVOID address;
+
+  // Means in the JavaScript space `null` was passed through.
+  if (args[1] == Null(isolate)) {
+    address = NULL;
+  } else {
+    address = (LPVOID) args[1]->IntegerValue();
+  }
+
+  LPVOID allocatedAddress = VirtualAllocEx(handle, address, size, allocationType, protection);
+
+  char* errorMessage = "";
+
+  // If null, it means an error occurred
+  if (allocatedAddress == NULL) {
+    errorMessage = "an error occurred calling VirtualAllocEx";
+    // errorMessage = GetLastErrorToString().c_str();
+  }
+
+  // If there is an error and there is no callback, throw the error
+  if (strcmp(errorMessage, "") && args.Length() != 6) {
+    memoryjs::throwError(errorMessage, isolate);
+    return;
+  }
+
+  if (args.Length() == 6) {
+    // Callback to let the user handle with the information
+    Local<Function> callback = Local<Function>::Cast(args[5]);
+    const unsigned argc = 2;
+    Local<Value> argv[argc] = {
+      String::NewFromUtf8(isolate, errorMessage),
+      Number::New(isolate, (int)allocatedAddress)
+    };
+    callback->Call(Null(isolate), argc, argv);
+  } else {
+    // return JSON
+    args.GetReturnValue().Set(Number::New(isolate, (int)allocatedAddress));
+  }
+}
+
+// https://stackoverflow.com/a/17387176
+std::string GetLastErrorToString() {
+  DWORD errorMessageID = ::GetLastError();
+    
+  // No error message, return empty string
+  if(errorMessageID == 0) {
+    return std::string();
+  }
+
+  LPSTR messageBuffer = nullptr;
+
+  size_t size = FormatMessageA(
+    FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+    NULL,
+    errorMessageID,
+    MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+    (LPSTR)&messageBuffer,
+    0,
+    NULL
+  );
+
+  std::string message(messageBuffer, size);
+
+  // Free the buffer
+  LocalFree(messageBuffer);
+  return message;
+}
+
 void init(Local<Object> exports) {
   NODE_SET_METHOD(exports, "openProcess", openProcess);
   NODE_SET_METHOD(exports, "closeProcess", closeProcess);
@@ -897,6 +987,7 @@ void init(Local<Object> exports) {
   NODE_SET_METHOD(exports, "findPattern", findPattern);
   NODE_SET_METHOD(exports, "setProtection", setProtection);
   NODE_SET_METHOD(exports, "callFunction", callFunction);
+  NODE_SET_METHOD(exports, "virtualAllocEx", virtualAllocEx);
 }
 
 NODE_MODULE(memoryjs, init)

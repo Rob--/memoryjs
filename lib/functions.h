@@ -36,7 +36,7 @@ namespace functions {
   char readChar(HANDLE hProcess, DWORD64 address);
 
   template <class returnDataType>
-  Call functions::call(HANDLE pHandle, std::vector<Arg> args, Type returnType, DWORD64 address, char** errorMessage) {
+  Call call(HANDLE pHandle, std::vector<Arg> args, Type returnType, DWORD64 address, char** errorMessage) {
     std::vector<unsigned char> argShellcode;
 
     std::reverse(args.begin(), args.end());

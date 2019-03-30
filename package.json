@@ -1,6 +1,6 @@
 {
   "name": "memoryjs",
-  "version": "3.2.1",
+  "version": "3.2.3",
   "description": "Node add-on for memory reading and writing!",
   "main": "index.js",
   "scripts": {
@@ -30,7 +30,7 @@
   "dependencies": {
     "concentrate": "^0.2.3",
     "dissolve": "^0.3.3",
-    "eslint": "^4.18.1",
+    "eslint": "^5.16.0",
     "eslint-config-airbnb-base": "^12.1.0",
     "eslint-plugin-import": "^2.8.0"
   }

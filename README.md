@@ -16,6 +16,7 @@ through for the process (that is given when doing memoryjs.openProcess). This al
 - write to memory
 - read/write buffers
 - change memory protection
+- reserve/allocate, commit or change regions of memory
 - pattern scanning
 - execute a function
 
@@ -25,7 +26,7 @@ TODO:
 
 # Install
 
-This is a Node add-on (last tested to be working on `v6.9.1`) and therefore requires [node-gyp](https://github.com/nodejs/node-gyp) to use.
+This is a Node add-on (last tested to be working on `v8.11.3`) and therefore requires [node-gyp](https://github.com/nodejs/node-gyp) to use.
 
 You may also need to [follow these steps](https://github.com/nodejs/node-gyp#user-content-installation).
 
@@ -225,11 +226,11 @@ The `returnValue` is the value returned from the function that was called. `exit
 
 When using the write or read functions, the data type (dataType) parameter can either be a string and be one of the following:
 
-`"int", "int32", "uint32", "int64", "uint64", "dword", "short", "long", "float", "double", "bool", "boolean", "ptr", "pointer", "str", "string", "vec3", "vector3", "vec4", "vector4"`
+`"byte", "int", "int32", "uint32", "int64", "uint64", "dword", "short", "long", "float", "double", "bool", "boolean", "ptr", "pointer", "str", "string", "vec3", "vector3", "vec4", "vector4"`
 
 or can reference constants from within the library:
 
-`memoryjs.INT, memoryjs.INT32, memoryjs.UINT32, memoryjs.INT64, memoryjs.UINT64, memoryjs.DWORD, memoryjs.SHORT, memoryjs.LONG, memoryjs.FLOAT, memoryjs.DOUBLE, memoryjs.BOOL, memoryjs.BOOLEAN, memoryjs.PTR, memoryjs.POINTER, memoryjs.STR, memoryjs.STRING, memoryjs.VEC3, memoryjs.VECTOR3, memoryjs.VEC4, memoryjs.VECTOR4`
+`memoryjs.BYTE, memoryjs.INT, memoryjs.INT32, memoryjs.UINT32, memoryjs.INT64, memoryjs.UINT64, memoryjs.DWORD, memoryjs.SHORT, memoryjs.LONG, memoryjs.FLOAT, memoryjs.DOUBLE, memoryjs.BOOL, memoryjs.BOOLEAN, memoryjs.PTR, memoryjs.POINTER, memoryjs.STR, memoryjs.STRING, memoryjs.VEC3, memoryjs.VECTOR3, memoryjs.VEC4, memoryjs.VECTOR4`
 
 This is simply used to denote the type of data being read or written.
 
@@ -267,6 +268,16 @@ This parameter should reference a constant from the library:
 `memoryjs.PAGE_NOACCESS, memoryjs.PAGE_READONLY, memoryjs.PAGE_READWRITE, memoryjs.PAGE_WRITECOPY, memoryjs.PAGE_EXECUTE, memoryjs.PAGE_EXECUTE_READ, memoryjs.PAGE_EXECUTE_READWRITE, memoryjs.PAGE_EXECUTE_WRITECOPY, memoryjs.PAGE_GUARD, memoryjs.PAGE_NOCACHE, memoryjs.PAGE_WRITECOMBINE, memoryjs.PAGE_ENCLAVE_THREAD_CONTROL, memoryjs.PAGE_TARGETS_NO_UPDATE, memoryjs.PAGE_TARGETS_INVALID, memoryjs.PAGE_ENCLAVE_UNVALIDATED`
 
 Refer to MSDN's [Memory Protection Constants](https://docs.microsoft.com/en-gb/windows/desktop/Memory/memory-protection-constants) for more information.
+
+### Memory Allocation Type:
+
+Memory allocation type is a bit flag DWORD value.
+
+This parameter should reference a constat from the library:
+
+`memoryjs.MEM_COMMIT, memoryjs.MEM_RESERVE, memoryjs.MEM_RESET, memoryjs.MEM_RESET_UNDO`
+
+Refer to MSDN's [VirtualAllocEx](https://docs.microsoft.com/en-us/windows/desktop/api/memoryapi/nf-memoryapi-virtualallocex) documentation for more information.
 
 ### Strings:
 
@@ -516,4 +527,23 @@ calls a function at the given address with the given arguments
   - **err** *(string)* - error message (empty if there were no errors)
   - **result** *(object)* - result of the function call
   
- **returns** [*result object (object)*](#user-content-result-object) either directly or via the callback
+**returns** [*result object (object)*](#user-content-result-object) either directly or via the callback
+
+---
+
+#### virtualAllocEx(handle, address, size, allocationType, protection[, callback])
+
+reserves, commits or changes the state of a region of memory within the virtual address space of a specified process
+
+- **handle** *(int)* - the handle of the process in which the memory region whose state you want to change lies
+- **address** *(int)* - the starting address for the region you want to allocate, leave this argument as `null` if you want the function to determine where to allocate the memory region
+- **size** *(int)* - the size of the region of memory to allocate
+- **allocationType** *(int)* - the type of memory allocation, choose from one of the [allocation types](#user-content-memory-allocation-type)
+- **protection** *(int)* - the memory protection for the region of pages to be allocated, specify one of the [protection types](#user-content-protection-type)
+- **callback** *(function)* - has two parameters:
+  - **err** *(string)* - error message (empty if there were no errors)
+  - **result** *(number)* - base address of the allocated region of pages if successful
+
+**returns** base address of the allocated region of pages if successful.
+
+Notes: please refer to the [VirtualAllocEx](https://docs.microsoft.com/en-us/windows/desktop/api/memoryapi/nf-memoryapi-virtualallocex) documentation for more details. If this function fails and no callback was passed, an error will be thrown. If you want to allocate memory, leave the `address` argument as `null`.

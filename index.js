@@ -57,6 +57,16 @@ module.exports = {
   PAGE_TARGETS_INVALID: 0x40000000,
   PAGE_ENCLAVE_UNVALIDATED: 0x20000000,
 
+  // Memory allocation types.
+  // See: https://docs.microsoft.com/en-us/windows/desktop/api/memoryapi/nf-memoryapi-virtualallocex
+  MEM_COMMIT: 0x00001000,
+  MEM_RESERVE: 0x00002000,
+  MEM_RESET: 0x00080000,
+  MEM_RESET_UNDO: 0x1000000,
+  MEM_LARGE_PAGES: 0x20000000,
+  MEM_PHYSICAL: 0x00400000,
+  MEM_TOP_DOWN: 0x00100000,
+
   openProcess(processIdentifier, callback) {
     if (arguments.length === 1) {
       return memoryjs.openProcess(processIdentifier);
@@ -77,7 +87,7 @@ module.exports = {
     if (arguments.length === 2) {
       return memoryjs.findModule(moduleName, processId);
     }
- 
+
     memoryjs.findModule(moduleName, processId, callback);
   },
 
@@ -107,7 +117,7 @@ module.exports = {
 
   writeMemory(handle, address, value, dataType) {
     if (dataType === 'str' || dataType === 'string') {
-      value = value + '\0'; // add terminator
+      value += '\0'; // add terminator
     }
 
     return memoryjs.writeMemory(handle, address, value, dataType.toLowerCase());
@@ -117,12 +127,28 @@ module.exports = {
     return memoryjs.writeBuffer(handle, address, buffer);
   },
 
+  // eslint-disable-next-line
   findPattern(handle, moduleName, signature, signatureType, patternOffset, addressOffset, callback) {
     if (arguments.length === 6) {
-      return memoryjs.findPattern(handle, moduleName, signature, signatureType, patternOffset, addressOffset);
+      return memoryjs.findPattern(
+        handle,
+        moduleName,
+        signature,
+        signatureType,
+        patternOffset,
+        addressOffset,
+      );
     }
 
-    memoryjs.findPattern(handle, moduleName, signature, signatureType, patternOffset, addressOffset, callback);
+    memoryjs.findPattern(
+      handle,
+      moduleName,
+      signature,
+      signatureType,
+      patternOffset,
+      addressOffset,
+      callback,
+    );
   },
 
   callFunction(handle, args, returnType, address, callback) {
@@ -131,6 +157,14 @@ module.exports = {
     }
 
     memoryjs.callFunction(handle, args, returnType, address, callback);
+  },
+
+  virtualAllocEx(handle, address, size, allocationType, protection, callback) {
+    if (arguments.length === 5) {
+      return memoryjs.virtualAllocEx(handle, address, size, allocationType, protection);
+    }
+
+    memoryjs.virtualAllocEx(handle, address, size, allocationType, protection, callback);
   },
 
   setProtection: memoryjs.setProtection,
