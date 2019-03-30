@@ -11,8 +11,8 @@ const returnType = memoryjs.T_FLOAT;
 const address = 0x1031537;
 
 const {
-    returnValue,
-    exitCode
+  returnValue,
+  exitCode,
 } = memoryjs.callFunction(processObject.handle, args, returnType, address);
 
 console.log(`Return value: ${returnValue}`);

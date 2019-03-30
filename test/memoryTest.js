@@ -21,48 +21,48 @@ string  0xB1FAA4        robert
 const processObject = memoryjs.openProcess(processName);
 
 const data = [{
-    type: memoryjs.INT,
-    name: 'int',
-    address: 0x003AFCB4,
+  type: memoryjs.INT,
+  name: 'int',
+  address: 0x003AFCB4,
 }, {
-    type: memoryjs.DWORD,
-    name: 'dword',
-    address: 0x003AFCA8,
+  type: memoryjs.DWORD,
+  name: 'dword',
+  address: 0x003AFCA8,
 }, {
-    type: memoryjs.SHORT,
-    name: 'short',
-    address: 0x003AFC9C,
+  type: memoryjs.SHORT,
+  name: 'short',
+  address: 0x003AFC9C,
 }, {
-    type: memoryjs.LONG,
-    name: 'long',
-    address: 0x003AFC90,
+  type: memoryjs.LONG,
+  name: 'long',
+  address: 0x003AFC90,
 }, {
-    type: memoryjs.FLOAT,
-    name: 'float',
-    address: 0x003AFC84,
+  type: memoryjs.FLOAT,
+  name: 'float',
+  address: 0x003AFC84,
 }, {
-    type: memoryjs.DOUBLE,
-    name: 'double',
-    address: 0x003AFC74,
+  type: memoryjs.DOUBLE,
+  name: 'double',
+  address: 0x003AFC74,
 }, {
-    type: memoryjs.POINTER,
-    name: 'pointer',
-    address: 0x003AFC68,
+  type: memoryjs.POINTER,
+  name: 'pointer',
+  address: 0x003AFC68,
 }, {
-    type: memoryjs.BOOL,
-    name: 'bool',
-    address: 0x003AFC5F,
+  type: memoryjs.BOOL,
+  name: 'bool',
+  address: 0x003AFC5F,
 }, {
-    type: memoryjs.STRING,
-    name: 'string',
-    address:  0xb1faa4,
+  type: memoryjs.STRING,
+  name: 'string',
+  address: 0xb1faa4,
 }];
 
 console.log('type\taddress\t\tvalue');
 
 data.forEach(({ type, name, address }) => {
-    const result = memoryjs.readMemory(processObject.handle, address, type);
-    console.log(`${name}\t0x${address.toString(16).toUpperCase()}\t${result}`);
+  const result = memoryjs.readMemory(processObject.handle, address, type);
+  console.log(`${name}\t0x${address.toString(16).toUpperCase()}\t${result}`);
 });
 
 memoryjs.closeProcess(processObject.handle);
