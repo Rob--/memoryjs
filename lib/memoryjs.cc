@@ -707,12 +707,12 @@ void findPattern(const FunctionCallbackInfo<Value>& args) {
     if (!strcmp(moduleEntries[i].szModule, std::string(*moduleName).c_str())) {
       v8::String::Utf8Value signature(args[2]->ToString());
 
-      const char* pattern = std::string(*signature).c_str();
+      // const char* pattern = std::string(*signature).c_str();
       short sigType = args[3]->Uint32Value();
       uint32_t patternOffset = args[4]->Uint32Value();
       uint32_t addressOffset = args[5]->Uint32Value();
 
-      address = Pattern.findPattern(handle, moduleEntries[i], pattern, sigType, patternOffset, addressOffset);
+      address = Pattern.findPattern(handle, moduleEntries[i], std::string(*signature).c_str(), sigType, patternOffset, addressOffset);
       break;
     }
   }
