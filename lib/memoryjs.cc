@@ -736,36 +736,6 @@ void findPattern(const FunctionCallbackInfo<Value>& args) {
   }
 }
 
-// Arguments:
-//   Process Handle
-//   Address
-//   Size
-//   Protection
-// Returns:
-//   Old Protection as a DWORD (unsigned int).
-void setProtection(const FunctionCallbackInfo<Value>& args) {
-  Isolate* isolate = args.GetIsolate();
-
-  if (args.Length() != 4) {
-    memoryjs::throwError("requires 4 arguments", isolate);
-    return;
-  }
-
-  if (!args[0]->IsNumber() && !args[1]->IsNumber() && !args[2]->IsNumber()) {
-    memoryjs::throwError("All arguments should be numbers.", isolate);
-    return;
-  }
-
-  DWORD result;
-  HANDLE handle = (HANDLE)args[0]->IntegerValue();
-  DWORD64 address = args[1]->IntegerValue();
-  SIZE_T size = args[2]->IntegerValue();
-  DWORD protection = args[3]->Uint32Value();
-
-  Memory.setProtection(handle, address, size, protection, &result);
-  args.GetReturnValue().Set(Number::New(isolate, result));
-}
-
 void callFunction(const FunctionCallbackInfo<Value>& args) {
   Isolate* isolate = args.GetIsolate();
 
@@ -884,6 +854,59 @@ void callFunction(const FunctionCallbackInfo<Value>& args) {
   
 }
 
+void setProtection(const FunctionCallbackInfo<Value>& args) {
+  Isolate* isolate = args.GetIsolate();
+
+  if (args.Length() != 4 && args.Length() != 5) {
+    memoryjs::throwError("requires 4 arguments, 5 with callback", isolate);
+    return;
+  }
+
+  if (!args[0]->IsNumber() && !args[1]->IsNumber() && !args[2]->IsNumber()) {
+    memoryjs::throwError("All arguments should be numbers.", isolate);
+    return;
+  }
+
+  if (args.Length() == 5 && !args[4]->IsFunction()) {
+    memoryjs::throwError("callback needs to be a function", isolate);
+    return;
+  }
+
+  DWORD result;
+  HANDLE handle = (HANDLE)args[0]->IntegerValue();
+  DWORD64 address = args[1]->IntegerValue();
+  SIZE_T size = args[2]->IntegerValue();
+  DWORD protection = args[3]->Uint32Value();
+
+  bool success = VirtualProtectEx(handle, (LPVOID) address, size, protection, &result);
+
+  char* errorMessage = "";
+
+  if (success == 0) {
+    errorMessage = "an error occurred calling VirtualProtectEx";
+    // errorMessage = GetLastErrorToString().c_str();
+  }
+
+  // If there is an error and there is no callback, throw the error
+  if (strcmp(errorMessage, "") && args.Length() != 5) {
+    memoryjs::throwError(errorMessage, isolate);
+    return;
+  }
+
+  if (args.Length() == 5) {
+    // Callback to let the user handle with the information
+    Local<Function> callback = Local<Function>::Cast(args[5]);
+    const unsigned argc = 2;
+    Local<Value> argv[argc] = {
+      String::NewFromUtf8(isolate, errorMessage),
+      Number::New(isolate, result)
+    };
+    callback->Call(Null(isolate), argc, argv);
+  } else {
+    args.GetReturnValue().Set(Number::New(isolate, result));
+  }
+}
+
 void virtualAllocEx(const FunctionCallbackInfo<Value>& args) {
   Isolate* isolate = args.GetIsolate();
 
@@ -941,7 +964,6 @@ void virtualAllocEx(const FunctionCallbackInfo<Value>& args) {
     };
     callback->Call(Null(isolate), argc, argv);
   } else {
-    // return JSON
     args.GetReturnValue().Set(Number::New(isolate, (int)allocatedAddress));
   }
 }
