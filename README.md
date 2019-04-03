@@ -1,9 +1,10 @@
-# memoryjs
-Node add-on for memory reading and writing! (finally!)
+# memoryjs &middot; [![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/Rob--/memoryjs/blob/master/LICENSE.md) [![npm version](https://img.shields.io/npm/v/memoryjs.svg?style=flat)](https://www.npmjs.com/package/memoryjs)
+
+memoryjs is an NPM package for reading and writing process memory! (finally!)
 
 NOTE: version 3 of this library introduces breaking changes that are incompatible with previous versions.
 The notable change is that when reading memory, writing memory and pattern scanning you are required to pass the handle
-through for the process (that is given when doing memoryjs.openProcess). This allows for multi-process support.
+through for the process (that is returned from `memoryjs.openProcess`). This allows for multi-process support.
 
 # Features
 
