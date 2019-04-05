@@ -2,6 +2,7 @@
 #include <node_buffer.h>
 #include <windows.h>
 #include <TlHelp32.h>
+#include <psapi.h>
 #include <string>
 #include <vector>
 #include <iostream>
@@ -11,6 +12,8 @@
 #include "memory.h"
 #include "pattern.h"
 #include "functions.h"
+
+#pragma comment(lib, "psapi.lib")
 
 using v8::Exception;
 using v8::Function;
@@ -940,6 +943,14 @@ void getRegions(const FunctionCallbackInfo<Value>& args) {
     region->Set(String::NewFromUtf8(isolate, "State"), Number::New(isolate, (DWORD) regions[i].State));
     region->Set(String::NewFromUtf8(isolate, "Protect"), Number::New(isolate, (DWORD) regions[i].Protect));
     region->Set(String::NewFromUtf8(isolate, "Type"), Number::New(isolate, (DWORD) regions[i].Type));
+
+    char moduleName[MAX_PATH];
+    DWORD size = GetModuleFileNameExA(handle, (HINSTANCE)regions[i].AllocationBase, moduleName, MAX_PATH);
+
+    if (size != 0) {
+      region->Set(String::NewFromUtf8(isolate, "szExeFile"), String::NewFromUtf8(isolate, moduleName));
+    }
+
 
     regionsArray->Set(i, region);
   }
