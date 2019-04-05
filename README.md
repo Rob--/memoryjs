@@ -1,24 +1,30 @@
-# memoryjs
-Node add-on for memory reading and writing! (finally!)
+# memoryjs &middot; [![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/Rob--/memoryjs/blob/master/LICENSE.md) [![npm version](https://img.shields.io/npm/v/memoryjs.svg?style=flat)](https://www.npmjs.com/package/memoryjs)
+
+memoryjs is an NPM package for reading and writing process memory! (finally!)
 
 NOTE: version 3 of this library introduces breaking changes that are incompatible with previous versions.
 The notable change is that when reading memory, writing memory and pattern scanning you are required to pass the handle
-through for the process (that is given when doing memoryjs.openProcess). This allows for multi-process support.
+through for the process (that is returned from `memoryjs.openProcess`). This allows for multi-process support.
 
 # Features
 
-- open a process
-- close the process (handle)
-- list all open processes
-- list all modules associated with a process
-- find a certain module associated with a process
-- read memory
-- write to memory
-- read/write buffers
-- change memory protection
-- reserve/allocate, commit or change regions of memory
-- pattern scanning
-- execute a function
+- List all open processes
+- List all modules associated with a process
+- Find a specific module within a process
+- Read process memory
+- Write process memory
+- Read buffers from memory
+- Write buffer to memory
+- Change memory protection
+- Reserve/allocate, commit or change regions of memory
+- Pattern scanning
+- Execute a function within a process
+
+Functions that this library directly exposes from the WinAPI:
+- [ReadProcessMemory](https://docs.microsoft.com/en-us/windows/desktop/api/memoryapi/nf-memoryapi-readprocessmemory)
+- [WriteProcessMemory](https://docs.microsoft.com/en-us/windows/desktop/api/memoryapi/nf-memoryapi-writeprocessmemory)
+- [VirtualProtectEx](https://docs.microsoft.com/en-us/windows/desktop/api/memoryapi/nf-memoryapi-virtualprotectex)
+- [VirtualAllocEx](https://docs.microsoft.com/en-us/windows/desktop/api/memoryapi/nf-memoryapi-virtualallocex)
 
 TODO:
 - WriteFile support (for driver interactions)
@@ -190,6 +196,8 @@ Click [here](#user-content-result-object) to see what a result object looks like
 Clicklick [here](#user-content-function-execution-1) for details about how to format the arguments and the return type.
 
 # Documentation
+
+Note: this documentation is currently being updated, refer to the [Wiki](https://github.com/Rob--/memoryjs/wiki) for more information.
 
 ### Process Object:
 ``` javascript
@@ -368,182 +376,3 @@ See the [result object documentation](user-content-result-object) for details on
 Notes: currently passing a `double` as an argument is not supported, but returning one is.
 
 Much thanks to the [various contributors](https://github.com/Rob--/memoryjs/issues/6) that made this feature possible.
-
-
----
-
-#### openProcess(processIdentifier[, callback])
-
-opens a process to be able to read from and write to it
-
-- **processIdentifier** *(string/int)* - the identifier of the process to open, can either be a name ('csgo.exe') or an id (3270)
-- **callback** *(function)* - has two parameters:
-  - **err** *(string)* - error message (empty if there were no errors)
-  - **processObject** *(object)* - information about the process
-
-**returns** [*process object (object)*](#user-content-process-object) either directly or via the callback
-
----
-
-#### closeProcess(handle)
-
-closes the handle on the opened process
-
-- **handle** *(int)* - the handle of the process to close
-
----
-
-#### getProcesses([callback])
-
-collects information about all the running processes
-
-- **callback** *(function)* - has two parameters:
-  - **err** *(string)* - error message (empty if there were no errors)
-  - **processes** *(array)* - array of *process object (JSON)*
-
-**returns** an array of [*process object (object)*](#user-content-process-object) for all the running processes
-
----
-
-#### findModule(moduleName, processId[, callback])
-
-finds a module associated with a given process
-
-- **moduleName** *(string)* - the name of the module to find
-- **processId** *(int)* - the id of the process in which to find the module
-- **callback** *(function)* - has two parameters:
-  - **err** *(string)* - error message (empty if there were no errors)
-  - **module** *(object)* - information about the module
-
-**returns** [*module object (object)*](#user-content-module-object) either directly or via the callback
-
----
-
-#### getModules(processId[, callback])
-
-gets all modules associated with a given process
-
-- **processId** *(int)* - the id of the process in which to find the module
-- **callback** *(function)* - has two parameters:
-  - **err** *(string)* - error message (empty if there were no errors)
-  - **modules** *(array)* - array of *module object (JSON)*
-
-**returns** an array of [*module object (object)*](#user-content-module-object) for all the modules found
-
----
-
-#### readMemory(handle, address, dataType[, callback])
-
-reads the memory at a given address
-
-- **handle** *(int)* - the handle of the process, given to you by the process object retrieved when opening the process
-- **address** *(int)* - the address in memory to read from
-- **dataType** *(string)* - the data type to read into (definitions can be found at the top of this section)
-- **callback** *(function)* - has two parameters:
-  - **err** *(string)* - error message (empty if there were no errors)
-  - **value** *(any data type)* - the value stored at the given address in memory
-
-**returns** the value that has been read from memory
-
----
-
-#### readBuffer(handle, address, size[, callback])
-
-reads `size` bytes of memory at the given address
-
-- **handle** *(int)* - the handle of the process, given to you by the process object retrieved when opening the process
-- **address** *(int)* - the address in memory to read from
-- **size** *(int)* - the number of bytes to read into the buffer
-- **callback** *(function)* - has two parameters:
-  - **err** *(string)* - error message (empty if there were no errors)
-  - **value** *(buffer)* - the bytes read from memory at the given address in a buffer
-
-**returns** the bytes read from memory at the given address in a buffer
-
----
-
-#### writeMemory(handle, address, value, dataType[, callback])
-
-writes to an address in memory
-
-- **handle** *(int)* - the handle of the process, given to you by the process object retrieved when opening the process
-- **address** *(int)* - the address in memory to write to
-- **value** *(any data type)* - the data type of value must be either `number`, `string` or `boolean` and is the value that will be written to the address in memory
-- **dataType** *(string)* the data type of the value (definitions can be found at the top of this section)
-- **callback** *(function)* - has one parameter:
-  - **err** *(string)* - error message (empty if there were no errors)
-
----
-
-#### writeBuffer(handle, address, buffer)
-
-writes `size` bytes of memory to the given address
-- **handle** *(int)* - the handle of the process, given to you by the process object retrieved when opening the process
-- **address** *(int)* - the address in memory to write to
-- **buffer** *(buffer)* - the buffer to write to memory
-
----
-
-#### findPattern(handle, moduleName, signature, signatureType, patternOffset, addressOffset[, callback])
-
-pattern scans memory to find an offset
-
-- **handle** *(int)* - the handle of the process, given to you by the process object retrieved when opening the process
-- **moduleName** *(string)* - the name of the module to pattern scan (module.szModule)
-- **signature** *(string)* - the actual signature mask (in the form `A9 ? ? ? A3 ?`)
-- **signatureType** *(int)* - flags for [signature types](#user-content-signature-type) (definitions can be found at the top of this section)
-- **patternOffset** *(int)* - offset will be added to the address (before reading, if `memoryjs.READ` is raised)
-- **addressOffset** *(int)* - offset will be added to the address returned
-- **callback** *(function)* - has two parameters:
-  - **err** *(string)* - error message (empty if there were no errors)
-  - **offset** *(int)* - value of the offset found (will return -1 if the module was not found, -2 if the pattern found no address)
-
-**returns** the value of the offset found
-
----
-
-#### setProtection(handle, address, size, protection)
-
-sets the protection of the memory address
-
-- **handle** *(int)* - the handle of the process, given to you by the process object retrieved when opening the process
-- **address** *(int)* - the address in memory to write to
-- **size** *(int)* - number of bytes at the address to change the protection of
-- **protection** *(int)* the [protection type](#user-content-protection-type) to set this if a bit flag
-
-**returns** old protection value
-
----
-
-#### callFunction(handle, args, returnType, address[, callback])
-
-calls a function at the given address with the given arguments
-
-- **handle** *(int)* - the handle of the process in which the function lies
-- **args** *(array of objects)* - the arguments being supplied to the function
-- **returnType** *(int)* - the return type of the function
-- **address** *(int)* - the absolute of the address of the function
-- **callback** *(function)* - has two parameters:
-  - **err** *(string)* - error message (empty if there were no errors)
-  - **result** *(object)* - result of the function call
-  
-**returns** [*result object (object)*](#user-content-result-object) either directly or via the callback
-
----
-
-#### virtualAllocEx(handle, address, size, allocationType, protection[, callback])
-
-reserves, commits or changes the state of a region of memory within the virtual address space of a specified process
-
-- **handle** *(int)* - the handle of the process in which the memory region whose state you want to change lies
-- **address** *(int)* - the starting address for the region you want to allocate, leave this argument as `null` if you want the function to determine where to allocate the memory region
-- **size** *(int)* - the size of the region of memory to allocate
-- **allocationType** *(int)* - the type of memory allocation, choose from one of the [allocation types](#user-content-memory-allocation-type)
-- **protection** *(int)* - the memory protection for the region of pages to be allocated, specify one of the [protection types](#user-content-protection-type)
-- **callback** *(function)* - has two parameters:
-  - **err** *(string)* - error message (empty if there were no errors)
-  - **result** *(number)* - base address of the allocated region of pages if successful
-
-**returns** base address of the allocated region of pages if successful.
-
-Notes: please refer to the [VirtualAllocEx](https://docs.microsoft.com/en-us/windows/desktop/api/memoryapi/nf-memoryapi-virtualallocex) documentation for more details. If this function fails and no callback was passed, an error will be thrown. If you want to allocate memory, leave the `address` argument as `null`.
