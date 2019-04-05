@@ -158,7 +158,7 @@ See the [Documentation](#user-content-documentation) section of this README to s
 
 Set protection of memory:
 ``` javascript
-const oldProtection = memoryjs.setProtection(handle, address, size, protection);
+const oldProtection = memoryjs.virtualProtectEx(handle, address, size, protection);
 ```
 
 See the [Documentation](#user-content-protection-type) section of this README to see what values `protection` can be.

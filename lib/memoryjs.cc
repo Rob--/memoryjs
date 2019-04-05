@@ -857,7 +857,7 @@ void callFunction(const FunctionCallbackInfo<Value>& args) {
   
 }
 
-void setProtection(const FunctionCallbackInfo<Value>& args) {
+void virtualProtectEx(const FunctionCallbackInfo<Value>& args) {
   Isolate* isolate = args.GetIsolate();
 
   if (args.Length() != 4 && args.Length() != 5) {
@@ -1126,7 +1126,7 @@ void init(Local<Object> exports) {
   NODE_SET_METHOD(exports, "writeMemory", writeMemory);
   NODE_SET_METHOD(exports, "writeBuffer", writeBuffer);
   NODE_SET_METHOD(exports, "findPattern", findPattern);
-  NODE_SET_METHOD(exports, "setProtection", setProtection);
+  NODE_SET_METHOD(exports, "virtualProtectEx", VirtualProtectEx);
   NODE_SET_METHOD(exports, "callFunction", callFunction);
   NODE_SET_METHOD(exports, "virtualAllocEx", virtualAllocEx);
   NODE_SET_METHOD(exports, "getRegions", getRegions);

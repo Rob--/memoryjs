@@ -172,12 +172,12 @@ module.exports = {
     memoryjs.virtualAllocEx(handle, address, size, allocationType, protection, callback);
   },
 
-  setProtection(handle, address, size, protection, callback) {
+  virtualProtectEx(handle, address, size, protection, callback) {
     if (arguments.length === 4) {
-      return memoryjs.setProtection(handle, address, size, protection);
+      return memoryjs.virtualProtectEx(handle, address, size, protection);
     }
 
-    memoryjs.setProtection(handle, address, size, protection, callback);
+    memoryjs.virtualProtectEx(handle, address, size, protection, callback);
   },
 
   getRegions(handle, getOffsets, callback) {
