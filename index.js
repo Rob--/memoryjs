@@ -188,5 +188,13 @@ module.exports = {
     memoryjs.getRegions(handle, callback);
   },
 
+  virtualQueryEx(handle, address, callback) {
+    if (arguments.length === 2) {
+      return memoryjs.virtualQueryEx(handle, address);
+    }
+
+    memoryjs.virtualQueryEx(handle, address, callback);
+  },
+
   closeProcess: memoryjs.closeProcess,
 };

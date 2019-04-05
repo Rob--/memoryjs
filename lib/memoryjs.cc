@@ -944,7 +944,7 @@ void getRegions(const FunctionCallbackInfo<Value>& args) {
     regionsArray->Set(i, region);
   }
 
-   if (args.Length() == 2) {
+  if (args.Length() == 2) {
     // Callback to let the user handle with the information
     Local<Function> callback = Local<Function>::Cast(args[1]);
     const unsigned argc = 2;
@@ -953,6 +953,65 @@ void getRegions(const FunctionCallbackInfo<Value>& args) {
   } else {
     // return JSON
     args.GetReturnValue().Set(regionsArray);
+  }
+}
+
+void virtualQueryEx(const FunctionCallbackInfo<Value>& args) {
+  Isolate* isolate = args.GetIsolate();
+
+  if (args.Length() != 2 && args.Length() != 3) {
+    memoryjs::throwError("requires 2 arguments, 3 with callback", isolate);
+    return;
+  }
+
+  if (!args[0]->IsNumber() || !args[1]->IsNumber()) {
+    memoryjs::throwError("first and second argument need to be a number", isolate);
+    return;
+  }
+
+  if (args.Length() == 3 && !args[2]->IsFunction()) {
+    memoryjs::throwError("callback needs to be a function", isolate);
+    return;
+  }
+
+  HANDLE handle = (HANDLE)args[0]->IntegerValue();
+  DWORD64 address = args[1]->IntegerValue();
+
+  MEMORY_BASIC_INFORMATION information;
+  SIZE_T result = VirtualQueryEx(handle, (LPVOID)address, &information, sizeof(information));
+
+  char* errorMessage = "";
+
+  if (result == 0 || result != sizeof(information)) {
+    errorMessage = "an error occurred calling VirtualQueryEx";
+    // errorMessage = GetLastErrorToString().c_str();
+  }
+
+  // If there is an error and there is no callback, throw the error
+  if (strcmp(errorMessage, "") && args.Length() != 3) {
+    memoryjs::throwError(errorMessage, isolate);
+    return;
+  }
+
+  Local<Object> region = Object::New(isolate);
+
+  region->Set(String::NewFromUtf8(isolate, "BaseAddress"), Number::New(isolate, (DWORD64) information.BaseAddress));
+  region->Set(String::NewFromUtf8(isolate, "AllocationBase"), Number::New(isolate, (DWORD64) information.AllocationBase));
+  region->Set(String::NewFromUtf8(isolate, "AllocationProtect"), Number::New(isolate, (DWORD) information.AllocationProtect));
+  region->Set(String::NewFromUtf8(isolate, "RegionSize"), Number::New(isolate, (SIZE_T) information.RegionSize));
+  region->Set(String::NewFromUtf8(isolate, "State"), Number::New(isolate, (DWORD) information.State));
+  region->Set(String::NewFromUtf8(isolate, "Protect"), Number::New(isolate, (DWORD) information.Protect));
+  region->Set(String::NewFromUtf8(isolate, "Type"), Number::New(isolate, (DWORD) information.Type));
+
+  if (args.Length() == 3) {
+    // Callback to let the user handle with the information
+    Local<Function> callback = Local<Function>::Cast(args[1]);
+    const unsigned argc = 2;
+    Local<Value> argv[argc] = { String::NewFromUtf8(isolate, ""), region };
+    callback->Call(Null(isolate), argc, argv);
+  } else {
+    // return JSON
+    args.GetReturnValue().Set(region);
   }
 }
 
@@ -1060,6 +1119,7 @@ void init(Local<Object> exports) {
   NODE_SET_METHOD(exports, "callFunction", callFunction);
   NODE_SET_METHOD(exports, "virtualAllocEx", virtualAllocEx);
   NODE_SET_METHOD(exports, "getRegions", getRegions);
+  NODE_SET_METHOD(exports, "virtualQueryEx", virtualQueryEx);
 }
 
 NODE_MODULE(memoryjs, init)
