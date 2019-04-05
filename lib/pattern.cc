@@ -14,8 +14,6 @@
 pattern::pattern() {}
 pattern::~pattern() {}
 
-using v8::Object;
-
 /* based off Y3t1y3t's implementation */
 uintptr_t pattern::findPattern(HANDLE handle, MODULEENTRY32 module, const char* pattern, short sigType, uintptr_t patternOffset, uintptr_t addressOffset) { 
   auto moduleSize = uintptr_t(module.modBaseSize);

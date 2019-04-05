@@ -1,7 +1,6 @@
 const memoryjs = require('./build/Release/memoryjs');
 
 module.exports = {
-
   // data type constants
   BYTE: 'byte',
   INT: 'int',
@@ -52,20 +51,26 @@ module.exports = {
   PAGE_GUARD: 0x100,
   PAGE_NOCACHE: 0x200,
   PAGE_WRITECOMBINE: 0x400,
-  PAGE_ENCLAVE_THREAD_CONTROL: 0x80000000,
+  PAGE_ENCLAVE_UNVALIDATED: 0x20000000,
   PAGE_TARGETS_NO_UPDATE: 0x40000000,
   PAGE_TARGETS_INVALID: 0x40000000,
-  PAGE_ENCLAVE_UNVALIDATED: 0x20000000,
+  PAGE_ENCLAVE_THREAD_CONTROL: 0x80000000,
 
   // Memory allocation types.
   // See: https://docs.microsoft.com/en-us/windows/desktop/api/memoryapi/nf-memoryapi-virtualallocex
   MEM_COMMIT: 0x00001000,
   MEM_RESERVE: 0x00002000,
   MEM_RESET: 0x00080000,
+  MEM_TOP_DOWN: 0x00100000,
   MEM_RESET_UNDO: 0x1000000,
   MEM_LARGE_PAGES: 0x20000000,
   MEM_PHYSICAL: 0x00400000,
-  MEM_TOP_DOWN: 0x00100000,
+
+  // Page types.
+  // See: https://docs.microsoft.com/en-us/windows/desktop/api/winnt/ns-winnt-_memory_basic_information
+  MEM_PRIVATE: 0x20000,
+  MEM_MAPPED: 0x40000,
+  MEM_IMAGE: 0x1000000,
 
   openProcess(processIdentifier, callback) {
     if (arguments.length === 1) {
@@ -167,6 +172,21 @@ module.exports = {
     memoryjs.virtualAllocEx(handle, address, size, allocationType, protection, callback);
   },
 
-  setProtection: memoryjs.setProtection,
+  setProtection(handle, address, size, protection, callback) {
+    if (arguments.length === 4) {
+      return memoryjs.setProtection(handle, address, size, protection);
+    }
+
+    memoryjs.setProtection(handle, address, size, protection, callback);
+  },
+
+  getRegions(handle, getOffsets, callback) {
+    if (arguments.length === 1) {
+      return memoryjs.getRegions(handle);
+    }
+
+    memoryjs.getRegions(handle, callback);
+  },
+
   closeProcess: memoryjs.closeProcess,
 };

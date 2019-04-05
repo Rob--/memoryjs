@@ -907,6 +907,55 @@ void setProtection(const FunctionCallbackInfo<Value>& args) {
   }
 }
 
+void getRegions(const FunctionCallbackInfo<Value>& args) {
+  Isolate* isolate = args.GetIsolate();
+
+  if (args.Length() != 1 && args.Length() != 2) {
+    memoryjs::throwError("requires 1 argument, 2 with callback", isolate);
+    return;
+  }
+
+  if (!args[0]->IsNumber()) {
+    memoryjs::throwError("invalid arguments: first argument must be a number", isolate);
+    return;
+  }
+
+  if (args.Length() == 2 && !args[1]->IsFunction()) {
+    memoryjs::throwError("callback needs to be a function", isolate);
+    return;
+  }
+
+  HANDLE handle = (HANDLE)args[0]->IntegerValue();
+  std::vector<MEMORY_BASIC_INFORMATION> regions = Memory.getRegions(handle);
+
+  Handle<Array> regionsArray = Array::New(isolate, regions.size());
+
+  for (std::vector<MEMORY_BASIC_INFORMATION>::size_type i = 0; i != regions.size(); i++) {
+    Local<Object> region = Object::New(isolate);
+
+    region->Set(String::NewFromUtf8(isolate, "BaseAddress"), Number::New(isolate, (DWORD64) regions[i].BaseAddress));
+    region->Set(String::NewFromUtf8(isolate, "AllocationBase"), Number::New(isolate, (DWORD64) regions[i].AllocationBase));
+    region->Set(String::NewFromUtf8(isolate, "AllocationProtect"), Number::New(isolate, (DWORD) regions[i].AllocationProtect));
+    region->Set(String::NewFromUtf8(isolate, "RegionSize"), Number::New(isolate, (SIZE_T) regions[i].RegionSize));
+    region->Set(String::NewFromUtf8(isolate, "State"), Number::New(isolate, (DWORD) regions[i].State));
+    region->Set(String::NewFromUtf8(isolate, "Protect"), Number::New(isolate, (DWORD) regions[i].Protect));
+    region->Set(String::NewFromUtf8(isolate, "Type"), Number::New(isolate, (DWORD) regions[i].Type));
+
+    regionsArray->Set(i, region);
+  }
+
+   if (args.Length() == 2) {
+    // Callback to let the user handle with the information
+    Local<Function> callback = Local<Function>::Cast(args[1]);
+    const unsigned argc = 2;
+    Local<Value> argv[argc] = { String::NewFromUtf8(isolate, ""), regionsArray };
+    callback->Call(Null(isolate), argc, argv);
+  } else {
+    // return JSON
+    args.GetReturnValue().Set(regionsArray);
+  }
+}
+
 void virtualAllocEx(const FunctionCallbackInfo<Value>& args) {
   Isolate* isolate = args.GetIsolate();
 
@@ -1010,6 +1059,7 @@ void init(Local<Object> exports) {
   NODE_SET_METHOD(exports, "setProtection", setProtection);
   NODE_SET_METHOD(exports, "callFunction", callFunction);
   NODE_SET_METHOD(exports, "virtualAllocEx", virtualAllocEx);
+  NODE_SET_METHOD(exports, "getRegions", getRegions);
 }
 
 NODE_MODULE(memoryjs, init)

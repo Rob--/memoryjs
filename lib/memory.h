@@ -7,11 +7,12 @@
 #include <windows.h>
 #include <TlHelp32.h>
 
-using v8::Isolate;
-
 class memory {
-
 public:
+  memory();
+  ~memory();
+  std::vector<MEMORY_BASIC_INFORMATION> getRegions(HANDLE hProcess);
+
   template <class dataType>
   dataType readMemory(HANDLE hProcess, DWORD64 address) {
     dataType cRead;
