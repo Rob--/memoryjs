@@ -8,17 +8,12 @@
 #include <TlHelp32.h>
 #include <vector>
 
-using v8::Isolate;
-
-class module {
-
-public:
-  module();
-  ~module();
-
-  DWORD64 module::getBaseAddress(const char* processName, DWORD processId);
+namespace module {
+  DWORD64 getBaseAddress(const char* processName, DWORD processId);
   MODULEENTRY32 findModule(const char* moduleName, DWORD processId, char** errorMessage);
   std::vector<MODULEENTRY32> getModules(DWORD processId, char** errorMessage);
+  std::vector<THREADENTRY32> getThreads(DWORD processId, char** errorMessage);
+
 };
 #endif
 #pragma once

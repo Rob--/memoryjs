@@ -8,7 +8,8 @@
         "lib/process.cc",
         "lib/module.cc",
         "lib/pattern.cc",
-        "lib/functions.cc"
+        "lib/functions.cc",
+        "lib/debugger.cc"
       ]
     }
   ]

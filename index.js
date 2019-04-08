@@ -1,4 +1,5 @@
 const memoryjs = require('./build/Release/memoryjs');
+const Debugger = require('./debugger');
 
 module.exports = {
   // data type constants
@@ -71,6 +72,17 @@ module.exports = {
   MEM_PRIVATE: 0x20000,
   MEM_MAPPED: 0x40000,
   MEM_IMAGE: 0x1000000,
+
+  // Hardware registers
+  DR0: 0x0,
+  DR1: 0x1,
+  DR2: 0x2,
+  DR3: 0x3,
+
+  // Hardware breakpoint trigger types
+  TRIGGER_EXECUTE: 0x0,
+  TRIGGER_ACCESS: 0x3,
+  TRIGGER_WRITE: 0x1,
 
   openProcess(processIdentifier, callback) {
     if (arguments.length === 1) {
@@ -195,6 +207,15 @@ module.exports = {
 
     memoryjs.virtualQueryEx(handle, address, callback);
   },
+
+  attachDebugger: memoryjs.attachDebugger,
+  detatchDebugger: memoryjs.detatchDebugger,
+  awaitDebugEvent: memoryjs.awaitDebugEvent,
+  handleDebugEvent: memoryjs.handleDebugEvent,
+  setHardwareBreakpoint: memoryjs.setHardwareBreakpoint,
+  removeHardwareBreakpoint: memoryjs.removeHardwareBreakpoint,
+
+  Debugger: new Debugger(memoryjs),
 
   closeProcess: memoryjs.closeProcess,
 };

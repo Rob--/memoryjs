@@ -6,12 +6,14 @@
 #include <string>
 #include <vector>
 #include <iostream>
+#include <thread>
 #include "module.h"
 #include "process.h"
 #include "memoryjs.h"
 #include "memory.h"
 #include "pattern.h"
 #include "functions.h"
+#include "debugger.h"
 
 #pragma comment(lib, "psapi.lib")
 
@@ -29,7 +31,7 @@ using v8::Array;
 using v8::Boolean;
 
 process Process;
-module Module;
+// module Module;
 memory Memory;
 pattern Pattern;
 // functions Functions;
@@ -109,7 +111,7 @@ void openProcess(const FunctionCallbackInfo<Value>& args) {
   processInfo->Set(String::NewFromUtf8(isolate, "szExeFile"), String::NewFromUtf8(isolate, pair.process.szExeFile));
   processInfo->Set(String::NewFromUtf8(isolate, "handle"), Number::New(isolate, (int)pair.handle));
 
-  DWORD64 base = Module.getBaseAddress(pair.process.szExeFile, pair.process.th32ProcessID);
+  DWORD64 base = module::getBaseAddress(pair.process.szExeFile, pair.process.th32ProcessID);
   processInfo->Set(String::NewFromUtf8(isolate, "modBaseAddr"), Number::New(isolate, (uintptr_t)base));
 
   // openProcess can either take one argument or can take
@@ -220,7 +222,7 @@ void getModules(const FunctionCallbackInfo<Value>& args) {
   // Define error message that may be set by the function that gets the modules
   char* errorMessage = "";
 
-  std::vector<MODULEENTRY32> moduleEntries = Module.getModules(args[0]->Int32Value(), &errorMessage);
+  std::vector<MODULEENTRY32> moduleEntries = module::getModules(args[0]->Int32Value(), &errorMessage);
 
   // If an error message was returned from the function getting the modules, throw the error.
   // Only throw an error if there is no callback (if there's a callback, the error is passed there).
@@ -285,7 +287,7 @@ void findModule(const FunctionCallbackInfo<Value>& args) {
   // Define error message that may be set by the function that gets the modules
   char* errorMessage = "";
 
-  MODULEENTRY32 module = Module.findModule((char*) *(moduleName), args[1]->Int32Value(), &errorMessage);
+  MODULEENTRY32 module = module::findModule((char*) *(moduleName), args[1]->Int32Value(), &errorMessage);
 
   // If an error message was returned from the function getting the module, throw the error.
   // Only throw an error if there is no callback (if there's a callback, the error is passed there).
@@ -296,7 +298,7 @@ void findModule(const FunctionCallbackInfo<Value>& args) {
 
   // In case it failed to open, let's keep retrying
   while (!strcmp(module.szExePath, "")) {
-    module = Module.findModule((char*) *(moduleName), args[1]->Int32Value(), &errorMessage);
+    module = module::findModule((char*) *(moduleName), args[1]->Int32Value(), &errorMessage);
   };
 
   // Create a v8 Object (JSON) to store the process information
@@ -695,7 +697,7 @@ void findPattern(const FunctionCallbackInfo<Value>& args) {
 
   HANDLE handle = (HANDLE)args[0]->IntegerValue();
 
-  std::vector<MODULEENTRY32> moduleEntries = Module.getModules(GetProcessId(handle), &errorMessage);
+  std::vector<MODULEENTRY32> moduleEntries = module::getModules(GetProcessId(handle), &errorMessage);
 
   // If an error message was returned from the function getting the modules, throw the error.
   // Only throw an error if there is no callback (if there's a callback, the error is passed there).
@@ -1087,6 +1089,93 @@ void virtualAllocEx(const FunctionCallbackInfo<Value>& args) {
   }
 }
 
+void attachDebugger(const FunctionCallbackInfo<Value>& args) {
+  Isolate* isolate = args.GetIsolate();
+
+  DWORD processId = args[0]->Uint32Value();
+  bool killOnExit = args[1]->BooleanValue();
+
+  bool success = debugger::attach(processId, killOnExit);
+  args.GetReturnValue().Set(Boolean::New(isolate, success));
+}
+
+void detatchDebugger(const FunctionCallbackInfo<Value>& args) {
+  Isolate* isolate = args.GetIsolate();
+
+  DWORD processId = args[0]->Uint32Value();
+  
+  bool success = debugger::detatch(processId);
+  args.GetReturnValue().Set(Boolean::New(isolate, success));
+}
+
+void awaitDebugEvent(const FunctionCallbackInfo<Value>& args) {
+  Isolate* isolate = args.GetIsolate();
+
+  int millisTimeout = args[1]->Uint32Value();
+
+  DebugEvent debugEvent;
+  bool success = debugger::awaitDebugEvent(millisTimeout, &debugEvent);
+
+  Register hardwareRegister = static_cast<Register>(args[0]->Uint32Value());
+
+  if (success && debugEvent.hardwareRegister == hardwareRegister) {
+    Local<Object> info = Object::New(isolate);
+
+    info->Set(String::NewFromUtf8(isolate, "processId"), Number::New(isolate, (DWORD) debugEvent.processId));
+    info->Set(String::NewFromUtf8(isolate, "threadId"), Number::New(isolate, (DWORD) debugEvent.threadId));
+    info->Set(String::NewFromUtf8(isolate, "exceptionCode"), Number::New(isolate, (DWORD) debugEvent.exceptionCode));
+    info->Set(String::NewFromUtf8(isolate, "exceptionFlags"), Number::New(isolate, (DWORD) debugEvent.exceptionFlags));
+    info->Set(String::NewFromUtf8(isolate, "exceptionAddress"), Number::New(isolate, (DWORD64) debugEvent.exceptionAddress));
+    info->Set(String::NewFromUtf8(isolate, "hardwareRegister"), Number::New(isolate, static_cast<int>(debugEvent.hardwareRegister))); 
+  
+    args.GetReturnValue().Set(info);
+  }
+
+  // If we aren't interested in passing this event back to the JS space,
+  // just silently handle it
+  if (success && debugEvent.hardwareRegister != hardwareRegister) {
+    debugger::handleDebugEvent(debugEvent.processId, debugEvent.threadId);
+  }
+}
+
+void handleDebugEvent(const FunctionCallbackInfo<Value>& args) {
+  Isolate* isolate = args.GetIsolate();
+
+  DWORD processId = args[0]->Uint32Value();
+  DWORD threadId = args[1]->Uint32Value();
+
+  bool success = debugger::handleDebugEvent(processId, threadId);
+  args.GetReturnValue().Set(Boolean::New(isolate, success));
+}
+
+void setHardwareBreakpoint(const FunctionCallbackInfo<Value>& args) {
+  Isolate* isolate = args.GetIsolate();
+
+  DWORD processId = args[0]->Uint32Value();
+  DWORD64 address = args[1]->IntegerValue();
+  Register hardwareRegister = static_cast<Register>(args[2]->Uint32Value());
+
+  // Execute = 0x0
+  // Access = 0x3
+  // Writer = 0x1
+  int trigger = args[3]->Uint32Value();
+  
+  int length = args[4]->Uint32Value();
+
+  bool success = debugger::setHardwareBreakpoint(processId, address, hardwareRegister, trigger, length);
+  args.GetReturnValue().Set(Boolean::New(isolate, success));
+}
+
+void removeHardwareBreakpoint(const FunctionCallbackInfo<Value>& args) {
+  Isolate* isolate = args.GetIsolate();
+
+  DWORD processId = args[0]->Uint32Value();
+  Register hardwareRegister = static_cast<Register>(args[1]->Uint32Value());
+
+  bool success = debugger::setHardwareBreakpoint(processId, 0, hardwareRegister, 0, 0);
+  args.GetReturnValue().Set(Boolean::New(isolate, success));
+}
+
 // https://stackoverflow.com/a/17387176
 std::string GetLastErrorToString() {
   DWORD errorMessageID = ::GetLastError();
@@ -1126,11 +1215,17 @@ void init(Local<Object> exports) {
   NODE_SET_METHOD(exports, "writeMemory", writeMemory);
   NODE_SET_METHOD(exports, "writeBuffer", writeBuffer);
   NODE_SET_METHOD(exports, "findPattern", findPattern);
-  NODE_SET_METHOD(exports, "virtualProtectEx", VirtualProtectEx);
+  NODE_SET_METHOD(exports, "virtualProtectEx", virtualProtectEx);
   NODE_SET_METHOD(exports, "callFunction", callFunction);
   NODE_SET_METHOD(exports, "virtualAllocEx", virtualAllocEx);
   NODE_SET_METHOD(exports, "getRegions", getRegions);
   NODE_SET_METHOD(exports, "virtualQueryEx", virtualQueryEx);
+  NODE_SET_METHOD(exports, "attachDebugger", attachDebugger);
+  NODE_SET_METHOD(exports, "detatchDebugger", detatchDebugger);
+  NODE_SET_METHOD(exports, "awaitDebugEvent", awaitDebugEvent);
+  NODE_SET_METHOD(exports, "handleDebugEvent", handleDebugEvent);
+  NODE_SET_METHOD(exports, "setHardwareBreakpoint", setHardwareBreakpoint);
+  NODE_SET_METHOD(exports, "removeHardwareBreakpoint", removeHardwareBreakpoint);
 }
 
 NODE_MODULE(memoryjs, init)

@@ -6,14 +6,6 @@
 #include "process.h"
 #include "memoryjs.h"
 
-module::module() {}
-
-module::~module() {}
-
-using v8::Exception;
-using v8::Isolate;
-using v8::String;
-
 DWORD64 module::getBaseAddress(const char* processName, DWORD processId) {
   char* errorMessage = "";
   MODULEENTRY32 baseModule = module::findModule(processName, processId, &errorMessage);
@@ -50,7 +42,7 @@ std::vector<MODULEENTRY32> module::getModules(DWORD processId, char** errorMessa
   MODULEENTRY32 mEntry;
 
   if (hModuleSnapshot == INVALID_HANDLE_VALUE) {
-    *errorMessage = "method failed to take snapshot of the process";
+    *errorMessage = "method failed to take snapshot of the modules";
   }
 
   // Before use, set the structure size.
@@ -73,4 +65,30 @@ std::vector<MODULEENTRY32> module::getModules(DWORD processId, char** errorMessa
   CloseHandle(hModuleSnapshot);
 
   return modules;
+}
+
+std::vector<THREADENTRY32> module::getThreads(DWORD processId, char** errorMessage) {
+  HANDLE hThreadSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, processId);
+  THREADENTRY32 mEntry;
+
+  if (hThreadSnapshot == INVALID_HANDLE_VALUE) {
+    *errorMessage = "method failed to take snapshot of the threads";
+  }
+
+  mEntry.dwSize = sizeof(mEntry);
+
+  if(!Thread32First(hThreadSnapshot, &mEntry)) {
+    CloseHandle(hThreadSnapshot);
+    *errorMessage = "method failed to retrieve the first thread";
+  }
+
+  std::vector<THREADENTRY32> threads;
+
+  do {
+    threads.push_back(mEntry);
+  } while (Thread32Next(hThreadSnapshot, &mEntry));
+
+  CloseHandle(hThreadSnapshot);
+
+  return threads;
 }

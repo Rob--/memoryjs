@@ -8,8 +8,6 @@
 #include <TlHelp32.h>
 #include <vector>
 
-using v8::Isolate;
-
 enum Type {
   T_VOID = 0x0,
   T_STRING = 0x1,
