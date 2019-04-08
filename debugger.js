@@ -113,7 +113,6 @@ class Debugger extends EventEmitter {
     const success = this.memoryjs
       .setHardwareBreakpoint(processId, address, register, trigger, size);
 
-    console.log('a', register, success);
     // If the breakpoint was set, mark this register as busy
     if (success) {
       this.registers.busy(register);

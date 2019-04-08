@@ -19,6 +19,7 @@ through for the process (that is returned from `memoryjs.openProcess`). This all
 - Reserve/allocate, commit or change regions of memory
 - Pattern scanning
 - Execute a function within a process
+- Hardware breakpoints (find out what accesses/writes to this address etc)
 
 Functions that this library directly exposes from the WinAPI:
 - [ReadProcessMemory](https://docs.microsoft.com/en-us/windows/desktop/api/memoryapi/nf-memoryapi-readprocessmemory)
@@ -194,6 +195,38 @@ memoryjs.callFunction(handle, args, returnType, address, (error, result) => {
 
 Click [here](#user-content-result-object) to see what a result object looks like.
 Clicklick [here](#user-content-function-execution-1) for details about how to format the arguments and the return type.
+
+### Hardware Breakpoints
+
+Attach a debugger:
+``` javascript
+const success = memoryjs.attatchDebugger(processId, exitOnDetatch);
+```
+
+Detatch debugger:
+``` javascript
+const success = memoryjs.detatchDebugger(processId);
+```
+
+Wait for debug devent:
+``` javascript
+const success = memoryjs.awaitDebugEvent(hardwareRegister, millisTimeout);
+```
+
+Handle debug event:
+``` javascript
+const success = memoryjs.handleDebugEvent(processId, threadId);
+```
+
+Set a hardware breakpoint:
+``` javascript
+const success = memoryjs.setHardwareBreakpoint(processId, address, hardwareRegister, trigger, length);
+```
+
+Remove a hardware breakpoint:
+``` javascript
+const success = memoryjs.removeHardwareBreakpoint(processId, hardwareRegister);
+```
 
 # Documentation
 
@@ -376,3 +409,110 @@ See the [result object documentation](user-content-result-object) for details on
 Notes: currently passing a `double` as an argument is not supported, but returning one is.
 
 Much thanks to the [various contributors](https://github.com/Rob--/memoryjs/issues/6) that made this feature possible.
+
+### Hardware Breakpoints:
+
+Hardware breakpoints work by attaching a debugger to the process, setting a breakpoint on a certain address and declaring a trigger type (e.g. breakpoint on writing to the address) and then continuously waiting for a debug event to arise (and then consequently handling it).
+
+This library exposes the main functions, but also includes a wrapper class to simplify the process. For a complete code example, checkout our [debugging example](link).
+
+When setting a breakpoint, you are required to pass a trigger type:
+- `memoryjs.TRIGGER_ACCESS` - breakpoint occurs when the address is accessed
+- `memoryjs.TRIGGER_WRITE` - breakpoint occurs when the address is written to
+
+Do note that when monitoring an address containing a string, the `size` parameter of the `setHardwareBreakpoint` function should be the length of the string. When using the `Debugger` wrapper class, the wrapper will automatically determine the size of the string by attempting to read it.
+
+To summarise:
+- When using the `Debugger` class:
+  - No need to pass the `size` parameter to `setHardwareBreakpoint`
+  - No need to manually pick a hardware register
+  - Debug events are picked up via an event listener
+  - `setHardwareBreakpoint` returns the register that was used for the breakpoint
+
+- When manually using the debugger functions:
+  - The `size` parameter is the size of the variable in memory (e.g. int32 = 4 bytes). For a string, this parameter is the length of the string
+  - Manually need to pick a hardware register (via `memoryjs.DR0` through `memoryhs.DR3`). Only 4 hardware registers are available (some CPUs may even has less than 4 available). This means only 4 breakpoints can be set at any given time
+  - Need to manually wait for debug and handle debug events
+  - `setHardwareBreakpoint` returns a boolean stating whether the operation as successful
+
+#### Using the Debugger Wrapper
+
+The Debugger wrapper contains these functions you should use:
+
+``` javascript
+class Debugger {
+  attatch(processId, killOnDetatch = false);
+  detatch(processId);
+  setHardwareBreakpoint(processId, address, trigger, dataType);
+  removeHardwareBreakpoint(processId, register);
+}
+```
+
+1. Attach the debugger
+``` javascript
+const hardwareDebugger = memoryjs.Debugger;
+hardwareDebugger.attach(processId);
+```
+
+2. Set a hardware breakpoint
+``` javascript
+const address = 0xDEADBEEF;
+const trigger = memoryjs.TRIGGER_ACCESS;
+const dataType = memoryjs.INT;
+const register = hardwareDebugger.setHardwareBreakpoint(processId, address, trigger, dataType);
+```
+
+3. Create an event listener for debug events (breakpoints)
+``` javascript
+// `debugEvent` event emission catches debug events from all registers
+hardwareDebugger.on('debugEvent', ({ register, event }) => {
+  console.log(`Hardware Register ${register} breakpoint`);
+  console.log(event);
+});
+
+// You can listen to debug events from specific hardware registers
+// by listening to whatever register was returned from `setHardwareBreakpoint`
+hardwareDebugger.on(register, (event) => {
+  console.log(event);
+});
+```
+
+#### When Manually Debugging
+
+1. Attatch the debugger
+``` javascript
+const hardwareDebugger = memoryjs.Debugger;
+hardwareDebugger.attach(processId);
+```
+
+2. Set a hardware breakpoint (determine which register to use and the size of the data type)
+``` javascript
+// available registers: DR0 through DR3
+const register = memoryjs.DR0;
+// int = 4 bytes
+const size = 4;
+
+const address = 0xDEADBEEF;
+const trigger = memoryjs.TRIGGER_ACCESS;
+const dataType = memoryjs.INT;
+
+const success = memoryjs.setHardwareBreakpoint(processId, address, register, trigger, size);
+```
+
+3. Create the await/handle debug event loop
+``` javascript
+const timeout = 100;
+
+setInterval(() => {
+  // `debugEvent` can be null if no event occurred
+  const debugEvent = memoryjs.awaitDebugEvent(register, timeout);
+
+  // If a breakpoint occurred, handle it
+  if (debugEvent) {
+    memoryjs.handleDebugEvent(debugEvent.processId, debugEvent.threadId);
+  }
+}, timeout);
+```
+
+Note: a loop is not required, e.g. no loop required if you want to simply wait until the first detection of the address being accessed or written to.
+
