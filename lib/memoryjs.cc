@@ -1092,6 +1092,16 @@ void virtualAllocEx(const FunctionCallbackInfo<Value>& args) {
 void attachDebugger(const FunctionCallbackInfo<Value>& args) {
   Isolate* isolate = args.GetIsolate();
 
+  if (args.Length() != 2) {
+    memoryjs::throwError("requires 2 arguments", isolate);
+    return;
+  }
+
+  if (!args[0]->IsNumber() || !args[1]->IsBoolean()) {
+    memoryjs::throwError("first argument needs to be a number, second a boolean", isolate);
+    return;
+  }
+
   DWORD processId = args[0]->Uint32Value();
   bool killOnExit = args[1]->BooleanValue();
 
@@ -1103,6 +1113,16 @@ void detatchDebugger(const FunctionCallbackInfo<Value>& args) {
   Isolate* isolate = args.GetIsolate();
 
   DWORD processId = args[0]->Uint32Value();
+
+  if (args.Length() != 1) {
+    memoryjs::throwError("requires only 1 argument", isolate);
+    return;
+  }
+
+  if (!args[0]->IsNumber()) {
+    memoryjs::throwError("only argument needs to be a number", isolate);
+    return;
+  }
   
   bool success = debugger::detatch(processId);
   args.GetReturnValue().Set(Boolean::New(isolate, success));
@@ -1110,6 +1130,16 @@ void detatchDebugger(const FunctionCallbackInfo<Value>& args) {
 
 void awaitDebugEvent(const FunctionCallbackInfo<Value>& args) {
   Isolate* isolate = args.GetIsolate();
+
+  if (args.Length() != 2) {
+    memoryjs::throwError("requires 2 arguments", isolate);
+    return;
+  }
+
+  if (!args[0]->IsNumber() || !args[1]->IsNumber()) {
+    memoryjs::throwError("both arguments need to be a number", isolate);
+    return;
+  }
 
   int millisTimeout = args[1]->Uint32Value();
 
