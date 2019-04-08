@@ -17,6 +17,7 @@ through for the process (that is returned from `memoryjs.openProcess`). This all
 - Write buffer to memory
 - Change memory protection
 - Reserve/allocate, commit or change regions of memory
+- Fetch a list of memory regions within a process
 - Pattern scanning
 - Execute a function within a process
 - Hardware breakpoints (find out what accesses/writes to this address etc)
@@ -152,6 +153,17 @@ Write buffer to memory:
 memoryjs.writeBuffer(handle, address, buffer);
 ```
 
+Fetch memory regions (sync):
+``` javascript
+const regions = memoryjs.getRegions(handle);
+```
+
+Fetch memory regions (async):
+``` javascript
+memoryjs.getRegions(handle, (regions) => {
+
+});
+```
 
 See the [Documentation](#user-content-documentation) section of this README to see what values `dataType` can be.
 
