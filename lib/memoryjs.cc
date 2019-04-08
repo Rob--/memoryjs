@@ -1141,6 +1141,16 @@ void awaitDebugEvent(const FunctionCallbackInfo<Value>& args) {
 void handleDebugEvent(const FunctionCallbackInfo<Value>& args) {
   Isolate* isolate = args.GetIsolate();
 
+  if (args.Length() != 2) {
+    memoryjs::throwError("requires 2 arguments", isolate);
+    return;
+  }
+
+  if (!args[0]->IsNumber() || !args[1]->IsNumber()) {
+    memoryjs::throwError("both arguments need to be numbers", isolate);
+    return;
+  }
+
   DWORD processId = args[0]->Uint32Value();
   DWORD threadId = args[1]->Uint32Value();
 
@@ -1150,6 +1160,18 @@ void handleDebugEvent(const FunctionCallbackInfo<Value>& args) {
 
 void setHardwareBreakpoint(const FunctionCallbackInfo<Value>& args) {
   Isolate* isolate = args.GetIsolate();
+
+  if (args.Length() != 5) {
+    memoryjs::throwError("requires 5 arguments", isolate);
+    return;
+  }
+
+  for (int i = 0; i < args.Length(); i++) {
+    if (!args[i]->IsNumber()) {
+      memoryjs::throwError("all arguments need to be numbers", isolate);
+      return;
+    }
+  }
 
   DWORD processId = args[0]->Uint32Value();
   DWORD64 address = args[1]->IntegerValue();
@@ -1168,6 +1190,16 @@ void setHardwareBreakpoint(const FunctionCallbackInfo<Value>& args) {
 
 void removeHardwareBreakpoint(const FunctionCallbackInfo<Value>& args) {
   Isolate* isolate = args.GetIsolate();
+
+  if (args.Length() != 2) {
+    memoryjs::throwError("requires 2 arguments", isolate);
+    return;
+  }
+
+  if (!args[0]->IsNumber() || !args[1]->IsNumber()) {
+    memoryjs::throwError("both arguments need to be numbers", isolate);
+    return;
+  }
 
   DWORD processId = args[0]->Uint32Value();
   Register hardwareRegister = static_cast<Register>(args[1]->Uint32Value());
