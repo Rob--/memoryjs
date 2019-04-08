@@ -414,7 +414,7 @@ Much thanks to the [various contributors](https://github.com/Rob--/memoryjs/issu
 
 Hardware breakpoints work by attaching a debugger to the process, setting a breakpoint on a certain address and declaring a trigger type (e.g. breakpoint on writing to the address) and then continuously waiting for a debug event to arise (and then consequently handling it).
 
-This library exposes the main functions, but also includes a wrapper class to simplify the process. For a complete code example, checkout our [debugging example](link).
+This library exposes the main functions, but also includes a wrapper class to simplify the process. For a complete code example, checkout our [debugging example](https://github.com/Rob--/memoryjs/blob/master/examples/debugging.js).
 
 When setting a breakpoint, you are required to pass a trigger type:
 - `memoryjs.TRIGGER_ACCESS` - breakpoint occurs when the address is accessed
@@ -434,6 +434,13 @@ To summarise:
   - Manually need to pick a hardware register (via `memoryjs.DR0` through `memoryhs.DR3`). Only 4 hardware registers are available (some CPUs may even has less than 4 available). This means only 4 breakpoints can be set at any given time
   - Need to manually wait for debug and handle debug events
   - `setHardwareBreakpoint` returns a boolean stating whether the operation as successful
+
+For more reading about debugging and hardware breakpoints, checkout the following links:
+- [DebugActiveProcess](https://msdn.microsoft.com/en-us/library/windows/desktop/ms679295(v=vs.85).aspx) - attatching the debugger
+- [DebugSetProcessKillOnExit](https://docs.microsoft.com/en-us/windows/desktop/api/winbase/nf-winbase-debugsetprocesskillonexit) - kill the process when detatching
+- [DebugActiveProcessStop](https://msdn.microsoft.com/en-us/library/windows/desktop/ms679296(v=vs.85).aspx) - detatching the debugger
+- [WaitForDebugEvent](https://msdn.microsoft.com/en-us/library/windows/desktop/ms681423(v=vs.85).aspx) - waiting for the breakpoint to be triggered
+- [ContinueDebugEvent](https://msdn.microsoft.com/en-us/library/windows/desktop/ms679285(v=vs.85).aspx) - handling the event
 
 #### Using the Debugger Wrapper
 
