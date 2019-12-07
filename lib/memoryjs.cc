@@ -46,7 +46,7 @@ struct Vector4 {
 
 void memoryjs::throwError(char* error, Isolate* isolate) {
   isolate->ThrowException(
-    Exception::TypeError(String::NewFromUtf8(isolate,error).ToLocalChecked())
+    Exception::TypeError(String::NewFromUtf8(isolate,error,v8::NewStringType::kNormal).ToLocalChecked())
   );
   return;
 }
@@ -103,16 +103,16 @@ void openProcess(const FunctionCallbackInfo<Value>& args) {
   // Create a v8 Object (JSON) to store the process information
   Local<Object> processInfo = Object::New(isolate);
 
-  processInfo->Set(isolate->GetCurrentContext(), String::NewFromUtf8(isolate, "dwSize").ToLocalChecked(), Number::New(isolate, (int)pair.process.dwSize));
-  processInfo->Set(isolate->GetCurrentContext(), String::NewFromUtf8(isolate, "th32ProcessID").ToLocalChecked(), Number::New(isolate, (int)pair.process.th32ProcessID));
-  processInfo->Set(isolate->GetCurrentContext(), String::NewFromUtf8(isolate, "cntThreads").ToLocalChecked(), Number::New(isolate, (int)pair.process.cntThreads));
-  processInfo->Set(isolate->GetCurrentContext(), String::NewFromUtf8(isolate, "th32ParentProcessID").ToLocalChecked(), Number::New(isolate, (int)pair.process.th32ParentProcessID));
-  processInfo->Set(isolate->GetCurrentContext(), String::NewFromUtf8(isolate, "pcPriClassBase").ToLocalChecked(), Number::New(isolate, (int)pair.process.pcPriClassBase));
-  processInfo->Set(isolate->GetCurrentContext(), String::NewFromUtf8(isolate, "szExeFile").ToLocalChecked(), String::NewFromUtf8(isolate, pair.process.szExeFile).ToLocalChecked());
-  processInfo->Set(isolate->GetCurrentContext(), String::NewFromUtf8(isolate, "handle").ToLocalChecked(), Number::New(isolate, (int)pair.handle));
+  processInfo->Set(isolate->GetCurrentContext(), String::NewFromUtf8(isolate, "dwSize", v8::NewStringType::kNormal).ToLocalChecked(), Number::New(isolate, (int)pair.process.dwSize));
+  processInfo->Set(isolate->GetCurrentContext(), String::NewFromUtf8(isolate, "th32ProcessID", v8::NewStringType::kNormal).ToLocalChecked(), Number::New(isolate, (int)pair.process.th32ProcessID));
+  processInfo->Set(isolate->GetCurrentContext(), String::NewFromUtf8(isolate, "cntThreads", v8::NewStringType::kNormal).ToLocalChecked(), Number::New(isolate, (int)pair.process.cntThreads));
+  processInfo->Set(isolate->GetCurrentContext(), String::NewFromUtf8(isolate, "th32ParentProcessID", v8::NewStringType::kNormal).ToLocalChecked(), Number::New(isolate, (int)pair.process.th32ParentProcessID));
+  processInfo->Set(isolate->GetCurrentContext(), String::NewFromUtf8(isolate, "pcPriClassBase", v8::NewStringType::kNormal).ToLocalChecked(), Number::New(isolate, (int)pair.process.pcPriClassBase));
+  processInfo->Set(isolate->GetCurrentContext(), String::NewFromUtf8(isolate, "szExeFile", v8::NewStringType::kNormal).ToLocalChecked(), String::NewFromUtf8(isolate, pair.process.szExeFile, v8::NewStringType::kNormal).ToLocalChecked());
+  processInfo->Set(isolate->GetCurrentContext(), String::NewFromUtf8(isolate, "handle", v8::NewStringType::kNormal).ToLocalChecked(), Number::New(isolate, (int)pair.handle));
 
   DWORD64 base = module::getBaseAddress(pair.process.szExeFile, pair.process.th32ProcessID);
-  processInfo->Set(isolate->GetCurrentContext(), String::NewFromUtf8(isolate, "modBaseAddr").ToLocalChecked(), Number::New(isolate, (uintptr_t)base));
+  processInfo->Set(isolate->GetCurrentContext(), String::NewFromUtf8(isolate, "modBaseAddr", v8::NewStringType::kNormal).ToLocalChecked(), Number::New(isolate, (uintptr_t)base));
 
   // openProcess can either take one argument or can take
   // two arguments for asychronous use (second argument is the callback)
@@ -120,7 +120,7 @@ void openProcess(const FunctionCallbackInfo<Value>& args) {
     // Callback to let the user handle with the information
     Local<Function> callback = Local<Function>::Cast(args[1]);
     const unsigned argc = 2;
-    Local<Value> argv[argc] = { String::NewFromUtf8(isolate, errorMessage).ToLocalChecked(), processInfo };
+    Local<Value> argv[argc] = { String::NewFromUtf8(isolate, errorMessage, v8::NewStringType::kNormal).ToLocalChecked(), processInfo };
     callback->Call(isolate->GetCurrentContext(), Null(isolate), argc, argv);
   } else {
     // return JSON
@@ -177,11 +177,11 @@ void getProcesses(const FunctionCallbackInfo<Value>& args) {
     // Create a v8 object to store the current process' information
     Local<Object> process = Object::New(isolate);
 
-    process->Set(isolate->GetCurrentContext(), String::NewFromUtf8(isolate, "cntThreads").ToLocalChecked(), Number::New(isolate, (int)processEntries[i].cntThreads));
-    process->Set(isolate->GetCurrentContext(), String::NewFromUtf8(isolate, "szExeFile").ToLocalChecked(), String::NewFromUtf8(isolate, processEntries[i].szExeFile).ToLocalChecked());
-    process->Set(isolate->GetCurrentContext(), String::NewFromUtf8(isolate, "th32ProcessID").ToLocalChecked(), Number::New(isolate, (int)processEntries[i].th32ProcessID));
-    process->Set(isolate->GetCurrentContext(), String::NewFromUtf8(isolate, "th32ParentProcessID").ToLocalChecked(), Number::New(isolate, (int)processEntries[i].th32ParentProcessID));
-    process->Set(isolate->GetCurrentContext(), String::NewFromUtf8(isolate, "pcPriClassBase").ToLocalChecked(), Number::New(isolate, (int)processEntries[i].pcPriClassBase));
+    process->Set(isolate->GetCurrentContext(), String::NewFromUtf8(isolate, "cntThreads", v8::NewStringType::kNormal).ToLocalChecked(), Number::New(isolate, (int)processEntries[i].cntThreads));
+    process->Set(isolate->GetCurrentContext(), String::NewFromUtf8(isolate, "szExeFile", v8::NewStringType::kNormal).ToLocalChecked(), String::NewFromUtf8(isolate, processEntries[i].szExeFile, v8::NewStringType::kNormal).ToLocalChecked());
+    process->Set(isolate->GetCurrentContext(), String::NewFromUtf8(isolate, "th32ProcessID", v8::NewStringType::kNormal).ToLocalChecked(), Number::New(isolate, (int)processEntries[i].th32ProcessID));
+    process->Set(isolate->GetCurrentContext(), String::NewFromUtf8(isolate, "th32ParentProcessID", v8::NewStringType::kNormal).ToLocalChecked(), Number::New(isolate, (int)processEntries[i].th32ParentProcessID));
+    process->Set(isolate->GetCurrentContext(), String::NewFromUtf8(isolate, "pcPriClassBase", v8::NewStringType::kNormal).ToLocalChecked(), Number::New(isolate, (int)processEntries[i].pcPriClassBase));
 
     // Push the object to the array
     processes->Set(isolate->GetCurrentContext(), i, process);
@@ -193,7 +193,7 @@ void getProcesses(const FunctionCallbackInfo<Value>& args) {
     // Callback to let the user handle with the information
     Local<Function> callback = Local<Function>::Cast(args[0]);
     const unsigned argc = 2;
-    Local<Value> argv[argc] = { String::NewFromUtf8(isolate, errorMessage).ToLocalChecked(), processes };
+    Local<Value> argv[argc] = { String::NewFromUtf8(isolate, errorMessage, v8::NewStringType::kNormal).ToLocalChecked(), processes };
     callback->Call(isolate->GetCurrentContext(), Null(isolate), argc, argv);
   } else {
     // return JSON
@@ -240,11 +240,11 @@ void getModules(const FunctionCallbackInfo<Value>& args) {
     //  Create a v8 object to store the current module's information
     Local<Object> module = Object::New(isolate);
 
-    module->Set(isolate->GetCurrentContext(), String::NewFromUtf8(isolate, "modBaseAddr").ToLocalChecked(), Number::New(isolate, (uintptr_t)moduleEntries[i].modBaseAddr));
-    module->Set(isolate->GetCurrentContext(), String::NewFromUtf8(isolate, "modBaseSize").ToLocalChecked(), Number::New(isolate, (int)moduleEntries[i].modBaseSize));
-    module->Set(isolate->GetCurrentContext(), String::NewFromUtf8(isolate, "szExePath").ToLocalChecked(), String::NewFromUtf8(isolate, moduleEntries[i].szExePath).ToLocalChecked());
-    module->Set(isolate->GetCurrentContext(), String::NewFromUtf8(isolate, "szModule").ToLocalChecked(), String::NewFromUtf8(isolate, moduleEntries[i].szModule).ToLocalChecked());
-    module->Set(isolate->GetCurrentContext(), String::NewFromUtf8(isolate, "th32ModuleID").ToLocalChecked(), Number::New(isolate, (int)moduleEntries[i].th32ProcessID));
+    module->Set(isolate->GetCurrentContext(), String::NewFromUtf8(isolate, "modBaseAddr", v8::NewStringType::kNormal).ToLocalChecked(), Number::New(isolate, (uintptr_t)moduleEntries[i].modBaseAddr));
+    module->Set(isolate->GetCurrentContext(), String::NewFromUtf8(isolate, "modBaseSize", v8::NewStringType::kNormal).ToLocalChecked(), Number::New(isolate, (int)moduleEntries[i].modBaseSize));
+    module->Set(isolate->GetCurrentContext(), String::NewFromUtf8(isolate, "szExePath", v8::NewStringType::kNormal).ToLocalChecked(), String::NewFromUtf8(isolate, moduleEntries[i].szExePath, v8::NewStringType::kNormal).ToLocalChecked());
+    module->Set(isolate->GetCurrentContext(), String::NewFromUtf8(isolate, "szModule", v8::NewStringType::kNormal).ToLocalChecked(), String::NewFromUtf8(isolate, moduleEntries[i].szModule, v8::NewStringType::kNormal).ToLocalChecked());
+    module->Set(isolate->GetCurrentContext(), String::NewFromUtf8(isolate, "th32ModuleID", v8::NewStringType::kNormal).ToLocalChecked(), Number::New(isolate, (int)moduleEntries[i].th32ProcessID));
 
     // Push the object to the array
     modules->Set(isolate->GetCurrentContext(), i, module);
@@ -256,7 +256,7 @@ void getModules(const FunctionCallbackInfo<Value>& args) {
     // Callback to let the user handle with the information
     Local<Function> callback = Local<Function>::Cast(args[1]);
     const unsigned argc = 2;
-    Local<Value> argv[argc] = { String::NewFromUtf8(isolate, errorMessage).ToLocalChecked(), modules };
+    Local<Value> argv[argc] = { String::NewFromUtf8(isolate, errorMessage, v8::NewStringType::kNormal).ToLocalChecked(), modules };
     callback->Call(isolate->GetCurrentContext(), Null(isolate), argc, argv);
   } else {
     // return JSON
@@ -304,12 +304,12 @@ void findModule(const FunctionCallbackInfo<Value>& args) {
   // Create a v8 Object (JSON) to store the process information
   Local<Object> moduleInfo = Object::New(isolate);
 
-  moduleInfo->Set(isolate->GetCurrentContext(), String::NewFromUtf8(isolate, "modBaseAddr").ToLocalChecked(), Number::New(isolate, (uintptr_t)module.modBaseAddr));
-  moduleInfo->Set(isolate->GetCurrentContext(), String::NewFromUtf8(isolate, "modBaseSize").ToLocalChecked(), Number::New(isolate, (int)module.modBaseSize));
-  moduleInfo->Set(isolate->GetCurrentContext(), String::NewFromUtf8(isolate, "szExePath").ToLocalChecked(), String::NewFromUtf8(isolate, module.szExePath).ToLocalChecked());
-  moduleInfo->Set(isolate->GetCurrentContext(), String::NewFromUtf8(isolate, "szModule").ToLocalChecked(), String::NewFromUtf8(isolate, module.szModule).ToLocalChecked());
-  moduleInfo->Set(isolate->GetCurrentContext(), String::NewFromUtf8(isolate, "th32ProcessID").ToLocalChecked(), Number::New(isolate, (int)module.th32ProcessID));
-  moduleInfo->Set(isolate->GetCurrentContext(), String::NewFromUtf8(isolate, "hModule").ToLocalChecked(), Number::New(isolate, (uintptr_t)module.hModule));
+  moduleInfo->Set(isolate->GetCurrentContext(), String::NewFromUtf8(isolate, "modBaseAddr", v8::NewStringType::kNormal).ToLocalChecked(), Number::New(isolate, (uintptr_t)module.modBaseAddr));
+  moduleInfo->Set(isolate->GetCurrentContext(), String::NewFromUtf8(isolate, "modBaseSize", v8::NewStringType::kNormal).ToLocalChecked(), Number::New(isolate, (int)module.modBaseSize));
+  moduleInfo->Set(isolate->GetCurrentContext(), String::NewFromUtf8(isolate, "szExePath", v8::NewStringType::kNormal).ToLocalChecked(), String::NewFromUtf8(isolate, module.szExePath, v8::NewStringType::kNormal).ToLocalChecked());
+  moduleInfo->Set(isolate->GetCurrentContext(), String::NewFromUtf8(isolate, "szModule", v8::NewStringType::kNormal).ToLocalChecked(), String::NewFromUtf8(isolate, module.szModule, v8::NewStringType::kNormal).ToLocalChecked());
+  moduleInfo->Set(isolate->GetCurrentContext(), String::NewFromUtf8(isolate, "th32ProcessID", v8::NewStringType::kNormal).ToLocalChecked(), Number::New(isolate, (int)module.th32ProcessID));
+  moduleInfo->Set(isolate->GetCurrentContext(), String::NewFromUtf8(isolate, "hModule", v8::NewStringType::kNormal).ToLocalChecked(), Number::New(isolate, (uintptr_t)module.hModule));
 
   // findModule can either take one or two arguments,
   // three arguments for asychronous use (third argument is the callback)
@@ -317,7 +317,7 @@ void findModule(const FunctionCallbackInfo<Value>& args) {
     // Callback to let the user handle with the information
     Local<Function> callback = Local<Function>::Cast(args[2]);
     const unsigned argc = 2;
-    Local<Value> argv[argc] = { String::NewFromUtf8(isolate, errorMessage).ToLocalChecked(), moduleInfo };
+    Local<Value> argv[argc] = { String::NewFromUtf8(isolate, errorMessage, v8::NewStringType::kNormal).ToLocalChecked(), moduleInfo };
     callback->Call(isolate->GetCurrentContext(), Null(isolate), argc, argv);
   } else {
     // return JSON
@@ -352,7 +352,7 @@ void readMemory(const FunctionCallbackInfo<Value>& args) {
   Local<Value> argv[argc];
 
   // Define the error message that will be set if no data type is recognised
-  argv[0] = String::NewFromUtf8(isolate, "").ToLocalChecked();
+  argv[0] = String::NewFromUtf8(isolate, "", v8::NewStringType::kNormal).ToLocalChecked();
 
   HANDLE handle = (HANDLE)args[0]->IntegerValue(isolate->GetCurrentContext()).ToChecked();
   DWORD64 address = args[1]->IntegerValue(isolate->GetCurrentContext()).ToChecked();
@@ -460,15 +460,15 @@ void readMemory(const FunctionCallbackInfo<Value>& args) {
 
     if (chars.size() == 0) {
     
-      if (args.Length() == 4) argv[0] = String::NewFromUtf8(isolate, "unable to read string (no null-terminator found after 1 million chars)").ToLocalChecked();
+      if (args.Length() == 4) argv[0] = String::NewFromUtf8(isolate, "unable to read string (no null-terminator found after 1 million chars)", v8::NewStringType::kNormal).ToLocalChecked();
       else return memoryjs::throwError("unable to read string (no null-terminator found after 1 million chars)", isolate);
     
     } else {
       // vector -> string
       std::string str(chars.begin(), chars.end());
 
-      if (args.Length() == 4) argv[1] = String::NewFromUtf8(isolate, str.c_str()).ToLocalChecked();
-      else args.GetReturnValue().Set(String::NewFromUtf8(isolate, str.c_str()).ToLocalChecked());
+      if (args.Length() == 4) argv[1] = String::NewFromUtf8(isolate, str.c_str(), v8::NewStringType::kNormal).ToLocalChecked();
+      else args.GetReturnValue().Set(String::NewFromUtf8(isolate, str.c_str(), v8::NewStringType::kNormal).ToLocalChecked());
     
     }
 
@@ -476,9 +476,9 @@ void readMemory(const FunctionCallbackInfo<Value>& args) {
 
     Vector3 result = Memory.readMemory<Vector3>(handle, address);
     Local<Object> moduleInfo = Object::New(isolate);
-    moduleInfo->Set(isolate->GetCurrentContext(), String::NewFromUtf8(isolate, "x").ToLocalChecked(), Number::New(isolate, result.x));
-    moduleInfo->Set(isolate->GetCurrentContext(), String::NewFromUtf8(isolate, "y").ToLocalChecked(), Number::New(isolate, result.y));
-    moduleInfo->Set(isolate->GetCurrentContext(), String::NewFromUtf8(isolate, "z").ToLocalChecked(), Number::New(isolate, result.z));
+    moduleInfo->Set(isolate->GetCurrentContext(), String::NewFromUtf8(isolate, "x", v8::NewStringType::kNormal).ToLocalChecked(), Number::New(isolate, result.x));
+    moduleInfo->Set(isolate->GetCurrentContext(), String::NewFromUtf8(isolate, "y", v8::NewStringType::kNormal).ToLocalChecked(), Number::New(isolate, result.y));
+    moduleInfo->Set(isolate->GetCurrentContext(), String::NewFromUtf8(isolate, "z", v8::NewStringType::kNormal).ToLocalChecked(), Number::New(isolate, result.z));
 
     if (args.Length() == 4) argv[1] = moduleInfo;
     else args.GetReturnValue().Set(moduleInfo);
@@ -487,17 +487,17 @@ void readMemory(const FunctionCallbackInfo<Value>& args) {
     
     Vector4 result = Memory.readMemory<Vector4>(handle, address);
     Local<Object> moduleInfo = Object::New(isolate);
-    moduleInfo->Set(isolate->GetCurrentContext(), String::NewFromUtf8(isolate, "w").ToLocalChecked(), Number::New(isolate, result.w));
-    moduleInfo->Set(isolate->GetCurrentContext(), String::NewFromUtf8(isolate, "x").ToLocalChecked(), Number::New(isolate, result.x));
-    moduleInfo->Set(isolate->GetCurrentContext(), String::NewFromUtf8(isolate, "y").ToLocalChecked(), Number::New(isolate, result.y));
-    moduleInfo->Set(isolate->GetCurrentContext(), String::NewFromUtf8(isolate, "z").ToLocalChecked(), Number::New(isolate, result.z));
+    moduleInfo->Set(isolate->GetCurrentContext(), String::NewFromUtf8(isolate, "w", v8::NewStringType::kNormal).ToLocalChecked(), Number::New(isolate, result.w));
+    moduleInfo->Set(isolate->GetCurrentContext(), String::NewFromUtf8(isolate, "x", v8::NewStringType::kNormal).ToLocalChecked(), Number::New(isolate, result.x));
+    moduleInfo->Set(isolate->GetCurrentContext(), String::NewFromUtf8(isolate, "y", v8::NewStringType::kNormal).ToLocalChecked(), Number::New(isolate, result.y));
+    moduleInfo->Set(isolate->GetCurrentContext(), String::NewFromUtf8(isolate, "z", v8::NewStringType::kNormal).ToLocalChecked(), Number::New(isolate, result.z));
 
     if (args.Length() == 4) argv[1] = moduleInfo;
     else args.GetReturnValue().Set(moduleInfo);
 
   } else {
 
-    if (args.Length() == 4) argv[0] = String::NewFromUtf8(isolate, "unexpected data type").ToLocalChecked();
+    if (args.Length() == 4) argv[0] = String::NewFromUtf8(isolate, "unexpected data type", v8::NewStringType::kNormal).ToLocalChecked();
     else return memoryjs::throwError("unexpected data type", isolate);
 
   }
@@ -529,7 +529,7 @@ void readBuffer(const FunctionCallbackInfo<Value>& args) {
   Local<Value> argv[argc];
 
   // Define the error message that will be set if no data type is recognised
-  argv[0] = String::NewFromUtf8(isolate, "").ToLocalChecked();
+  argv[0] = String::NewFromUtf8(isolate, "", v8::NewStringType::kNormal).ToLocalChecked();
 
   HANDLE handle = (HANDLE)args[0]->IntegerValue(isolate->GetCurrentContext()).ToChecked();
   DWORD64 address = args[1]->IntegerValue(isolate->GetCurrentContext()).ToChecked();
@@ -627,9 +627,9 @@ void writeMemory(const FunctionCallbackInfo<Value>& args) {
 
     Local<Object> value = Local<Object>::Cast(args[2]);
     Vector3 vector = {
-      value->Get(isolate->GetCurrentContext(), String::NewFromUtf8(isolate, "x").ToLocalChecked()).ToLocalChecked()->NumberValue(isolate->GetCurrentContext()).ToChecked(),
-      value->Get(isolate->GetCurrentContext(), String::NewFromUtf8(isolate, "y").ToLocalChecked()).ToLocalChecked()->NumberValue(isolate->GetCurrentContext()).ToChecked(),
-      value->Get(isolate->GetCurrentContext(), String::NewFromUtf8(isolate, "z").ToLocalChecked()).ToLocalChecked()->NumberValue(isolate->GetCurrentContext()).ToChecked()
+      value->Get(isolate->GetCurrentContext(), String::NewFromUtf8(isolate, "x", v8::NewStringType::kNormal).ToLocalChecked()).ToLocalChecked()->NumberValue(isolate->GetCurrentContext()).ToChecked(),
+      value->Get(isolate->GetCurrentContext(), String::NewFromUtf8(isolate, "y", v8::NewStringType::kNormal).ToLocalChecked()).ToLocalChecked()->NumberValue(isolate->GetCurrentContext()).ToChecked(),
+      value->Get(isolate->GetCurrentContext(), String::NewFromUtf8(isolate, "z", v8::NewStringType::kNormal).ToLocalChecked()).ToLocalChecked()->NumberValue(isolate->GetCurrentContext()).ToChecked()
     };
     Memory.writeMemory<Vector3>(handle, address, vector);
 
@@ -637,10 +637,10 @@ void writeMemory(const FunctionCallbackInfo<Value>& args) {
 
     Local<Object> value = Local<Object>::Cast(args[2]);
     Vector4 vector = {
-      value->Get(isolate->GetCurrentContext(), String::NewFromUtf8(isolate, "w").ToLocalChecked()).ToLocalChecked()->NumberValue(isolate->GetCurrentContext()).ToChecked(),
-      value->Get(isolate->GetCurrentContext(), String::NewFromUtf8(isolate, "x").ToLocalChecked()).ToLocalChecked()->NumberValue(isolate->GetCurrentContext()).ToChecked(),
-      value->Get(isolate->GetCurrentContext(), String::NewFromUtf8(isolate, "y").ToLocalChecked()).ToLocalChecked()->NumberValue(isolate->GetCurrentContext()).ToChecked(),
-      value->Get(isolate->GetCurrentContext(), String::NewFromUtf8(isolate, "z").ToLocalChecked()).ToLocalChecked()->NumberValue(isolate->GetCurrentContext()).ToChecked()
+      value->Get(isolate->GetCurrentContext(), String::NewFromUtf8(isolate, "w", v8::NewStringType::kNormal).ToLocalChecked()).ToLocalChecked()->NumberValue(isolate->GetCurrentContext()).ToChecked(),
+      value->Get(isolate->GetCurrentContext(), String::NewFromUtf8(isolate, "x", v8::NewStringType::kNormal).ToLocalChecked()).ToLocalChecked()->NumberValue(isolate->GetCurrentContext()).ToChecked(),
+      value->Get(isolate->GetCurrentContext(), String::NewFromUtf8(isolate, "y", v8::NewStringType::kNormal).ToLocalChecked()).ToLocalChecked()->NumberValue(isolate->GetCurrentContext()).ToChecked(),
+      value->Get(isolate->GetCurrentContext(), String::NewFromUtf8(isolate, "z", v8::NewStringType::kNormal).ToLocalChecked()).ToLocalChecked()->NumberValue(isolate->GetCurrentContext()).ToChecked()
     };
     Memory.writeMemory<Vector4>(handle, address, vector);
 
@@ -733,7 +733,7 @@ void findPattern(const FunctionCallbackInfo<Value>& args) {
     // Callback to let the user handle with the information
     Local<Function> callback = Local<Function>::Cast(args[6]);
     const unsigned argc = 2;
-    Local<Value> argv[argc] = { String::NewFromUtf8(isolate, errorMessage).ToLocalChecked(), Number::New(isolate, address) };
+    Local<Value> argv[argc] = { String::NewFromUtf8(isolate, errorMessage, v8::NewStringType::kNormal).ToLocalChecked(), Number::New(isolate, address) };
     callback->Call(isolate->GetCurrentContext(), Null(isolate), argc, argv);
   } else {
     // return JSON
@@ -765,17 +765,17 @@ void callFunction(const FunctionCallbackInfo<Value>& args) {
   for (unsigned int i = 0; i < arguments->Length(); i++) {
     Local<Object> argument = Local<Object>::Cast(arguments->Get(isolate->GetCurrentContext(), i).ToLocalChecked());
 
-    Type type = (Type) argument->Get(isolate->GetCurrentContext(), String::NewFromUtf8(isolate, "type").ToLocalChecked()).ToLocalChecked()->Uint32Value(isolate->GetCurrentContext()).ToChecked();
+    Type type = (Type) argument->Get(isolate->GetCurrentContext(), String::NewFromUtf8(isolate, "type", v8::NewStringType::kNormal).ToLocalChecked()).ToLocalChecked()->Uint32Value(isolate->GetCurrentContext()).ToChecked();
     
     if (type == T_STRING) {
-      Local<Value> data = argument->Get(isolate->GetCurrentContext(), String::NewFromUtf8(isolate, "value").ToLocalChecked()).ToLocalChecked();
+      Local<Value> data = argument->Get(isolate->GetCurrentContext(), String::NewFromUtf8(isolate, "value", v8::NewStringType::kNormal).ToLocalChecked()).ToLocalChecked();
       v8::String::Utf8Value stringValueUtf(isolate, data->ToString(isolate->GetCurrentContext()).ToLocalChecked());
       std::string stringValue = std::string(*stringValueUtf);
       parsedArgs.push_back({ type, &stringValue });
     }
 
     if (type == T_INT) {
-      int data = argument->Get(isolate->GetCurrentContext(), String::NewFromUtf8(isolate, "value").ToLocalChecked()).ToLocalChecked()->NumberValue(isolate->GetCurrentContext()).ToChecked();
+      int data = argument->Get(isolate->GetCurrentContext(), String::NewFromUtf8(isolate, "value", v8::NewStringType::kNormal).ToLocalChecked()).ToLocalChecked()->NumberValue(isolate->GetCurrentContext()).ToChecked();
 
       // As we only pass the addresses of the variable to the `call` function and not a copy
       // of the variable itself, we need to ensure that the variable stays alive and in a unique
@@ -790,7 +790,7 @@ void callFunction(const FunctionCallbackInfo<Value>& args) {
     }
 
     if (type == T_FLOAT) {
-      float data = argument->Get(isolate->GetCurrentContext(), String::NewFromUtf8(isolate, "value").ToLocalChecked()).ToLocalChecked()->NumberValue(isolate->GetCurrentContext()).ToChecked();
+      float data = argument->Get(isolate->GetCurrentContext(), String::NewFromUtf8(isolate, "value", v8::NewStringType::kNormal).ToLocalChecked()).ToLocalChecked()->NumberValue(isolate->GetCurrentContext()).ToChecked();
 
       float* memory = (float*) malloc(sizeof(float));
       *memory = data;
@@ -816,10 +816,10 @@ void callFunction(const FunctionCallbackInfo<Value>& args) {
 
   Local<Object> info = Object::New(isolate);
 
-  Local<String> keyString = String::NewFromUtf8(isolate, "returnValue").ToLocalChecked();
+  Local<String> keyString = String::NewFromUtf8(isolate, "returnValue", v8::NewStringType::kNormal).ToLocalChecked();
   
   if (returnType == T_STRING) {
-    info->Set(isolate->GetCurrentContext(), keyString, String::NewFromUtf8(isolate, data.returnString.c_str()).ToLocalChecked());
+    info->Set(isolate->GetCurrentContext(), keyString, String::NewFromUtf8(isolate, data.returnString.c_str(), v8::NewStringType::kNormal).ToLocalChecked());
   }
   
   if (returnType == T_CHAR) {
@@ -844,13 +844,13 @@ void callFunction(const FunctionCallbackInfo<Value>& args) {
     info->Set(isolate->GetCurrentContext(), keyString, Number::New(isolate, value));
   }
 
-  info->Set(isolate->GetCurrentContext(), String::NewFromUtf8(isolate, "exitCode").ToLocalChecked(), Number::New(isolate, data.exitCode));
+  info->Set(isolate->GetCurrentContext(), String::NewFromUtf8(isolate, "exitCode", v8::NewStringType::kNormal).ToLocalChecked(), Number::New(isolate, data.exitCode));
 
   if (args.Length() == 5) {
     // Callback to let the user handle with the information
     Local<Function> callback = Local<Function>::Cast(args[2]);
     const unsigned argc = 2;
-    Local<Value> argv[argc] = { String::NewFromUtf8(isolate, errorMessage).ToLocalChecked(), info };
+    Local<Value> argv[argc] = { String::NewFromUtf8(isolate, errorMessage, v8::NewStringType::kNormal).ToLocalChecked(), info };
     callback->Call(isolate->GetCurrentContext(), Null(isolate), argc, argv);
   } else {
     // return JSON
@@ -903,7 +903,7 @@ void virtualProtectEx(const FunctionCallbackInfo<Value>& args) {
     Local<Function> callback = Local<Function>::Cast(args[5]);
     const unsigned argc = 2;
     Local<Value> argv[argc] = {
-      String::NewFromUtf8(isolate, errorMessage).ToLocalChecked(),
+      String::NewFromUtf8(isolate, errorMessage, v8::NewStringType::kNormal).ToLocalChecked(),
       Number::New(isolate, result)
     };
     callback->Call(isolate->GetCurrentContext(), Null(isolate), argc, argv);
@@ -938,19 +938,19 @@ void getRegions(const FunctionCallbackInfo<Value>& args) {
   for (std::vector<MEMORY_BASIC_INFORMATION>::size_type i = 0; i != regions.size(); i++) {
     Local<Object> region = Object::New(isolate);
 
-    region->Set(isolate->GetCurrentContext(), String::NewFromUtf8(isolate, "BaseAddress").ToLocalChecked(), Number::New(isolate, (DWORD64) regions[i].BaseAddress));
-    region->Set(isolate->GetCurrentContext(), String::NewFromUtf8(isolate, "AllocationBase").ToLocalChecked(), Number::New(isolate, (DWORD64) regions[i].AllocationBase));
-    region->Set(isolate->GetCurrentContext(), String::NewFromUtf8(isolate, "AllocationProtect").ToLocalChecked(), Number::New(isolate, (DWORD) regions[i].AllocationProtect));
-    region->Set(isolate->GetCurrentContext(), String::NewFromUtf8(isolate, "RegionSize").ToLocalChecked(), Number::New(isolate, (SIZE_T) regions[i].RegionSize));
-    region->Set(isolate->GetCurrentContext(), String::NewFromUtf8(isolate, "State").ToLocalChecked(), Number::New(isolate, (DWORD) regions[i].State));
-    region->Set(isolate->GetCurrentContext(), String::NewFromUtf8(isolate, "Protect").ToLocalChecked(), Number::New(isolate, (DWORD) regions[i].Protect));
-    region->Set(isolate->GetCurrentContext(), String::NewFromUtf8(isolate, "Type").ToLocalChecked(), Number::New(isolate, (DWORD) regions[i].Type));
+    region->Set(isolate->GetCurrentContext(), String::NewFromUtf8(isolate, "BaseAddress", v8::NewStringType::kNormal).ToLocalChecked(), Number::New(isolate, (DWORD64) regions[i].BaseAddress));
+    region->Set(isolate->GetCurrentContext(), String::NewFromUtf8(isolate, "AllocationBase", v8::NewStringType::kNormal).ToLocalChecked(), Number::New(isolate, (DWORD64) regions[i].AllocationBase));
+    region->Set(isolate->GetCurrentContext(), String::NewFromUtf8(isolate, "AllocationProtect", v8::NewStringType::kNormal).ToLocalChecked(), Number::New(isolate, (DWORD) regions[i].AllocationProtect));
+    region->Set(isolate->GetCurrentContext(), String::NewFromUtf8(isolate, "RegionSize", v8::NewStringType::kNormal).ToLocalChecked(), Number::New(isolate, (SIZE_T) regions[i].RegionSize));
+    region->Set(isolate->GetCurrentContext(), String::NewFromUtf8(isolate, "State", v8::NewStringType::kNormal).ToLocalChecked(), Number::New(isolate, (DWORD) regions[i].State));
+    region->Set(isolate->GetCurrentContext(), String::NewFromUtf8(isolate, "Protect", v8::NewStringType::kNormal).ToLocalChecked(), Number::New(isolate, (DWORD) regions[i].Protect));
+    region->Set(isolate->GetCurrentContext(), String::NewFromUtf8(isolate, "Type", v8::NewStringType::kNormal).ToLocalChecked(), Number::New(isolate, (DWORD) regions[i].Type));
 
     char moduleName[MAX_PATH];
     DWORD size = GetModuleFileNameExA(handle, (HINSTANCE)regions[i].AllocationBase, moduleName, MAX_PATH);
 
     if (size != 0) {
-      region->Set(isolate->GetCurrentContext(), String::NewFromUtf8(isolate, "szExeFile").ToLocalChecked(), String::NewFromUtf8(isolate, moduleName).ToLocalChecked());
+      region->Set(isolate->GetCurrentContext(), String::NewFromUtf8(isolate, "szExeFile", v8::NewStringType::kNormal).ToLocalChecked(), String::NewFromUtf8(isolate, moduleName, v8::NewStringType::kNormal).ToLocalChecked());
     }
 
 
@@ -961,7 +961,7 @@ void getRegions(const FunctionCallbackInfo<Value>& args) {
     // Callback to let the user handle with the information
     Local<Function> callback = Local<Function>::Cast(args[1]);
     const unsigned argc = 2;
-    Local<Value> argv[argc] = { String::NewFromUtf8(isolate, "").ToLocalChecked(), regionsArray };
+    Local<Value> argv[argc] = { String::NewFromUtf8(isolate, "", v8::NewStringType::kNormal).ToLocalChecked(), regionsArray };
     callback->Call(isolate->GetCurrentContext(), Null(isolate), argc, argv);
   } else {
     // return JSON
@@ -1008,19 +1008,19 @@ void virtualQueryEx(const FunctionCallbackInfo<Value>& args) {
 
   Local<Object> region = Object::New(isolate);
 
-  region->Set(isolate->GetCurrentContext(), String::NewFromUtf8(isolate, "BaseAddress").ToLocalChecked(), Number::New(isolate, (DWORD64) information.BaseAddress));
-  region->Set(isolate->GetCurrentContext(), String::NewFromUtf8(isolate, "AllocationBase").ToLocalChecked(), Number::New(isolate, (DWORD64) information.AllocationBase));
-  region->Set(isolate->GetCurrentContext(), String::NewFromUtf8(isolate, "AllocationProtect").ToLocalChecked(), Number::New(isolate, (DWORD) information.AllocationProtect));
-  region->Set(isolate->GetCurrentContext(), String::NewFromUtf8(isolate, "RegionSize").ToLocalChecked(), Number::New(isolate, (SIZE_T) information.RegionSize));
-  region->Set(isolate->GetCurrentContext(), String::NewFromUtf8(isolate, "State").ToLocalChecked(), Number::New(isolate, (DWORD) information.State));
-  region->Set(isolate->GetCurrentContext(), String::NewFromUtf8(isolate, "Protect").ToLocalChecked(), Number::New(isolate, (DWORD) information.Protect));
-  region->Set(isolate->GetCurrentContext(), String::NewFromUtf8(isolate, "Type").ToLocalChecked(), Number::New(isolate, (DWORD) information.Type));
+  region->Set(isolate->GetCurrentContext(), String::NewFromUtf8(isolate, "BaseAddress", v8::NewStringType::kNormal).ToLocalChecked(), Number::New(isolate, (DWORD64) information.BaseAddress));
+  region->Set(isolate->GetCurrentContext(), String::NewFromUtf8(isolate, "AllocationBase", v8::NewStringType::kNormal).ToLocalChecked(), Number::New(isolate, (DWORD64) information.AllocationBase));
+  region->Set(isolate->GetCurrentContext(), String::NewFromUtf8(isolate, "AllocationProtect", v8::NewStringType::kNormal).ToLocalChecked(), Number::New(isolate, (DWORD) information.AllocationProtect));
+  region->Set(isolate->GetCurrentContext(), String::NewFromUtf8(isolate, "RegionSize", v8::NewStringType::kNormal).ToLocalChecked(), Number::New(isolate, (SIZE_T) information.RegionSize));
+  region->Set(isolate->GetCurrentContext(), String::NewFromUtf8(isolate, "State", v8::NewStringType::kNormal).ToLocalChecked(), Number::New(isolate, (DWORD) information.State));
+  region->Set(isolate->GetCurrentContext(), String::NewFromUtf8(isolate, "Protect", v8::NewStringType::kNormal).ToLocalChecked(), Number::New(isolate, (DWORD) information.Protect));
+  region->Set(isolate->GetCurrentContext(), String::NewFromUtf8(isolate, "Type", v8::NewStringType::kNormal).ToLocalChecked(), Number::New(isolate, (DWORD) information.Type));
 
   if (args.Length() == 3) {
     // Callback to let the user handle with the information
     Local<Function> callback = Local<Function>::Cast(args[1]);
     const unsigned argc = 2;
-    Local<Value> argv[argc] = { String::NewFromUtf8(isolate, "").ToLocalChecked(), region };
+    Local<Value> argv[argc] = { String::NewFromUtf8(isolate, "", v8::NewStringType::kNormal).ToLocalChecked(), region };
     callback->Call(isolate->GetCurrentContext(), Null(isolate), argc, argv);
   } else {
     // return JSON
@@ -1080,7 +1080,7 @@ void virtualAllocEx(const FunctionCallbackInfo<Value>& args) {
     Local<Function> callback = Local<Function>::Cast(args[5]);
     const unsigned argc = 2;
     Local<Value> argv[argc] = {
-      String::NewFromUtf8(isolate, errorMessage).ToLocalChecked(),
+      String::NewFromUtf8(isolate, errorMessage, v8::NewStringType::kNormal).ToLocalChecked(),
       Number::New(isolate, (int)allocatedAddress)
     };
     callback->Call(isolate->GetCurrentContext(), Null(isolate), argc, argv);
@@ -1151,12 +1151,12 @@ void awaitDebugEvent(const FunctionCallbackInfo<Value>& args) {
   if (success && debugEvent.hardwareRegister == hardwareRegister) {
     Local<Object> info = Object::New(isolate);
 
-    info->Set(isolate->GetCurrentContext(), String::NewFromUtf8(isolate, "processId").ToLocalChecked(), Number::New(isolate, (DWORD) debugEvent.processId));
-    info->Set(isolate->GetCurrentContext(), String::NewFromUtf8(isolate, "threadId").ToLocalChecked(), Number::New(isolate, (DWORD) debugEvent.threadId));
-    info->Set(isolate->GetCurrentContext(), String::NewFromUtf8(isolate, "exceptionCode").ToLocalChecked(), Number::New(isolate, (DWORD) debugEvent.exceptionCode));
-    info->Set(isolate->GetCurrentContext(), String::NewFromUtf8(isolate, "exceptionFlags").ToLocalChecked(), Number::New(isolate, (DWORD) debugEvent.exceptionFlags));
-    info->Set(isolate->GetCurrentContext(), String::NewFromUtf8(isolate, "exceptionAddress").ToLocalChecked(), Number::New(isolate, (DWORD64) debugEvent.exceptionAddress));
-    info->Set(isolate->GetCurrentContext(), String::NewFromUtf8(isolate, "hardwareRegister").ToLocalChecked(), Number::New(isolate, static_cast<int>(debugEvent.hardwareRegister))); 
+    info->Set(isolate->GetCurrentContext(), String::NewFromUtf8(isolate, "processId", v8::NewStringType::kNormal).ToLocalChecked(), Number::New(isolate, (DWORD) debugEvent.processId));
+    info->Set(isolate->GetCurrentContext(), String::NewFromUtf8(isolate, "threadId", v8::NewStringType::kNormal).ToLocalChecked(), Number::New(isolate, (DWORD) debugEvent.threadId));
+    info->Set(isolate->GetCurrentContext(), String::NewFromUtf8(isolate, "exceptionCode", v8::NewStringType::kNormal).ToLocalChecked(), Number::New(isolate, (DWORD) debugEvent.exceptionCode));
+    info->Set(isolate->GetCurrentContext(), String::NewFromUtf8(isolate, "exceptionFlags", v8::NewStringType::kNormal).ToLocalChecked(), Number::New(isolate, (DWORD) debugEvent.exceptionFlags));
+    info->Set(isolate->GetCurrentContext(), String::NewFromUtf8(isolate, "exceptionAddress", v8::NewStringType::kNormal).ToLocalChecked(), Number::New(isolate, (DWORD64) debugEvent.exceptionAddress));
+    info->Set(isolate->GetCurrentContext(), String::NewFromUtf8(isolate, "hardwareRegister", v8::NewStringType::kNormal).ToLocalChecked(), Number::New(isolate, static_cast<int>(debugEvent.hardwareRegister))); 
   
     args.GetReturnValue().Set(info);
   }
