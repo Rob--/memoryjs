@@ -848,7 +848,7 @@ void callFunction(const FunctionCallbackInfo<Value>& args) {
 
   if (args.Length() == 5) {
     // Callback to let the user handle with the information
-    Local<Function> callback = Local<Function>::Cast(args[2]);
+    Local<Function> callback = Local<Function>::Cast(args[4]);
     const unsigned argc = 2;
     Local<Value> argv[argc] = { String::NewFromUtf8(isolate, errorMessage), info };
     callback->Call(Null(isolate), argc, argv);
