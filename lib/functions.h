@@ -24,7 +24,7 @@ struct Arg {
 };
 
 struct Call {
-  LPVOID returnValue;
+  int returnValue;
   std::string returnString;
   DWORD exitCode;
 };

@@ -1,12 +1,6 @@
-#include <node.h>
-#include <node_buffer.h>
 #include <windows.h>
-#include <TlHelp32.h>
 #include <psapi.h>
-#include <string>
-#include <vector>
-#include <iostream>
-#include <thread>
+#include <napi.h>
 #include "module.h"
 #include "process.h"
 #include "memoryjs.h"
@@ -17,18 +11,6 @@
 
 #pragma comment(lib, "psapi.lib")
 
-using v8::Exception;
-using v8::Function;
-using v8::FunctionCallbackInfo;
-using v8::Isolate;
-using v8::Local;
-using v8::Object;
-using v8::String;
-using v8::Number;
-using v8::Value;
-using v8::Handle;
-using v8::Array;
-using v8::Boolean;
 
 process Process;
 // module Module;
@@ -44,29 +26,22 @@ struct Vector4 {
   float w, x, y, z;
 };
 
-void memoryjs::throwError(char* error, Isolate* isolate) {
-  isolate->ThrowException(
-    Exception::TypeError(String::NewFromUtf8(isolate, error))
-  );
-  return;
-}
+Napi::Value openProcess(const Napi::CallbackInfo& args) {
+  Napi::Env env = args.Env();
 
-void openProcess(const FunctionCallbackInfo<Value>& args) {
-  Isolate* isolate = args.GetIsolate();
-  
   if (args.Length() != 1 && args.Length() != 2) {
-    memoryjs::throwError("requires 1 argument, or 2 arguments if a callback is being used", isolate);
-    return;
+    Napi::Error::New(env, "requires 1 argument, or 2 arguments if a callback is being used").ThrowAsJavaScriptException();
+    return env.Null();
   }
 
-  if (!args[0]->IsString() && !args[0]->IsNumber()) {
-    memoryjs::throwError("first argument must be a string or a number", isolate);
-    return;
+  if (!args[0].IsString() && !args[0].IsNumber()) {
+    Napi::Error::New(env, "first argument must be a string or a number").ThrowAsJavaScriptException();
+    return env.Null();
   }
 
-  if (args.Length() == 2 && !args[1]->IsFunction()) {
-    memoryjs::throwError("second argument must be a function", isolate);
-    return;
+  if (args.Length() == 2 && !args[1].IsFunction()) {
+    Napi::Error::New(env, "second argument must be a function").ThrowAsJavaScriptException();
+    return env.Null();
   }
 
   // Define error message that may be set by the function that opens the process
@@ -74,9 +49,9 @@ void openProcess(const FunctionCallbackInfo<Value>& args) {
 
   process::Pair pair;
 
-  if (args[0]->IsString()) {
-    v8::String::Utf8Value processName(args[0]);  
-    pair = Process.openProcess((char*) *(processName), &errorMessage);
+  if (args[0].IsString()) {
+    std::string processName(args[0].As<Napi::String>().Utf8Value());
+    pair = Process.openProcess(processName.c_str(), &errorMessage);
 
     // In case it failed to open, let's keep retrying
     // while(!strcmp(process.szExeFile, "")) {
@@ -84,77 +59,77 @@ void openProcess(const FunctionCallbackInfo<Value>& args) {
     // };
   }
 
-  if (args[0]->IsNumber()) {
-    pair = Process.openProcess(args[0]->Uint32Value(), &errorMessage);
+  if (args[0].IsNumber()) {
+    pair = Process.openProcess(args[0].As<Napi::Number>().Uint32Value(), &errorMessage);
 
     // In case it failed to open, let's keep retrying
     // while(!strcmp(process.szExeFile, "")) {
-    //   process = Process.openProcess(args[0]->Uint32Value(), &errorMessage);
+    //   process = Process.openProcess(info[0].As<Napi::Number>().Uint32Value(), &errorMessage);
     // };
   }
 
   // If an error message was returned from the function that opens the process, throw the error.
   // Only throw an error if there is no callback (if there's a callback, the error is passed there).
   if (strcmp(errorMessage, "") && args.Length() != 2) {
-    memoryjs::throwError(errorMessage, isolate);
-    return;
+    Napi::Error::New(env, errorMessage).ThrowAsJavaScriptException();
+    return env.Null();
   }
 
   // Create a v8 Object (JSON) to store the process information
-  Local<Object> processInfo = Object::New(isolate);
+  Napi::Object processInfo = Napi::Object::New(env);
 
-  processInfo->Set(String::NewFromUtf8(isolate, "dwSize"), Number::New(isolate, (int)pair.process.dwSize));
-  processInfo->Set(String::NewFromUtf8(isolate, "th32ProcessID"), Number::New(isolate, (int)pair.process.th32ProcessID));
-  processInfo->Set(String::NewFromUtf8(isolate, "cntThreads"), Number::New(isolate, (int)pair.process.cntThreads));
-  processInfo->Set(String::NewFromUtf8(isolate, "th32ParentProcessID"), Number::New(isolate, (int)pair.process.th32ParentProcessID));
-  processInfo->Set(String::NewFromUtf8(isolate, "pcPriClassBase"), Number::New(isolate, (int)pair.process.pcPriClassBase));
-  processInfo->Set(String::NewFromUtf8(isolate, "szExeFile"), String::NewFromUtf8(isolate, pair.process.szExeFile));
-  processInfo->Set(String::NewFromUtf8(isolate, "handle"), Number::New(isolate, (int)pair.handle));
+  processInfo.Set(Napi::String::New(env, "dwSize"), Napi::Value::From(env, (int)pair.process.dwSize));
+  processInfo.Set(Napi::String::New(env, "th32ProcessID"), Napi::Value::From(env, (int)pair.process.th32ProcessID));
+  processInfo.Set(Napi::String::New(env, "cntThreads"), Napi::Value::From(env, (int)pair.process.cntThreads));
+  processInfo.Set(Napi::String::New(env, "th32ParentProcessID"), Napi::Value::From(env, (int)pair.process.th32ParentProcessID));
+  processInfo.Set(Napi::String::New(env, "pcPriClassBase"), Napi::Value::From(env, (int)pair.process.pcPriClassBase));
+  processInfo.Set(Napi::String::New(env, "szExeFile"), Napi::String::New(env, pair.process.szExeFile));
+  processInfo.Set(Napi::String::New(env, "handle"), Napi::Value::From(env, (uintptr_t)pair.handle));
 
   DWORD64 base = module::getBaseAddress(pair.process.szExeFile, pair.process.th32ProcessID);
-  processInfo->Set(String::NewFromUtf8(isolate, "modBaseAddr"), Number::New(isolate, (uintptr_t)base));
+  processInfo.Set(Napi::String::New(env, "modBaseAddr"), Napi::Value::From(env, (uintptr_t)base));
 
   // openProcess can either take one argument or can take
   // two arguments for asychronous use (second argument is the callback)
   if (args.Length() == 2) {
     // Callback to let the user handle with the information
-    Local<Function> callback = Local<Function>::Cast(args[1]);
-    const unsigned argc = 2;
-    Local<Value> argv[argc] = { String::NewFromUtf8(isolate, errorMessage), processInfo };
-    callback->Call(Null(isolate), argc, argv);
+    Napi::Function callback = args[1].As<Napi::Function>();
+    callback.Call(env.Global(), { Napi::String::New(env, errorMessage), processInfo });
+    return env.Null();
   } else {
     // return JSON
-    args.GetReturnValue().Set(processInfo);
+    return processInfo;
   }
 }
 
-void closeProcess(const FunctionCallbackInfo<Value>& args) {
-  Isolate* isolate = args.GetIsolate();
+Napi::Value closeProcess(const Napi::CallbackInfo& args) {
+  Napi::Env env = args.Env();
 
   if (args.Length() != 1) {
-    memoryjs::throwError("requires 1 argument", isolate);
-    return;
+    Napi::Error::New(env, "requires 1 argument").ThrowAsJavaScriptException();
+    return env.Null();
   }
 
-  if (!args[0]->IsNumber()) {
-    memoryjs::throwError("first argument must be a number", isolate);
-    return;
+  if (!args[0].IsNumber()) {
+    Napi::Error::New(env, "first argument must be a number").ThrowAsJavaScriptException();
+    return env.Null();
   }
 
-  Process.closeProcess((HANDLE)args[0]->Int32Value());
+  Process.closeProcess((HANDLE)args[0].As<Napi::Number>().Int64Value());
+  return env.Null();
 }
 
-void getProcesses(const FunctionCallbackInfo<Value>& args) {
-  Isolate* isolate = args.GetIsolate();
+Napi::Value getProcesses(const Napi::CallbackInfo& args) {
+  Napi::Env env = args.Env();
 
   if (args.Length() > 1) {
-    memoryjs::throwError("requires either 0 arguments or 1 argument if a callback is being used", isolate);
-    return;
+    Napi::Error::New(env, "requires either 0 arguments or 1 argument if a callback is being used").ThrowAsJavaScriptException();
+    return env.Null();
   }
 
-  if (args.Length() == 1 && !args[0]->IsFunction()) {
-    memoryjs::throwError("first argument must be a function", isolate);
-    return;
+  if (args.Length() == 1 && !args[0].IsFunction()) {
+    Napi::Error::New(env, "first argument must be a function").ThrowAsJavaScriptException();
+    return env.Null();
   }
 
   // Define error message that may be set by the function that gets the processes
@@ -165,275 +140,255 @@ void getProcesses(const FunctionCallbackInfo<Value>& args) {
   // If an error message was returned from the function that gets the processes, throw the error.
   // Only throw an error if there is no callback (if there's a callback, the error is passed there).
   if (strcmp(errorMessage, "") && args.Length() != 1) {
-    memoryjs::throwError(errorMessage, isolate);
-    return;
+    Napi::Error::New(env, errorMessage).ThrowAsJavaScriptException();
+    return env.Null();
   }
 
   // Creates v8 array with the size being that of the processEntries vector processes is an array of JavaScript objects
-  Handle<Array> processes = Array::New(isolate, processEntries.size());
+  Napi::Array processes = Napi::Array::New(env, processEntries.size());
 
   // Loop over all processes found
   for (std::vector<PROCESSENTRY32>::size_type i = 0; i != processEntries.size(); i++) {
     // Create a v8 object to store the current process' information
-    Local<Object> process = Object::New(isolate);
+    Napi::Object process = Napi::Object::New(env);
 
-    process->Set(String::NewFromUtf8(isolate, "cntThreads"), Number::New(isolate, (int)processEntries[i].cntThreads));
-    process->Set(String::NewFromUtf8(isolate, "szExeFile"), String::NewFromUtf8(isolate, processEntries[i].szExeFile));
-    process->Set(String::NewFromUtf8(isolate, "th32ProcessID"), Number::New(isolate, (int)processEntries[i].th32ProcessID));
-    process->Set(String::NewFromUtf8(isolate, "th32ParentProcessID"), Number::New(isolate, (int)processEntries[i].th32ParentProcessID));
-    process->Set(String::NewFromUtf8(isolate, "pcPriClassBase"), Number::New(isolate, (int)processEntries[i].pcPriClassBase));
+    process.Set(Napi::String::New(env, "cntThreads"), Napi::Value::From(env, (int)processEntries[i].cntThreads));
+    process.Set(Napi::String::New(env, "szExeFile"), Napi::String::New(env, processEntries[i].szExeFile));
+    process.Set(Napi::String::New(env, "th32ProcessID"), Napi::Value::From(env, (int)processEntries[i].th32ProcessID));
+    process.Set(Napi::String::New(env, "th32ParentProcessID"), Napi::Value::From(env, (int)processEntries[i].th32ParentProcessID));
+    process.Set(Napi::String::New(env, "pcPriClassBase"), Napi::Value::From(env, (int)processEntries[i].pcPriClassBase));
 
     // Push the object to the array
-    processes->Set(i, process);
+    processes.Set(i, process);
   }
 
   /* getProcesses can either take no arguments or one argument
      one argument is for asychronous use (the callback) */
   if (args.Length() == 1) {
     // Callback to let the user handle with the information
-    Local<Function> callback = Local<Function>::Cast(args[0]);
-    const unsigned argc = 2;
-    Local<Value> argv[argc] = { String::NewFromUtf8(isolate, errorMessage), processes };
-    callback->Call(Null(isolate), argc, argv);
+    Napi::Function callback = args[0].As<Napi::Function>();
+    callback.Call(env.Global(), { Napi::String::New(env, errorMessage), processes });
+    return env.Null();
   } else {
     // return JSON
-    args.GetReturnValue().Set(processes);
+    return processes;
   }
 }
 
-void getModules(const FunctionCallbackInfo<Value>& args) {
-  Isolate* isolate = args.GetIsolate();
+Napi::Value getModules(const Napi::CallbackInfo& args) {
+  Napi::Env env = args.Env();
 
   if (args.Length() != 1 && args.Length() != 2) {
-    memoryjs::throwError("requires 1 argument, or 2 arguments if a callback is being used", isolate);
-    return;
+    Napi::Error::New(env, "requires 1 argument, or 2 arguments if a callback is being used").ThrowAsJavaScriptException();
+    return env.Null();
   }
 
-  if (!args[0]->IsNumber()) {
-    memoryjs::throwError("first argument must be a number", isolate);
-    return;
+  if (!args[0].IsNumber()) {
+    Napi::Error::New(env, "first argument must be a number").ThrowAsJavaScriptException();
+    return env.Null();
   }
 
-  if (args.Length() == 2 && !args[1]->IsFunction()) {
-    memoryjs::throwError("first argument must be a number, second argument must be a function", isolate);
-    return;
+  if (args.Length() == 2 && !args[1].IsFunction()) {
+    Napi::Error::New(env, "first argument must be a number, second argument must be a function").ThrowAsJavaScriptException();
+    return env.Null();
   }
 
   // Define error message that may be set by the function that gets the modules
   char* errorMessage = "";
 
-  std::vector<MODULEENTRY32> moduleEntries = module::getModules(args[0]->Int32Value(), &errorMessage);
+  std::vector<MODULEENTRY32> moduleEntries = module::getModules(args[0].As<Napi::Number>().Int32Value(), &errorMessage);
 
   // If an error message was returned from the function getting the modules, throw the error.
   // Only throw an error if there is no callback (if there's a callback, the error is passed there).
   if (strcmp(errorMessage, "") && args.Length() != 2) {
-    memoryjs::throwError(errorMessage, isolate);
-    return;
+    Napi::Error::New(env, errorMessage).ThrowAsJavaScriptException();
+    return env.Null();
   }
 
   // Creates v8 array with the size being that of the moduleEntries vector
   // modules is an array of JavaScript objects
-  Handle<Array> modules = Array::New(isolate, moduleEntries.size());
+  Napi::Array modules = Napi::Array::New(env, moduleEntries.size());
 
   // Loop over all modules found
   for (std::vector<MODULEENTRY32>::size_type i = 0; i != moduleEntries.size(); i++) {
     //  Create a v8 object to store the current module's information
-    Local<Object> module = Object::New(isolate);
+    Napi::Object module = Napi::Object::New(env);
 
-    module->Set(String::NewFromUtf8(isolate, "modBaseAddr"), Number::New(isolate, (uintptr_t)moduleEntries[i].modBaseAddr));
-    module->Set(String::NewFromUtf8(isolate, "modBaseSize"), Number::New(isolate, (int)moduleEntries[i].modBaseSize));
-    module->Set(String::NewFromUtf8(isolate, "szExePath"), String::NewFromUtf8(isolate, moduleEntries[i].szExePath));
-    module->Set(String::NewFromUtf8(isolate, "szModule"), String::NewFromUtf8(isolate, moduleEntries[i].szModule));
-    module->Set(String::NewFromUtf8(isolate, "th32ModuleID"), Number::New(isolate, (int)moduleEntries[i].th32ProcessID));
+    module.Set(Napi::String::New(env, "modBaseAddr"), Napi::Value::From(env, (uintptr_t)moduleEntries[i].modBaseAddr));
+    module.Set(Napi::String::New(env, "modBaseSize"), Napi::Value::From(env, (int)moduleEntries[i].modBaseSize));
+    module.Set(Napi::String::New(env, "szExePath"), Napi::String::New(env, moduleEntries[i].szExePath));
+    module.Set(Napi::String::New(env, "szModule"), Napi::String::New(env, moduleEntries[i].szModule));
+    module.Set(Napi::String::New(env, "th32ModuleID"), Napi::Value::From(env, (int)moduleEntries[i].th32ProcessID));
 
     // Push the object to the array
-    modules->Set(i, module);
+    modules.Set(i, module);
   }
 
   // getModules can either take one argument or two arguments
   // one/two arguments is for asychronous use (the callback)
   if (args.Length() == 2) {
     // Callback to let the user handle with the information
-    Local<Function> callback = Local<Function>::Cast(args[1]);
-    const unsigned argc = 2;
-    Local<Value> argv[argc] = { String::NewFromUtf8(isolate, errorMessage), modules };
-    callback->Call(Null(isolate), argc, argv);
+    Napi::Function callback = args[1].As<Napi::Function>();
+    callback.Call(env.Global(), { Napi::String::New(env, errorMessage), modules });
+    return env.Null();
   } else {
     // return JSON
-    args.GetReturnValue().Set(modules);
+    return modules;
   }
 }
 
-void findModule(const FunctionCallbackInfo<Value>& args) {
-  Isolate* isolate = args.GetIsolate();
+Napi::Value findModule(const Napi::CallbackInfo& args) {
+  Napi::Env env = args.Env();
 
   if (args.Length() != 1 && args.Length() != 2 && args.Length() != 3) {
-    memoryjs::throwError("requires 1 argument, 2 arguments, or 3 arguments if a callback is being used", isolate);
-    return;
+    Napi::Error::New(env, "requires 1 argument, 2 arguments, or 3 arguments if a callback is being used").ThrowAsJavaScriptException();
+    return env.Null();
   }
 
-  if (!args[0]->IsString() && !args[1]->IsNumber()) {
-    memoryjs::throwError("first argument must be a string, second argument must be a number", isolate);
-    return;
+  if (!args[0].IsString() && !args[1].IsNumber()) {
+    Napi::Error::New(env, "first argument must be a string, second argument must be a number").ThrowAsJavaScriptException();
+    return env.Null();
   }
 
-  if (args.Length() == 3 && !args[2]->IsFunction()) {
-    memoryjs::throwError("third argument must be a function", isolate);
-    return;
+  if (args.Length() == 3 && !args[2].IsFunction()) {
+    Napi::Error::New(env, "third argument must be a function").ThrowAsJavaScriptException();
+    return env.Null();
   }
-	
-  v8::String::Utf8Value moduleName(args[0]);
-	
+
+  std::string moduleName(args[0].As<Napi::String>().Utf8Value());
+
   // Define error message that may be set by the function that gets the modules
   char* errorMessage = "";
 
-  MODULEENTRY32 module = module::findModule((char*) *(moduleName), args[1]->Int32Value(), &errorMessage);
+  MODULEENTRY32 module = module::findModule(moduleName.c_str(), args[1].As<Napi::Number>().Int32Value(), &errorMessage);
 
   // If an error message was returned from the function getting the module, throw the error.
   // Only throw an error if there is no callback (if there's a callback, the error is passed there).
   if (strcmp(errorMessage, "") && args.Length() != 3) {
-    memoryjs::throwError(errorMessage, isolate);
-    return;
+    Napi::Error::New(env, errorMessage).ThrowAsJavaScriptException();
+    return env.Null();
   }
 
   // In case it failed to open, let's keep retrying
   while (!strcmp(module.szExePath, "")) {
-    module = module::findModule((char*) *(moduleName), args[1]->Int32Value(), &errorMessage);
+    module = module::findModule(moduleName.c_str(), args[1].As<Napi::Number>().Int32Value(), &errorMessage);
   };
 
   // Create a v8 Object (JSON) to store the process information
-  Local<Object> moduleInfo = Object::New(isolate);
+  Napi::Object moduleInfo = Napi::Object::New(env);
 
-  moduleInfo->Set(String::NewFromUtf8(isolate, "modBaseAddr"), Number::New(isolate, (uintptr_t)module.modBaseAddr));
-  moduleInfo->Set(String::NewFromUtf8(isolate, "modBaseSize"), Number::New(isolate, (int)module.modBaseSize));
-  moduleInfo->Set(String::NewFromUtf8(isolate, "szExePath"), String::NewFromUtf8(isolate, module.szExePath));
-  moduleInfo->Set(String::NewFromUtf8(isolate, "szModule"), String::NewFromUtf8(isolate, module.szModule));
-  moduleInfo->Set(String::NewFromUtf8(isolate, "th32ProcessID"), Number::New(isolate, (int)module.th32ProcessID));
-  moduleInfo->Set(String::NewFromUtf8(isolate, "hModule"), Number::New(isolate, (uintptr_t)module.hModule));
+  moduleInfo.Set(Napi::String::New(env, "modBaseAddr"), Napi::Value::From(env, (uintptr_t)module.modBaseAddr));
+  moduleInfo.Set(Napi::String::New(env, "modBaseSize"), Napi::Value::From(env, (int)module.modBaseSize));
+  moduleInfo.Set(Napi::String::New(env, "szExePath"), Napi::String::New(env, module.szExePath));
+  moduleInfo.Set(Napi::String::New(env, "szModule"), Napi::String::New(env, module.szModule));
+  moduleInfo.Set(Napi::String::New(env, "th32ProcessID"), Napi::Value::From(env, (int)module.th32ProcessID));
+  moduleInfo.Set(Napi::String::New(env, "hModule"), Napi::Value::From(env, (uintptr_t)module.hModule));
 
   // findModule can either take one or two arguments,
   // three arguments for asychronous use (third argument is the callback)
   if (args.Length() == 3) {
     // Callback to let the user handle with the information
-    Local<Function> callback = Local<Function>::Cast(args[2]);
-    const unsigned argc = 2;
-    Local<Value> argv[argc] = { String::NewFromUtf8(isolate, errorMessage), moduleInfo };
-    callback->Call(Null(isolate), argc, argv);
+    Napi::Function callback = args[2].As<Napi::Function>();
+    callback.Call(env.Global(), { Napi::String::New(env, errorMessage), moduleInfo });
+    return env.Null();
   } else {
     // return JSON
-    args.GetReturnValue().Set(moduleInfo);
+    return moduleInfo;
   }
 }
 
-void readMemory(const FunctionCallbackInfo<Value>& args) {
-  Isolate* isolate = args.GetIsolate();
+Napi::Value readMemory(const Napi::CallbackInfo& args) {
+  Napi::Env env = args.Env();
 
   if (args.Length() != 3 && args.Length() != 4) {
-    memoryjs::throwError("requires 3 arguments, or 4 arguments if a callback is being used", isolate);
-    return;
+    Napi::Error::New(env, "requires 3 arguments, or 4 arguments if a callback is being used").ThrowAsJavaScriptException();
+    return env.Null();
   }
 
-  if (!args[0]->IsNumber() && !args[1]->IsNumber() && !args[2]->IsString()) {
-    memoryjs::throwError("first and second argument must be a number, third argument must be a string", isolate);
-    return;
+  if (!args[0].IsNumber() && !args[1].IsNumber() && !args[2].IsString()) {
+    Napi::Error::New(env, "first and second argument must be a number, third argument must be a string").ThrowAsJavaScriptException();
+    return env.Null();
   }
 
-  if (args.Length() == 4 && !args[3]->IsFunction()) {
-    memoryjs::throwError("fourth argument must be a function", isolate);
-    return;
+  if (args.Length() == 4 && !args[3].IsFunction()) {
+    Napi::Error::New(env, "fourth argument must be a function").ThrowAsJavaScriptException();
+    return env.Null();
   }
 
-  v8::String::Utf8Value dataTypeArg(args[2]);
-  char* dataType = (char*) *(dataTypeArg);
-
-  // Set callback variables in the case the a callback parameter has been passed
-  Local<Function> callback = Local<Function>::Cast(args[3]);
-  const unsigned argc = 2;
-  Local<Value> argv[argc];
+  std::string dataTypeArg(args[2].As<Napi::String>().Utf8Value());
+  const char* dataType = dataTypeArg.c_str();
 
   // Define the error message that will be set if no data type is recognised
-  argv[0] = String::NewFromUtf8(isolate, "");
+  std::string errorMessage;
+  Napi::Value retVal = env.Null();
 
-  HANDLE handle = (HANDLE)args[0]->IntegerValue();
-  DWORD64 address = args[1]->IntegerValue();
+  HANDLE handle = (HANDLE)args[0].As<Napi::Number>().Int64Value();
+  DWORD64 address = args[1].As<Napi::Number>().Int64Value();
 
   if (!strcmp(dataType, "byte")) {
 
     unsigned char result = Memory.readMemory<unsigned char>(handle, address);
-    if (args.Length() == 4) argv[1] = Number::New(isolate, result);
-    else args.GetReturnValue().Set(Number::New(isolate, result));
+    retVal = Napi::Value::From(env, result);
 
   } else if (!strcmp(dataType, "int")) {
 
     int result = Memory.readMemory<int>(handle, address);
-    if (args.Length() == 4) argv[1] = Number::New(isolate, result);
-    else args.GetReturnValue().Set(Number::New(isolate, result));
+    retVal = Napi::Value::From(env, result);
 
   } else if (!strcmp(dataType, "int32")) {
 
     int32_t result = Memory.readMemory<int32_t>(handle, address);
-    if (args.Length() == 4) argv[1] = Number::New(isolate, result);
-    else args.GetReturnValue().Set(Number::New(isolate, result));
+    retVal = Napi::Value::From(env, result);
 
   } else if (!strcmp(dataType, "uint32")) {
 
     uint32_t result = Memory.readMemory<uint32_t>(handle, address);
-    if (args.Length() == 4) argv[1] = Number::New(isolate, result);
-    else args.GetReturnValue().Set(Number::New(isolate, result));
+    retVal = Napi::Value::From(env, result);
 
   } else if (!strcmp(dataType, "int64")) {
 
     int64_t result = Memory.readMemory<int64_t>(handle, address);
-    if (args.Length() == 4) argv[1] = Number::New(isolate, result);
-    else args.GetReturnValue().Set(Number::New(isolate, result));
+    retVal = Napi::Value::From(env, result);
 
   } else if (!strcmp(dataType, "uint64")) {
 
     uint64_t result = Memory.readMemory<uint64_t>(handle, address);
-    if (args.Length() == 4) argv[1] = Number::New(isolate, result);
-    else args.GetReturnValue().Set(Number::New(isolate, result));
+    retVal = Napi::Value::From(env, result);
 
   } else if (!strcmp(dataType, "dword")) {
 
     DWORD result = Memory.readMemory<DWORD>(handle, address);
-    if (args.Length() == 4) argv[1] = Number::New(isolate, result);
-    else args.GetReturnValue().Set(Number::New(isolate, result));
+    retVal = Napi::Value::From(env, result);
 
   } else if (!strcmp(dataType, "short")) {
 
     short result = Memory.readMemory<short>(handle, address);
-    if (args.Length() == 4) argv[1] = Number::New(isolate, result);
-    else args.GetReturnValue().Set(Number::New(isolate, result));
+    retVal = Napi::Value::From(env, result);
 
   } else if (!strcmp(dataType, "long")) {
 
     long result = Memory.readMemory<long>(handle, address);
-    if (args.Length() == 4) argv[1] = Number::New(isolate, result);
-    else args.GetReturnValue().Set(Number::New(isolate, result));
+    retVal = Napi::Value::From(env, result);
 
   } else if (!strcmp(dataType, "float")) {
 
     float result = Memory.readMemory<float>(handle, address);
-    if (args.Length() == 4) argv[1] = Number::New(isolate, result);
-    else args.GetReturnValue().Set(Number::New(isolate, result));
+    retVal = Napi::Value::From(env, result);
 
   } else if (!strcmp(dataType, "double")) {
-		
+
     double result = Memory.readMemory<double>(handle, address);
-    if (args.Length() == 4) argv[1] = Number::New(isolate, result);
-    else args.GetReturnValue().Set(Number::New(isolate, result));
+    retVal = Napi::Value::From(env, result);
 
   } else if (!strcmp(dataType, "ptr") || !strcmp(dataType, "pointer")) {
 
     intptr_t result = Memory.readMemory<intptr_t>(handle, address);
-    if (args.Length() == 4) argv[1] = Number::New(isolate, result);
-    else args.GetReturnValue().Set(Number::New(isolate, result));
+    retVal = Napi::Value::From(env, result);
 
   } else if (!strcmp(dataType, "bool") || !strcmp(dataType, "boolean")) {
 
     bool result = Memory.readMemory<bool>(handle, address);
-    if (args.Length() == 4) argv[1] = Boolean::New(isolate, result);
-    else args.GetReturnValue().Set(Boolean::New(isolate, result));
+    retVal = Napi::Boolean::New(env, result);
 
   } else if (!strcmp(dataType, "string") || !strcmp(dataType, "str")) {
 
@@ -459,234 +414,244 @@ void readMemory(const FunctionCallbackInfo<Value>& args) {
     }
 
     if (chars.size() == 0) {
-    
-      if (args.Length() == 4) argv[0] = String::NewFromUtf8(isolate, "unable to read string (no null-terminator found after 1 million chars)");
-      else return memoryjs::throwError("unable to read string (no null-terminator found after 1 million chars)", isolate);
-    
+
+      if (args.Length() == 4) errorMessage = "unable to read string (no null-terminator found after 1 million chars)";
+      else
+      {
+        Napi::Error::New(env, "unable to read string (no null-terminator found after 1 million chars)").ThrowAsJavaScriptException();
+        return env.Null();
+      }
+
     } else {
       // vector -> string
       std::string str(chars.begin(), chars.end());
 
-      if (args.Length() == 4) argv[1] = String::NewFromUtf8(isolate, str.c_str());
-      else args.GetReturnValue().Set(String::NewFromUtf8(isolate, str.c_str()));
-    
+      retVal = Napi::String::New(env, str.c_str());
     }
 
   } else if (!strcmp(dataType, "vector3") || !strcmp(dataType, "vec3")) {
 
     Vector3 result = Memory.readMemory<Vector3>(handle, address);
-    Local<Object> moduleInfo = Object::New(isolate);
-    moduleInfo->Set(String::NewFromUtf8(isolate, "x"), Number::New(isolate, result.x));
-    moduleInfo->Set(String::NewFromUtf8(isolate, "y"), Number::New(isolate, result.y));
-    moduleInfo->Set(String::NewFromUtf8(isolate, "z"), Number::New(isolate, result.z));
+    Napi::Object moduleInfo = Napi::Object::New(env);
+    moduleInfo.Set(Napi::String::New(env, "x"), Napi::Value::From(env, result.x));
+    moduleInfo.Set(Napi::String::New(env, "y"), Napi::Value::From(env, result.y));
+    moduleInfo.Set(Napi::String::New(env, "z"), Napi::Value::From(env, result.z));
 
-    if (args.Length() == 4) argv[1] = moduleInfo;
-    else args.GetReturnValue().Set(moduleInfo);
-
+    retVal = moduleInfo;
   } else if (!strcmp(dataType, "vector4") || !strcmp(dataType, "vec4")) {
-    
+
     Vector4 result = Memory.readMemory<Vector4>(handle, address);
-    Local<Object> moduleInfo = Object::New(isolate);
-    moduleInfo->Set(String::NewFromUtf8(isolate, "w"), Number::New(isolate, result.w));
-    moduleInfo->Set(String::NewFromUtf8(isolate, "x"), Number::New(isolate, result.x));
-    moduleInfo->Set(String::NewFromUtf8(isolate, "y"), Number::New(isolate, result.y));
-    moduleInfo->Set(String::NewFromUtf8(isolate, "z"), Number::New(isolate, result.z));
+    Napi::Object moduleInfo = Napi::Object::New(env);
+    moduleInfo.Set(Napi::String::New(env, "w"), Napi::Value::From(env, result.w));
+    moduleInfo.Set(Napi::String::New(env, "x"), Napi::Value::From(env, result.x));
+    moduleInfo.Set(Napi::String::New(env, "y"), Napi::Value::From(env, result.y));
+    moduleInfo.Set(Napi::String::New(env, "z"), Napi::Value::From(env, result.z));
 
-    if (args.Length() == 4) argv[1] = moduleInfo;
-    else args.GetReturnValue().Set(moduleInfo);
-
+    retVal = moduleInfo;
   } else {
 
-    if (args.Length() == 4) argv[0] = String::NewFromUtf8(isolate, "unexpected data type");
-    else return memoryjs::throwError("unexpected data type", isolate);
-
+    if (args.Length() == 4) errorMessage = "unexpected data type";
+    else
+    {
+      Napi::Error::New(env, "unexpected data type").ThrowAsJavaScriptException();
+      return env.Null();
+    }
   }
 
-  if (args.Length() == 4) callback->Call(Null(isolate), argc, argv);
+  if (args.Length() == 4)
+  {
+    Napi::Function callback = args[3].As<Napi::Function>();
+    if (!errorMessage.empty())
+      callback.Call(env.Global(), { Napi::String::New(env, errorMessage) });
+    else
+      callback.Call(env.Global(), { Napi::String::New(env, ""), retVal });
+    return env.Null();
+  }
+  else
+  {
+    return retVal;
+  }
 }
 
-void readBuffer(const FunctionCallbackInfo<Value>& args) {
-  Isolate* isolate = args.GetIsolate();
+Napi::Value readBuffer(const Napi::CallbackInfo& args) {
+  Napi::Env env = args.Env();
 
   if (args.Length() != 3 && args.Length() != 4) {
-    memoryjs::throwError("requires 3 arguments, or 4 arguments if a callback is being used", isolate);
-    return;
+    Napi::Error::New(env, "requires 3 arguments, or 4 arguments if a callback is being used").ThrowAsJavaScriptException();
+    return env.Null();
   }
 
-  if (!args[0]->IsNumber() && !args[1]->IsNumber() && !args[2]->IsNumber()) {
-    memoryjs::throwError("first, second and third arguments must be a number", isolate);
-    return;
+  if (!args[0].IsNumber() && !args[1].IsNumber() && !args[2].IsNumber()) {
+    Napi::Error::New(env, "first, second and third arguments must be a number").ThrowAsJavaScriptException();
+    return env.Null();
   }
 
-  if (args.Length() == 4 && !args[3]->IsFunction()) {
-    memoryjs::throwError("fourth argument must be a function", isolate);
-    return;
+  if (args.Length() == 4 && !args[3].IsFunction()) {
+    Napi::Error::New(env, "fourth argument must be a function").ThrowAsJavaScriptException();
+    return env.Null();
   }
 
-  // Set callback variables in the case the a callback parameter has been passed
-  Local<Function> callback = Local<Function>::Cast(args[3]);
-  const unsigned argc = 2;
-  Local<Value> argv[argc];
-
-  // Define the error message that will be set if no data type is recognised
-  argv[0] = String::NewFromUtf8(isolate, "");
-
-  HANDLE handle = (HANDLE)args[0]->IntegerValue();
-  DWORD64 address = args[1]->IntegerValue();
-  SIZE_T size = args[2]->IntegerValue();
+  HANDLE handle = (HANDLE)args[0].As<Napi::Number>().Int64Value();
+  DWORD64 address = args[1].As<Napi::Number>().Int64Value();
+  SIZE_T size = args[2].As<Napi::Number>().Int64Value();
   char* data = Memory.readBuffer(handle, address, size);
 
-  auto buffer = node::Buffer::New(isolate, data, size).ToLocalChecked();
+  Napi::Buffer<char> buffer = Napi::Buffer<char>::New(env, data, size);
 
   if (args.Length() == 4) {
-    argv[1] = buffer;
-    callback->Call(Null(isolate), argc, argv);
+    Napi::Function callback = args[3].As<Napi::Function>();
+    callback.Call(env.Global(), { Napi::String::New(env, ""), buffer });
+    return env.Null();
   } else {
-    args.GetReturnValue().Set(buffer);
+    return buffer;
   }
 }
 
-void writeMemory(const FunctionCallbackInfo<Value>& args) {
-  Isolate* isolate = args.GetIsolate();
+Napi::Value writeMemory(const Napi::CallbackInfo& args) {
+  Napi::Env env = args.Env();
 
   if (args.Length() != 4) {
-    memoryjs::throwError("requires 4 arguments", isolate);
-    return;
+    Napi::Error::New(env, "requires 4 arguments").ThrowAsJavaScriptException();
+    return env.Null();
   }
 
-  if (!args[0]->IsNumber() && !args[1]->IsNumber() && !args[3]->IsString()) {
-    memoryjs::throwError("first and second argument must be a number, third argument must be a string", isolate);
-    return;
+  if (!args[0].IsNumber() && !args[1].IsNumber() && !args[3].IsString()) {
+    Napi::Error::New(env, "first and second argument must be a number, third argument must be a string").ThrowAsJavaScriptException();
+    return env.Null();
   }
 
-  v8::String::Utf8Value dataTypeArg(args[3]);
-  char* dataType = (char*)*(dataTypeArg);
+  std::string dataTypeArg(args[3].As<Napi::String>().Utf8Value());
+  const char* dataType = dataTypeArg.c_str();
 
-  HANDLE handle = (HANDLE)args[0]->IntegerValue();
-  DWORD64 address = args[1]->IntegerValue();
+  HANDLE handle = (HANDLE)args[0].As<Napi::Number>().Int64Value();
+  DWORD64 address = args[1].As<Napi::Number>().Int64Value();
 
   if (!strcmp(dataType, "byte")) {
-  
-    Memory.writeMemory<unsigned char>(handle, address, args[2]->Uint32Value());
-  
+
+    Memory.writeMemory<unsigned char>(handle, address, args[2].As<Napi::Number>().Uint32Value());
+
   } else if (!strcmp(dataType, "int")) {
 
-    Memory.writeMemory<int>(handle, address, args[2]->NumberValue());
+    Memory.writeMemory<int>(handle, address, args[2].As<Napi::Number>().Int32Value());
 
   } else if (!strcmp(dataType, "int32")) {
 
-    Memory.writeMemory<int32_t>(handle, address, args[2]->Int32Value());
+    Memory.writeMemory<int32_t>(handle, address, args[2].As<Napi::Number>().Int32Value());
 
   } else if (!strcmp(dataType, "uint32")) {
 
-    Memory.writeMemory<uint32_t>(handle, address, args[2]->Uint32Value());
+    Memory.writeMemory<uint32_t>(handle, address, args[2].As<Napi::Number>().Uint32Value());
 
   } else if (!strcmp(dataType, "int64")) {
 
-    Memory.writeMemory<int64_t>(handle, address, args[2]->IntegerValue());
+    Memory.writeMemory<int64_t>(handle, address, args[2].As<Napi::Number>().Int64Value());
 
   } else if (!strcmp(dataType, "uint64")) {
 
-    Memory.writeMemory<uint64_t>(handle, address, args[2]->NumberValue());
+    Memory.writeMemory<uint64_t>(handle, address, args[2].As<Napi::Number>().Int64Value());
 
   } else if (!strcmp(dataType, "dword")) {
 
-    Memory.writeMemory<DWORD>(handle, address, args[2]->NumberValue());
+    Memory.writeMemory<DWORD>(handle, address, args[2].As<Napi::Number>().Uint32Value());
 
   } else if (!strcmp(dataType, "short")) {
 
-    Memory.writeMemory<short>(handle, address, args[2]->NumberValue());
+    Memory.writeMemory<short>(handle, address, args[2].As<Napi::Number>().Int32Value());
 
   } else if (!strcmp(dataType, "long")) {
 
-    Memory.writeMemory<long>(handle, address, args[2]->NumberValue());
+    Memory.writeMemory<long>(handle, address, args[2].As<Napi::Number>().Int32Value());
 
   } else if (!strcmp(dataType, "float")) {
 
-    Memory.writeMemory<float>(handle, address, args[2]->NumberValue());
+    Memory.writeMemory<float>(handle, address, args[2].As<Napi::Number>().FloatValue());
 
   } else if (!strcmp(dataType, "double")) {
 
-    Memory.writeMemory<double>(handle, address, args[2]->NumberValue());
+    Memory.writeMemory<double>(handle, address, args[2].As<Napi::Number>().DoubleValue());
 
   } else if (!strcmp(dataType, "bool") || !strcmp(dataType, "boolean")) {
 
-    Memory.writeMemory<bool>(handle, address, args[2]->BooleanValue());
+    Memory.writeMemory<bool>(handle, address, args[2].As<Napi::Boolean>().Value());
 
   } else if (!strcmp(dataType, "string") || !strcmp(dataType, "str")) {
 
-    v8::String::Utf8Value valueParam(args[2]->ToString());
-    
+    std::string valueParam(args[2].As<Napi::String>().Utf8Value());
+    valueParam.append("", 1);
+
     // Write String, Method 1
     //Memory.writeMemory<std::string>(handle, address, std::string(*valueParam));
 
     // Write String, Method 2
-    Memory.writeMemory(handle, address, *valueParam, valueParam.length());
-    
+    Memory.writeMemory(handle, address, (char*) valueParam.data(), valueParam.size());
+
   } else if (!strcmp(dataType, "vector3") || !strcmp(dataType, "vec3")) {
 
-    Handle<Object> value = Handle<Object>::Cast(args[2]);
+    Napi::Object value = args[2].As<Napi::Object>();
     Vector3 vector = {
-      value->Get(String::NewFromUtf8(isolate, "x"))->NumberValue(),
-      value->Get(String::NewFromUtf8(isolate, "y"))->NumberValue(),
-      value->Get(String::NewFromUtf8(isolate, "z"))->NumberValue()
+      value.Get(Napi::String::New(env, "x")).As<Napi::Number>().FloatValue(),
+      value.Get(Napi::String::New(env, "y")).As<Napi::Number>().FloatValue(),
+      value.Get(Napi::String::New(env, "z")).As<Napi::Number>().FloatValue()
     };
     Memory.writeMemory<Vector3>(handle, address, vector);
 
   } else if (!strcmp(dataType, "vector4") || !strcmp(dataType, "vec4")) {
 
-    Handle<Object> value = Handle<Object>::Cast(args[2]);
+    Napi::Object value = args[2].As<Napi::Object>();
     Vector4 vector = {
-      value->Get(String::NewFromUtf8(isolate, "w"))->NumberValue(),
-      value->Get(String::NewFromUtf8(isolate, "x"))->NumberValue(),
-      value->Get(String::NewFromUtf8(isolate, "y"))->NumberValue(),
-      value->Get(String::NewFromUtf8(isolate, "z"))->NumberValue()
+      value.Get(Napi::String::New(env, "w")).As<Napi::Number>().FloatValue(),
+      value.Get(Napi::String::New(env, "x")).As<Napi::Number>().FloatValue(),
+      value.Get(Napi::String::New(env, "y")).As<Napi::Number>().FloatValue(),
+      value.Get(Napi::String::New(env, "z")).As<Napi::Number>().FloatValue()
     };
     Memory.writeMemory<Vector4>(handle, address, vector);
 
   } else {
-    
-    memoryjs::throwError("unexpected data type", isolate);
 
+    Napi::Error::New(env, "unexpected data type").ThrowAsJavaScriptException();
   }
+
+  return env.Null();
 }
 
-void writeBuffer(const FunctionCallbackInfo<Value>& args) {
-  Isolate* isolate = args.GetIsolate();
+Napi::Value writeBuffer(const Napi::CallbackInfo& args) {
+  Napi::Env env = args.Env();
 
   if (args.Length() != 3) {
-    memoryjs::throwError("required 3 arguments", isolate);
-    return;
+    Napi::Error::New(env, "required 3 arguments").ThrowAsJavaScriptException();
+    return env.Null();
   }
 
-  if (!args[0]->IsNumber() && !args[1]->IsNumber()) {
-    memoryjs::throwError("first and second argument must be a number", isolate);
-    return;
+  if (!args[0].IsNumber() && !args[1].IsNumber()) {
+    Napi::Error::New(env, "first and second argument must be a number").ThrowAsJavaScriptException();
+    return env.Null();
   }
 
-  HANDLE handle = (HANDLE)args[0]->IntegerValue();
-  DWORD64 address = args[1]->IntegerValue();
-  SIZE_T length = node::Buffer::Length(args[2]);
-  char* data = node::Buffer::Data(args[2]);
+  HANDLE handle = (HANDLE)args[0].As<Napi::Number>().Int64Value();
+  DWORD64 address = args[1].As<Napi::Number>().Int64Value();
+  SIZE_T length = args[2].As<Napi::Buffer<char>>().Length();
+  char* data = args[2].As<Napi::Buffer<char>>().Data();
   Memory.writeMemory<char*>(handle, address, data, length);
+
+  return env.Null();
 }
 
-void findPattern(const FunctionCallbackInfo<Value>& args) {
-  Isolate* isolate = args.GetIsolate();
+Napi::Value findPattern(const Napi::CallbackInfo& args) {
+  Napi::Env env = args.Env();
 
   // if (args.Length() != 5 && args.Length() != 6) {
-  //   memoryjs::throwError("requires 5 arguments, or 6 arguments if a callback is being used", isolate);
-  //   return;
+  //   Napi::Error::New(env, "requires 5 arguments, or 6 arguments if a callback is being used").ThrowAsJavaScriptException();
+  //   return env.Null();
   // }
 
-  // if (!args[0]->IsNumber() && !args[1]->IsString() && !args[2]->IsNumber() && !args[3]->IsNumber() && !args[4]->IsNumber()) {
-  //   memoryjs::throwError("first argument must be a number, the remaining arguments must be numbers apart from the callback", isolate);
-  //   return;
+  // if (!args[0].IsNumber() && !args[1].IsString() && !args[2].IsNumber() && !args[3].IsNumber() && !args[4].IsNumber()) {
+  //   Napi::Error::New(env, "first argument must be a number, the remaining arguments must be numbers apart from the callback").ThrowAsJavaScriptException();
+  //   return env.Null();
   // }
 
-  // if (args.Length() == 6 && !args[5]->IsFunction()) {
-  //   memoryjs::throwError("sixth argument must be a function", isolate);
-  //   return;
+  // if (args.Length() == 6 && !args[5].IsFunction()) {
+  //   Napi::Error::New(env, "sixth argument must be a function").ThrowAsJavaScriptException();
+  //   return env.Null();
   // }
 
   // Address of findPattern result
@@ -695,29 +660,29 @@ void findPattern(const FunctionCallbackInfo<Value>& args) {
   // Define error message that may be set by the function that gets the modules
   char* errorMessage = "";
 
-  HANDLE handle = (HANDLE)args[0]->IntegerValue();
+  HANDLE handle = (HANDLE)args[0].As<Napi::Number>().Int64Value();
 
   std::vector<MODULEENTRY32> moduleEntries = module::getModules(GetProcessId(handle), &errorMessage);
 
   // If an error message was returned from the function getting the modules, throw the error.
   // Only throw an error if there is no callback (if there's a callback, the error is passed there).
   if (strcmp(errorMessage, "") && args.Length() != 7) {
-    memoryjs::throwError(errorMessage, isolate);
-    return;
+    Napi::Error::New(env, errorMessage).ThrowAsJavaScriptException();
+    return env.Null();
   }
 
   for (std::vector<MODULEENTRY32>::size_type i = 0; i != moduleEntries.size(); i++) {
-    v8::String::Utf8Value moduleName(args[1]);
+    std::string moduleName(args[1].As<Napi::String>().Utf8Value());
 
-    if (!strcmp(moduleEntries[i].szModule, std::string(*moduleName).c_str())) {
-      v8::String::Utf8Value signature(args[2]->ToString());
+    if (!strcmp(moduleEntries[i].szModule, moduleName.c_str())) {
+      std::string signature(args[2].As<Napi::String>().Utf8Value());
 
-      // const char* pattern = std::string(*signature).c_str();
-      short sigType = args[3]->Uint32Value();
-      uint32_t patternOffset = args[4]->Uint32Value();
-      uint32_t addressOffset = args[5]->Uint32Value();
+      // const char* pattern = signature.c_str();
+      short sigType = args[3].As<Napi::Number>().Uint32Value();
+      uint32_t patternOffset = args[4].As<Napi::Number>().Uint32Value();
+      uint32_t addressOffset = args[5].As<Napi::Number>().Uint32Value();
 
-      address = Pattern.findPattern(handle, moduleEntries[i], std::string(*signature).c_str(), sigType, patternOffset, addressOffset);
+      address = Pattern.findPattern(handle, moduleEntries[i], signature.c_str(), sigType, patternOffset, addressOffset);
       break;
     }
   }
@@ -731,27 +696,26 @@ void findPattern(const FunctionCallbackInfo<Value>& args) {
   // findPattern can be asynchronous
   if (args.Length() == 7) {
     // Callback to let the user handle with the information
-    Local<Function> callback = Local<Function>::Cast(args[6]);
-    const unsigned argc = 2;
-    Local<Value> argv[argc] = { String::NewFromUtf8(isolate, errorMessage), Number::New(isolate, address) };
-    callback->Call(Null(isolate), argc, argv);
+    Napi::Function callback = args[6].As<Napi::Function>();
+    callback.Call(env.Global(), { Napi::String::New(env, errorMessage), Napi::Value::From(env, address) });
+    return env.Null();
   } else {
     // return JSON
-    args.GetReturnValue().Set(Number::New(isolate, address));
+    return Napi::Value::From(env, address);
   }
 }
 
-void callFunction(const FunctionCallbackInfo<Value>& args) {
-  Isolate* isolate = args.GetIsolate();
+Napi::Value callFunction(const Napi::CallbackInfo& args) {
+  Napi::Env env = args.Env();
 
   if (args.Length() != 4 && args.Length() != 5) {
-    memoryjs::throwError("requires 4 arguments, 5 with callback", isolate);
-    return;
+    Napi::Error::New(env, "requires 4 arguments, 5 with callback").ThrowAsJavaScriptException();
+    return env.Null();
   }
 
-  if (!args[0]->IsNumber() && !args[1]->IsObject() && !args[2]->IsNumber() && !args[3]->IsNumber()) {
-    memoryjs::throwError("invalid arguments", isolate);
-    return;
+  if (!args[0].IsNumber() && !args[1].IsObject() && !args[2].IsNumber() && !args[3].IsNumber()) {
+    Napi::Error::New(env, "invalid arguments").ThrowAsJavaScriptException();
+    return env.Null();
   }
 
   // TODO: temp (?) solution to forcing variables onto the heap
@@ -761,21 +725,19 @@ void callFunction(const FunctionCallbackInfo<Value>& args) {
   std::vector<LPVOID> heap;
 
   std::vector<Arg> parsedArgs;
-  Handle<Array> arguments = Handle<Array>::Cast(args[1]);
-  for (unsigned int i = 0; i < arguments->Length(); i++) {
-    Handle<Object> argument = Handle<Object>::Cast(arguments->Get(i));
+  Napi::Array arguments = args[1].As<Napi::Array>();
+  for (unsigned int i = 0; i < arguments.Length(); i++) {
+    Napi::Object argument = arguments.Get(i).As<Napi::Object>();
 
-    Type type = (Type) argument->Get(String::NewFromUtf8(isolate, "type"))->Uint32Value();
-    
+    Type type = (Type) argument.Get(Napi::String::New(env, "type")).As<Napi::Number>().Uint32Value();
+
     if (type == T_STRING) {
-      Handle<Value> data = argument->Get(String::NewFromUtf8(isolate, "value"));
-      v8::String::Utf8Value stringValueUtf(data->ToString());
-      std::string stringValue = std::string(*stringValueUtf);
+      std::string stringValue = argument.Get(Napi::String::New(env, "value")).As<Napi::String>().Utf8Value();
       parsedArgs.push_back({ type, &stringValue });
     }
 
     if (type == T_INT) {
-      int data = argument->Get(String::NewFromUtf8(isolate, "value"))->NumberValue();
+      int data = argument.Get(Napi::String::New(env, "value")).As<Napi::Number>().Int32Value();
 
       // As we only pass the addresses of the variable to the `call` function and not a copy
       // of the variable itself, we need to ensure that the variable stays alive and in a unique
@@ -790,7 +752,7 @@ void callFunction(const FunctionCallbackInfo<Value>& args) {
     }
 
     if (type == T_FLOAT) {
-      float data = argument->Get(String::NewFromUtf8(isolate, "value"))->NumberValue();
+      float data = argument.Get(Napi::String::New(env, "value")).As<Napi::Number>().FloatValue();
 
       float* memory = (float*) malloc(sizeof(float));
       *memory = data;
@@ -800,9 +762,9 @@ void callFunction(const FunctionCallbackInfo<Value>& args) {
     }
   }
 
-  HANDLE handle = (HANDLE)args[0]->IntegerValue();
-  Type returnType = (Type) args[2]->Uint32Value();
-  DWORD64 address = args[3]->NumberValue();
+  HANDLE handle = (HANDLE)args[0].As<Napi::Number>().Int64Value();
+  Type returnType = (Type) args[2].As<Napi::Number>().Uint32Value();
+  DWORD64 address = args[3].As<Napi::Number>().Int64Value();
 
   char* errorMessage = "";
   Call data = functions::call<int>(handle, parsedArgs, returnType, address, &errorMessage);
@@ -814,74 +776,73 @@ void callFunction(const FunctionCallbackInfo<Value>& args) {
 
   heap.clear();
 
-  Local<Object> info = Object::New(isolate);
+  Napi::Object info = Napi::Object::New(env);
 
-  Local<String> keyString = String::NewFromUtf8(isolate, "returnValue");
-  
+  Napi::String keyString = Napi::String::New(env, "returnValue");
+
   if (returnType == T_STRING) {
-    info->Set(keyString, String::NewFromUtf8(isolate, data.returnString.c_str()));
+    info.Set(keyString, Napi::String::New(env, data.returnString.c_str()));
   }
-  
+
   if (returnType == T_CHAR) {
-    info->Set(keyString, Number::New(isolate, (char) data.returnValue));
+    info.Set(keyString, Napi::Value::From(env, (char) data.returnValue));
   }
 
   if (returnType == T_BOOL) {
-    info->Set(keyString, Number::New(isolate, (bool) data.returnValue));
+    info.Set(keyString, Napi::Value::From(env, (bool) data.returnValue));
   }
 
   if (returnType == T_INT) {
-    info->Set(keyString, Number::New(isolate, (int) data.returnValue));
+    info.Set(keyString, Napi::Value::From(env, (int) data.returnValue));
   }
 
   if (returnType == T_FLOAT) {
     float value = *(float *)&data.returnValue;
-    info->Set(keyString, Number::New(isolate, value));
+    info.Set(keyString, Napi::Value::From(env, value));
   }
 
   if (returnType == T_DOUBLE) {
     double value = *(double *)&data.returnValue;
-    info->Set(keyString, Number::New(isolate, value));
+    info.Set(keyString, Napi::Value::From(env, value));
   }
 
-  info->Set(String::NewFromUtf8(isolate, "exitCode"), Number::New(isolate, data.exitCode));
+  info.Set(Napi::String::New(env, "exitCode"), Napi::Value::From(env, data.exitCode));
 
   if (args.Length() == 5) {
     // Callback to let the user handle with the information
-    Local<Function> callback = Local<Function>::Cast(args[2]);
-    const unsigned argc = 2;
-    Local<Value> argv[argc] = { String::NewFromUtf8(isolate, errorMessage), info };
-    callback->Call(Null(isolate), argc, argv);
+    Napi::Function callback = args[2].As<Napi::Function>();
+    callback.Call(env.Global(), { Napi::String::New(env, errorMessage), info });
+    return env.Null();
   } else {
     // return JSON
-    args.GetReturnValue().Set(info);
+    return info;
   }
-  
+
 }
 
-void virtualProtectEx(const FunctionCallbackInfo<Value>& args) {
-  Isolate* isolate = args.GetIsolate();
+Napi::Value virtualProtectEx(const Napi::CallbackInfo& args) {
+  Napi::Env env = args.Env();
 
   if (args.Length() != 4 && args.Length() != 5) {
-    memoryjs::throwError("requires 4 arguments, 5 with callback", isolate);
-    return;
+    Napi::Error::New(env, "requires 4 arguments, 5 with callback").ThrowAsJavaScriptException();
+    return env.Null();
   }
 
-  if (!args[0]->IsNumber() && !args[1]->IsNumber() && !args[2]->IsNumber()) {
-    memoryjs::throwError("All arguments should be numbers.", isolate);
-    return;
+  if (!args[0].IsNumber() && !args[1].IsNumber() && !args[2].IsNumber()) {
+    Napi::Error::New(env, "All arguments should be numbers.").ThrowAsJavaScriptException();
+    return env.Null();
   }
 
-  if (args.Length() == 5 && !args[4]->IsFunction()) {
-    memoryjs::throwError("callback needs to be a function", isolate);
-    return;
+  if (args.Length() == 5 && !args[4].IsFunction()) {
+    Napi::Error::New(env, "callback needs to be a function").ThrowAsJavaScriptException();
+    return env.Null();
   }
 
   DWORD result;
-  HANDLE handle = (HANDLE)args[0]->IntegerValue();
-  DWORD64 address = args[1]->IntegerValue();
-  SIZE_T size = args[2]->IntegerValue();
-  DWORD protection = args[3]->Uint32Value();
+  HANDLE handle = (HANDLE)args[0].As<Napi::Number>().Int64Value();
+  DWORD64 address = args[1].As<Napi::Number>().Int64Value();
+  SIZE_T size = args[2].As<Napi::Number>().Int64Value();
+  DWORD protection = args[3].As<Napi::Number>().Uint32Value();
 
   bool success = VirtualProtectEx(handle, (LPVOID) address, size, protection, &result);
 
@@ -894,101 +855,99 @@ void virtualProtectEx(const FunctionCallbackInfo<Value>& args) {
 
   // If there is an error and there is no callback, throw the error
   if (strcmp(errorMessage, "") && args.Length() != 5) {
-    memoryjs::throwError(errorMessage, isolate);
-    return;
+    Napi::Error::New(env, errorMessage).ThrowAsJavaScriptException();
+    return env.Null();
   }
 
   if (args.Length() == 5) {
     // Callback to let the user handle with the information
-    Local<Function> callback = Local<Function>::Cast(args[5]);
-    const unsigned argc = 2;
-    Local<Value> argv[argc] = {
-      String::NewFromUtf8(isolate, errorMessage),
-      Number::New(isolate, result)
-    };
-    callback->Call(Null(isolate), argc, argv);
+    Napi::Function callback = args[5].As<Napi::Function>();
+    callback.Call(env.Global(), {
+      Napi::String::New(env, errorMessage),
+      Napi::Value::From(env, result)
+    });
+    return env.Null();
   } else {
-    args.GetReturnValue().Set(Number::New(isolate, result));
+    return Napi::Value::From(env, result);
   }
 }
 
-void getRegions(const FunctionCallbackInfo<Value>& args) {
-  Isolate* isolate = args.GetIsolate();
+Napi::Value getRegions(const Napi::CallbackInfo& args) {
+  Napi::Env env = args.Env();
 
   if (args.Length() != 1 && args.Length() != 2) {
-    memoryjs::throwError("requires 1 argument, 2 with callback", isolate);
-    return;
+    Napi::Error::New(env, "requires 1 argument, 2 with callback").ThrowAsJavaScriptException();
+    return env.Null();
   }
 
-  if (!args[0]->IsNumber()) {
-    memoryjs::throwError("invalid arguments: first argument must be a number", isolate);
-    return;
+  if (!args[0].IsNumber()) {
+    Napi::Error::New(env, "invalid arguments: first argument must be a number").ThrowAsJavaScriptException();
+    return env.Null();
   }
 
-  if (args.Length() == 2 && !args[1]->IsFunction()) {
-    memoryjs::throwError("callback needs to be a function", isolate);
-    return;
+  if (args.Length() == 2 && !args[1].IsFunction()) {
+    Napi::Error::New(env, "callback needs to be a function").ThrowAsJavaScriptException();
+    return env.Null();
   }
 
-  HANDLE handle = (HANDLE)args[0]->IntegerValue();
+  HANDLE handle = (HANDLE)args[0].As<Napi::Number>().Int64Value();
   std::vector<MEMORY_BASIC_INFORMATION> regions = Memory.getRegions(handle);
 
-  Handle<Array> regionsArray = Array::New(isolate, regions.size());
+  Napi::Array regionsArray = Napi::Array::New(env, regions.size());
 
   for (std::vector<MEMORY_BASIC_INFORMATION>::size_type i = 0; i != regions.size(); i++) {
-    Local<Object> region = Object::New(isolate);
+    Napi::Object region = Napi::Object::New(env);
 
-    region->Set(String::NewFromUtf8(isolate, "BaseAddress"), Number::New(isolate, (DWORD64) regions[i].BaseAddress));
-    region->Set(String::NewFromUtf8(isolate, "AllocationBase"), Number::New(isolate, (DWORD64) regions[i].AllocationBase));
-    region->Set(String::NewFromUtf8(isolate, "AllocationProtect"), Number::New(isolate, (DWORD) regions[i].AllocationProtect));
-    region->Set(String::NewFromUtf8(isolate, "RegionSize"), Number::New(isolate, (SIZE_T) regions[i].RegionSize));
-    region->Set(String::NewFromUtf8(isolate, "State"), Number::New(isolate, (DWORD) regions[i].State));
-    region->Set(String::NewFromUtf8(isolate, "Protect"), Number::New(isolate, (DWORD) regions[i].Protect));
-    region->Set(String::NewFromUtf8(isolate, "Type"), Number::New(isolate, (DWORD) regions[i].Type));
+    region.Set(Napi::String::New(env, "BaseAddress"), Napi::Value::From(env, (DWORD64) regions[i].BaseAddress));
+    region.Set(Napi::String::New(env, "AllocationBase"), Napi::Value::From(env, (DWORD64) regions[i].AllocationBase));
+    region.Set(Napi::String::New(env, "AllocationProtect"), Napi::Value::From(env, (DWORD) regions[i].AllocationProtect));
+    region.Set(Napi::String::New(env, "RegionSize"), Napi::Value::From(env, (SIZE_T) regions[i].RegionSize));
+    region.Set(Napi::String::New(env, "State"), Napi::Value::From(env, (DWORD) regions[i].State));
+    region.Set(Napi::String::New(env, "Protect"), Napi::Value::From(env, (DWORD) regions[i].Protect));
+    region.Set(Napi::String::New(env, "Type"), Napi::Value::From(env, (DWORD) regions[i].Type));
 
     char moduleName[MAX_PATH];
     DWORD size = GetModuleFileNameExA(handle, (HINSTANCE)regions[i].AllocationBase, moduleName, MAX_PATH);
 
     if (size != 0) {
-      region->Set(String::NewFromUtf8(isolate, "szExeFile"), String::NewFromUtf8(isolate, moduleName));
+      region.Set(Napi::String::New(env, "szExeFile"), Napi::String::New(env, moduleName));
     }
 
 
-    regionsArray->Set(i, region);
+    regionsArray.Set(i, region);
   }
 
   if (args.Length() == 2) {
     // Callback to let the user handle with the information
-    Local<Function> callback = Local<Function>::Cast(args[1]);
-    const unsigned argc = 2;
-    Local<Value> argv[argc] = { String::NewFromUtf8(isolate, ""), regionsArray };
-    callback->Call(Null(isolate), argc, argv);
+    Napi::Function callback = args[1].As<Napi::Function>();
+    callback.Call(env.Global(), { Napi::String::New(env, ""), regionsArray });
+    return env.Null();
   } else {
     // return JSON
-    args.GetReturnValue().Set(regionsArray);
+    return regionsArray;
   }
 }
 
-void virtualQueryEx(const FunctionCallbackInfo<Value>& args) {
-  Isolate* isolate = args.GetIsolate();
+Napi::Value virtualQueryEx(const Napi::CallbackInfo& args) {
+  Napi::Env env = args.Env();
 
   if (args.Length() != 2 && args.Length() != 3) {
-    memoryjs::throwError("requires 2 arguments, 3 with callback", isolate);
-    return;
+    Napi::Error::New(env, "requires 2 arguments, 3 with callback").ThrowAsJavaScriptException();
+    return env.Null();
   }
 
-  if (!args[0]->IsNumber() || !args[1]->IsNumber()) {
-    memoryjs::throwError("first and second argument need to be a number", isolate);
-    return;
+  if (!args[0].IsNumber() || !args[1].IsNumber()) {
+    Napi::Error::New(env, "first and second argument need to be a number").ThrowAsJavaScriptException();
+    return env.Null();
   }
 
-  if (args.Length() == 3 && !args[2]->IsFunction()) {
-    memoryjs::throwError("callback needs to be a function", isolate);
-    return;
+  if (args.Length() == 3 && !args[2].IsFunction()) {
+    Napi::Error::New(env, "callback needs to be a function").ThrowAsJavaScriptException();
+    return env.Null();
   }
 
-  HANDLE handle = (HANDLE)args[0]->IntegerValue();
-  DWORD64 address = args[1]->IntegerValue();
+  HANDLE handle = (HANDLE)args[0].As<Napi::Number>().Int64Value();
+  DWORD64 address = args[1].As<Napi::Number>().Int64Value();
 
   MEMORY_BASIC_INFORMATION information;
   SIZE_T result = VirtualQueryEx(handle, (LPVOID)address, &information, sizeof(information));
@@ -1002,61 +961,60 @@ void virtualQueryEx(const FunctionCallbackInfo<Value>& args) {
 
   // If there is an error and there is no callback, throw the error
   if (strcmp(errorMessage, "") && args.Length() != 3) {
-    memoryjs::throwError(errorMessage, isolate);
-    return;
+    Napi::Error::New(env, errorMessage).ThrowAsJavaScriptException();
+    return env.Null();
   }
 
-  Local<Object> region = Object::New(isolate);
+  Napi::Object region = Napi::Object::New(env);
 
-  region->Set(String::NewFromUtf8(isolate, "BaseAddress"), Number::New(isolate, (DWORD64) information.BaseAddress));
-  region->Set(String::NewFromUtf8(isolate, "AllocationBase"), Number::New(isolate, (DWORD64) information.AllocationBase));
-  region->Set(String::NewFromUtf8(isolate, "AllocationProtect"), Number::New(isolate, (DWORD) information.AllocationProtect));
-  region->Set(String::NewFromUtf8(isolate, "RegionSize"), Number::New(isolate, (SIZE_T) information.RegionSize));
-  region->Set(String::NewFromUtf8(isolate, "State"), Number::New(isolate, (DWORD) information.State));
-  region->Set(String::NewFromUtf8(isolate, "Protect"), Number::New(isolate, (DWORD) information.Protect));
-  region->Set(String::NewFromUtf8(isolate, "Type"), Number::New(isolate, (DWORD) information.Type));
+  region.Set(Napi::String::New(env, "BaseAddress"), Napi::Value::From(env, (DWORD64) information.BaseAddress));
+  region.Set(Napi::String::New(env, "AllocationBase"), Napi::Value::From(env, (DWORD64) information.AllocationBase));
+  region.Set(Napi::String::New(env, "AllocationProtect"), Napi::Value::From(env, (DWORD) information.AllocationProtect));
+  region.Set(Napi::String::New(env, "RegionSize"), Napi::Value::From(env, (SIZE_T) information.RegionSize));
+  region.Set(Napi::String::New(env, "State"), Napi::Value::From(env, (DWORD) information.State));
+  region.Set(Napi::String::New(env, "Protect"), Napi::Value::From(env, (DWORD) information.Protect));
+  region.Set(Napi::String::New(env, "Type"), Napi::Value::From(env, (DWORD) information.Type));
 
   if (args.Length() == 3) {
     // Callback to let the user handle with the information
-    Local<Function> callback = Local<Function>::Cast(args[1]);
-    const unsigned argc = 2;
-    Local<Value> argv[argc] = { String::NewFromUtf8(isolate, ""), region };
-    callback->Call(Null(isolate), argc, argv);
+    Napi::Function callback = args[1].As<Napi::Function>();
+    callback.Call(env.Global(), { Napi::String::New(env, ""), region });
+    return env.Null();
   } else {
     // return JSON
-    args.GetReturnValue().Set(region);
+    return region;
   }
 }
 
-void virtualAllocEx(const FunctionCallbackInfo<Value>& args) {
-  Isolate* isolate = args.GetIsolate();
+Napi::Value virtualAllocEx(const Napi::CallbackInfo& args) {
+  Napi::Env env = args.Env();
 
   if (args.Length() != 5 && args.Length() != 6) {
-    memoryjs::throwError("requires 5 arguments, 6 with callback", isolate);
-    return;
+    Napi::Error::New(env, "requires 5 arguments, 6 with callback").ThrowAsJavaScriptException();
+    return env.Null();
   }
 
-  if (!args[0]->IsNumber() || !args[2]->IsNumber() || !args[3]->IsNumber() || !args[4]->IsNumber()) {
-    memoryjs::throwError("invalid arguments: arguments 0, 2, 3 and 4 need to be numbers", isolate);
-    return;
+  if (!args[0].IsNumber() || !args[2].IsNumber() || !args[3].IsNumber() || !args[4].IsNumber()) {
+    Napi::Error::New(env, "invalid arguments: arguments 0, 2, 3 and 4 need to be numbers").ThrowAsJavaScriptException();
+    return env.Null();
   }
 
-  if (args.Length() == 6 && !args[5]->IsFunction()) {
-    memoryjs::throwError("callback needs to be a function", isolate);
-    return;
+  if (args.Length() == 6 && !args[5].IsFunction()) {
+    Napi::Error::New(env, "callback needs to be a function").ThrowAsJavaScriptException();
+    return env.Null();
   }
 
-  HANDLE handle = (HANDLE)args[0]->IntegerValue();
-  SIZE_T size = args[2]->IntegerValue();
-  DWORD allocationType = args[3]->Uint32Value();
-  DWORD protection = args[4]->Uint32Value();
+  HANDLE handle = (HANDLE)args[0].As<Napi::Number>().Int64Value();
+  SIZE_T size = args[2].As<Napi::Number>().Int64Value();
+  DWORD allocationType = args[3].As<Napi::Number>().Uint32Value();
+  DWORD protection = args[4].As<Napi::Number>().Uint32Value();
   LPVOID address;
 
   // Means in the JavaScript space `null` was passed through.
-  if (args[1] == Null(isolate)) {
+  if (args[1] == env.Null()) {
     address = NULL;
   } else {
-    address = (LPVOID) args[1]->IntegerValue();
+    address = (LPVOID) args[1].As<Napi::Number>().Int64Value();
   }
 
   LPVOID allocatedAddress = VirtualAllocEx(handle, address, size, allocationType, protection);
@@ -1071,94 +1029,93 @@ void virtualAllocEx(const FunctionCallbackInfo<Value>& args) {
 
   // If there is an error and there is no callback, throw the error
   if (strcmp(errorMessage, "") && args.Length() != 6) {
-    memoryjs::throwError(errorMessage, isolate);
-    return;
+    Napi::Error::New(env, errorMessage).ThrowAsJavaScriptException();
+    return env.Null();
   }
 
   if (args.Length() == 6) {
     // Callback to let the user handle with the information
-    Local<Function> callback = Local<Function>::Cast(args[5]);
-    const unsigned argc = 2;
-    Local<Value> argv[argc] = {
-      String::NewFromUtf8(isolate, errorMessage),
-      Number::New(isolate, (int)allocatedAddress)
-    };
-    callback->Call(Null(isolate), argc, argv);
+    Napi::Function callback = args[5].As<Napi::Function>();
+    callback.Call(env.Global(), {
+      Napi::String::New(env, errorMessage),
+      Napi::Value::From(env, (intptr_t)allocatedAddress)
+    });
+    return env.Null();
   } else {
-    args.GetReturnValue().Set(Number::New(isolate, (int)allocatedAddress));
+    return Napi::Value::From(env, (intptr_t)allocatedAddress);
   }
 }
 
-void attachDebugger(const FunctionCallbackInfo<Value>& args) {
-  Isolate* isolate = args.GetIsolate();
+Napi::Value attachDebugger(const Napi::CallbackInfo& args) {
+  Napi::Env env = args.Env();
 
   if (args.Length() != 2) {
-    memoryjs::throwError("requires 2 arguments", isolate);
-    return;
+    Napi::Error::New(env, "requires 2 arguments").ThrowAsJavaScriptException();
+    return env.Null();
   }
 
-  if (!args[0]->IsNumber() || !args[1]->IsBoolean()) {
-    memoryjs::throwError("first argument needs to be a number, second a boolean", isolate);
-    return;
+  if (!args[0].IsNumber() || !args[1].IsBoolean()) {
+    Napi::Error::New(env, "first argument needs to be a number, second a boolean").ThrowAsJavaScriptException();
+    return env.Null();
   }
 
-  DWORD processId = args[0]->Uint32Value();
-  bool killOnExit = args[1]->BooleanValue();
+  DWORD processId = args[0].As<Napi::Number>().Uint32Value();
+  bool killOnExit = args[1].As<Napi::Boolean>().Value();
 
   bool success = debugger::attach(processId, killOnExit);
-  args.GetReturnValue().Set(Boolean::New(isolate, success));
+  return Napi::Boolean::New(env, success);
 }
 
-void detatchDebugger(const FunctionCallbackInfo<Value>& args) {
-  Isolate* isolate = args.GetIsolate();
+Napi::Value detatchDebugger(const Napi::CallbackInfo& args) {
+  Napi::Env env = args.Env();
 
-  DWORD processId = args[0]->Uint32Value();
+  DWORD processId = args[0].As<Napi::Number>().Uint32Value();
 
   if (args.Length() != 1) {
-    memoryjs::throwError("requires only 1 argument", isolate);
-    return;
+    Napi::Error::New(env, "requires only 1 argument").ThrowAsJavaScriptException();
+    return env.Null();
   }
 
-  if (!args[0]->IsNumber()) {
-    memoryjs::throwError("only argument needs to be a number", isolate);
-    return;
+  if (!args[0].IsNumber()) {
+    Napi::Error::New(env, "only argument needs to be a number").ThrowAsJavaScriptException();
+    return env.Null();
   }
-  
+
   bool success = debugger::detatch(processId);
-  args.GetReturnValue().Set(Boolean::New(isolate, success));
+  return Napi::Boolean::New(env, success);
 }
 
-void awaitDebugEvent(const FunctionCallbackInfo<Value>& args) {
-  Isolate* isolate = args.GetIsolate();
+Napi::Value awaitDebugEvent(const Napi::CallbackInfo& args) {
+  Napi::Env env = args.Env();
 
   if (args.Length() != 2) {
-    memoryjs::throwError("requires 2 arguments", isolate);
-    return;
+    Napi::Error::New(env, "requires 2 arguments").ThrowAsJavaScriptException();
+    return env.Null();
   }
 
-  if (!args[0]->IsNumber() || !args[1]->IsNumber()) {
-    memoryjs::throwError("both arguments need to be a number", isolate);
-    return;
+  if (!args[0].IsNumber() || !args[1].IsNumber()) {
+    Napi::Error::New(env, "both arguments need to be a number").ThrowAsJavaScriptException();
+    return env.Null();
   }
 
-  int millisTimeout = args[1]->Uint32Value();
+  int millisTimeout = args[1].As<Napi::Number>().Uint32Value();
 
   DebugEvent debugEvent;
   bool success = debugger::awaitDebugEvent(millisTimeout, &debugEvent);
 
-  Register hardwareRegister = static_cast<Register>(args[0]->Uint32Value());
+  Register hardwareRegister = static_cast<Register>(args[0].As<Napi::Number>().Uint32Value());
 
   if (success && debugEvent.hardwareRegister == hardwareRegister) {
-    Local<Object> info = Object::New(isolate);
+    Napi::Object info = Napi::Object::New(env);
 
-    info->Set(String::NewFromUtf8(isolate, "processId"), Number::New(isolate, (DWORD) debugEvent.processId));
-    info->Set(String::NewFromUtf8(isolate, "threadId"), Number::New(isolate, (DWORD) debugEvent.threadId));
-    info->Set(String::NewFromUtf8(isolate, "exceptionCode"), Number::New(isolate, (DWORD) debugEvent.exceptionCode));
-    info->Set(String::NewFromUtf8(isolate, "exceptionFlags"), Number::New(isolate, (DWORD) debugEvent.exceptionFlags));
-    info->Set(String::NewFromUtf8(isolate, "exceptionAddress"), Number::New(isolate, (DWORD64) debugEvent.exceptionAddress));
-    info->Set(String::NewFromUtf8(isolate, "hardwareRegister"), Number::New(isolate, static_cast<int>(debugEvent.hardwareRegister))); 
-  
-    args.GetReturnValue().Set(info);
+    info.Set(Napi::String::New(env, "processId"), Napi::Value::From(env, (DWORD) debugEvent.processId));
+    info.Set(Napi::String::New(env, "threadId"), Napi::Value::From(env, (DWORD) debugEvent.threadId));
+    info.Set(Napi::String::New(env, "exceptionCode"), Napi::Value::From(env, (DWORD) debugEvent.exceptionCode));
+    info.Set(Napi::String::New(env, "exceptionFlags"), Napi::Value::From(env, (DWORD) debugEvent.exceptionFlags));
+    info.Set(Napi::String::New(env, "exceptionAddress"), Napi::Value::From(env, (DWORD64) debugEvent.exceptionAddress));
+    info.Set(Napi::String::New(env, "hardwareRegister"), Napi::Value::From(env, static_cast<int>(debugEvent.hardwareRegister)));
+
+    return info;
   }
 
   // If we aren't interested in passing this event back to the JS space,
@@ -1166,82 +1123,84 @@ void awaitDebugEvent(const FunctionCallbackInfo<Value>& args) {
   if (success && debugEvent.hardwareRegister != hardwareRegister) {
     debugger::handleDebugEvent(debugEvent.processId, debugEvent.threadId);
   }
+
+  return env.Null();
 }
 
-void handleDebugEvent(const FunctionCallbackInfo<Value>& args) {
-  Isolate* isolate = args.GetIsolate();
+Napi::Value handleDebugEvent(const Napi::CallbackInfo& args) {
+  Napi::Env env = args.Env();
 
   if (args.Length() != 2) {
-    memoryjs::throwError("requires 2 arguments", isolate);
-    return;
+    Napi::Error::New(env, "requires 2 arguments").ThrowAsJavaScriptException();
+    return env.Null();
   }
 
-  if (!args[0]->IsNumber() || !args[1]->IsNumber()) {
-    memoryjs::throwError("both arguments need to be numbers", isolate);
-    return;
+  if (!args[0].IsNumber() || !args[1].IsNumber()) {
+    Napi::Error::New(env, "both arguments need to be numbers").ThrowAsJavaScriptException();
+    return env.Null();
   }
 
-  DWORD processId = args[0]->Uint32Value();
-  DWORD threadId = args[1]->Uint32Value();
+  DWORD processId = args[0].As<Napi::Number>().Uint32Value();
+  DWORD threadId = args[1].As<Napi::Number>().Uint32Value();
 
   bool success = debugger::handleDebugEvent(processId, threadId);
-  args.GetReturnValue().Set(Boolean::New(isolate, success));
+  return Napi::Boolean::New(env, success);
 }
 
-void setHardwareBreakpoint(const FunctionCallbackInfo<Value>& args) {
-  Isolate* isolate = args.GetIsolate();
+Napi::Value setHardwareBreakpoint(const Napi::CallbackInfo& args) {
+  Napi::Env env = args.Env();
 
   if (args.Length() != 5) {
-    memoryjs::throwError("requires 5 arguments", isolate);
-    return;
+    Napi::Error::New(env, "requires 5 arguments").ThrowAsJavaScriptException();
+    return env.Null();
   }
 
-  for (int i = 0; i < args.Length(); i++) {
-    if (!args[i]->IsNumber()) {
-      memoryjs::throwError("all arguments need to be numbers", isolate);
-      return;
+  for (unsigned int i = 0; i < args.Length(); i++) {
+    if (!args[i].IsNumber()) {
+      Napi::Error::New(env, "all arguments need to be numbers").ThrowAsJavaScriptException();
+      return env.Null();
     }
   }
 
-  DWORD processId = args[0]->Uint32Value();
-  DWORD64 address = args[1]->IntegerValue();
-  Register hardwareRegister = static_cast<Register>(args[2]->Uint32Value());
+  DWORD processId = args[0].As<Napi::Number>().Uint32Value();
+  DWORD64 address = args[1].As<Napi::Number>().Int64Value();
+  Register hardwareRegister = static_cast<Register>(args[2].As<Napi::Number>().Uint32Value());
 
   // Execute = 0x0
   // Access = 0x3
   // Writer = 0x1
-  int trigger = args[3]->Uint32Value();
-  
-  int length = args[4]->Uint32Value();
+  int trigger = args[3].As<Napi::Number>().Uint32Value();
+
+  int length = args[4].As<Napi::Number>().Uint32Value();
 
   bool success = debugger::setHardwareBreakpoint(processId, address, hardwareRegister, trigger, length);
-  args.GetReturnValue().Set(Boolean::New(isolate, success));
+  return Napi::Boolean::New(env, success);
 }
 
-void removeHardwareBreakpoint(const FunctionCallbackInfo<Value>& args) {
-  Isolate* isolate = args.GetIsolate();
+Napi::Value removeHardwareBreakpoint(const Napi::CallbackInfo& args) {
+  Napi::Env env = args.Env();
 
   if (args.Length() != 2) {
-    memoryjs::throwError("requires 2 arguments", isolate);
-    return;
+    Napi::Error::New(env, "requires 2 arguments").ThrowAsJavaScriptException();
+    return env.Null();
   }
 
-  if (!args[0]->IsNumber() || !args[1]->IsNumber()) {
-    memoryjs::throwError("both arguments need to be numbers", isolate);
-    return;
+  if (!args[0].IsNumber() || !args[1].IsNumber()) {
+    Napi::Error::New(env, "both arguments need to be numbers").ThrowAsJavaScriptException();
+    return env.Null();
   }
 
-  DWORD processId = args[0]->Uint32Value();
-  Register hardwareRegister = static_cast<Register>(args[1]->Uint32Value());
+  DWORD processId = args[0].As<Napi::Number>().Uint32Value();
+  Register hardwareRegister = static_cast<Register>(args[1].As<Napi::Number>().Uint32Value());
 
   bool success = debugger::setHardwareBreakpoint(processId, 0, hardwareRegister, 0, 0);
-  args.GetReturnValue().Set(Boolean::New(isolate, success));
+  return Napi::Boolean::New(env, success);
 }
 
 // https://stackoverflow.com/a/17387176
 std::string GetLastErrorToString() {
   DWORD errorMessageID = ::GetLastError();
-    
+
   // No error message, return empty string
   if(errorMessageID == 0) {
     return std::string();
@@ -1266,28 +1225,29 @@ std::string GetLastErrorToString() {
   return message;
 }
 
-void init(Local<Object> exports) {
-  NODE_SET_METHOD(exports, "openProcess", openProcess);
-  NODE_SET_METHOD(exports, "closeProcess", closeProcess);
-  NODE_SET_METHOD(exports, "getProcesses", getProcesses);
-  NODE_SET_METHOD(exports, "getModules", getModules);
-  NODE_SET_METHOD(exports, "findModule", findModule);
-  NODE_SET_METHOD(exports, "readMemory", readMemory);
-  NODE_SET_METHOD(exports, "readBuffer", readBuffer);
-  NODE_SET_METHOD(exports, "writeMemory", writeMemory);
-  NODE_SET_METHOD(exports, "writeBuffer", writeBuffer);
-  NODE_SET_METHOD(exports, "findPattern", findPattern);
-  NODE_SET_METHOD(exports, "virtualProtectEx", virtualProtectEx);
-  NODE_SET_METHOD(exports, "callFunction", callFunction);
-  NODE_SET_METHOD(exports, "virtualAllocEx", virtualAllocEx);
-  NODE_SET_METHOD(exports, "getRegions", getRegions);
-  NODE_SET_METHOD(exports, "virtualQueryEx", virtualQueryEx);
-  NODE_SET_METHOD(exports, "attachDebugger", attachDebugger);
-  NODE_SET_METHOD(exports, "detatchDebugger", detatchDebugger);
-  NODE_SET_METHOD(exports, "awaitDebugEvent", awaitDebugEvent);
-  NODE_SET_METHOD(exports, "handleDebugEvent", handleDebugEvent);
-  NODE_SET_METHOD(exports, "setHardwareBreakpoint", setHardwareBreakpoint);
-  NODE_SET_METHOD(exports, "removeHardwareBreakpoint", removeHardwareBreakpoint);
+Napi::Object init(Napi::Env env, Napi::Object exports) {
+  exports.Set(Napi::String::New(env, "openProcess"), Napi::Function::New(env, openProcess));
+  exports.Set(Napi::String::New(env, "closeProcess"), Napi::Function::New(env, closeProcess));
+  exports.Set(Napi::String::New(env, "getProcesses"), Napi::Function::New(env, getProcesses));
+  exports.Set(Napi::String::New(env, "getModules"), Napi::Function::New(env, getModules));
+  exports.Set(Napi::String::New(env, "findModule"), Napi::Function::New(env, findModule));
+  exports.Set(Napi::String::New(env, "readMemory"), Napi::Function::New(env, readMemory));
+  exports.Set(Napi::String::New(env, "readBuffer"), Napi::Function::New(env, readBuffer));
+  exports.Set(Napi::String::New(env, "writeMemory"), Napi::Function::New(env, writeMemory));
+  exports.Set(Napi::String::New(env, "writeBuffer"), Napi::Function::New(env, writeBuffer));
+  exports.Set(Napi::String::New(env, "findPattern"), Napi::Function::New(env, findPattern));
+  exports.Set(Napi::String::New(env, "virtualProtectEx"), Napi::Function::New(env, virtualProtectEx));
+  exports.Set(Napi::String::New(env, "callFunction"), Napi::Function::New(env, callFunction));
+  exports.Set(Napi::String::New(env, "virtualAllocEx"), Napi::Function::New(env, virtualAllocEx));
+  exports.Set(Napi::String::New(env, "getRegions"), Napi::Function::New(env, getRegions));
+  exports.Set(Napi::String::New(env, "virtualQueryEx"), Napi::Function::New(env, virtualQueryEx));
+  exports.Set(Napi::String::New(env, "attachDebugger"), Napi::Function::New(env, attachDebugger));
+  exports.Set(Napi::String::New(env, "detatchDebugger"), Napi::Function::New(env, detatchDebugger));
+  exports.Set(Napi::String::New(env, "awaitDebugEvent"), Napi::Function::New(env, awaitDebugEvent));
+  exports.Set(Napi::String::New(env, "handleDebugEvent"), Napi::Function::New(env, handleDebugEvent));
+  exports.Set(Napi::String::New(env, "setHardwareBreakpoint"), Napi::Function::New(env, setHardwareBreakpoint));
+  exports.Set(Napi::String::New(env, "removeHardwareBreakpoint"), Napi::Function::New(env, removeHardwareBreakpoint));
+  return exports;
 }
 
-NODE_MODULE(memoryjs, init)
+NODE_API_MODULE(memoryjs, init)
