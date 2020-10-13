@@ -1,5 +1,5 @@
 const memoryjs = require('../index');
-const processName = 'TestTarget.exe';
+const processName = 'ProtectionTest.exe';
 
 // TODO: Start the TestTarget process, and monitor it's return value.
 
