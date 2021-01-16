@@ -58,7 +58,7 @@ If you are planning to use this module with Node Webkit or Electron, take a look
 Initialise:
 ``` javascript
 const memoryjs = require('memoryjs');
-const processName = "csgo.exe";
+const processName = "csgo.exe"; // Warning: dont use csgo because steam could ban your account
 ```
 
 ### Processes:
