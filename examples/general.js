@@ -87,3 +87,18 @@ const patternOffset = 0x1;
 const addressOffset = 0x10;
 const dwLocalPlayer = memoryjs.findPattern(processObject.handle, clientModule.szModule, signature, signatureTypes, patternOffset, addressOffset);
 console.log(`value of dwLocalPlayer: 0x${dwLocalPlayer.toString(16)}`);
+
+// inject dll
+memoryjs.injectDll(processObject.handle, 'C:\\TestDLL.dll', (error, success) => {
+  console.log(`injected TestDLL.dll into process: ${success} ${error}`);
+});
+
+// unload dll (by name)
+memoryjs.unloadDll(processObject.handle, 'TestDLL.dll', (error, success) => {
+  console.log(`unloaded TestDLL.dll from process: ${success} ${error}`);
+});
+
+// unload dll (by module base address)
+// const testDll = memoryjs.findModule('TestDLL.dll', processObject.th32ProcessID);
+// const success = memoryjs.unloadDll(processObject.handle, testDll.modBaseAddr);
+// console.log(`unloaded TestDLL.dll from process: ${success}`);

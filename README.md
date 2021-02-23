@@ -21,6 +21,8 @@ through for the process (that is returned from `memoryjs.openProcess`). This all
 - Pattern scanning
 - Execute a function within a process
 - Hardware breakpoints (find out what accesses/writes to this address etc)
+- Inject DLLs
+- Unload DLLs
 
 Functions that this library directly exposes from the WinAPI:
 - [ReadProcessMemory](https://docs.microsoft.com/en-us/windows/desktop/api/memoryapi/nf-memoryapi-readprocessmemory)
@@ -30,11 +32,10 @@ Functions that this library directly exposes from the WinAPI:
 
 TODO:
 - WriteFile support (for driver interactions)
-- DLL injections
 
 # Install
 
-This is a Node add-on (last tested to be working on `v8.11.3`) and therefore requires [node-gyp](https://github.com/nodejs/node-gyp) to use.
+This is a Node add-on (last tested to be working on `v14.15.0`) and therefore requires [node-gyp](https://github.com/nodejs/node-gyp) to use.
 
 You may also need to [follow these steps](https://github.com/nodejs/node-gyp#user-content-installation).
 
@@ -205,8 +206,38 @@ memoryjs.callFunction(handle, args, returnType, address, (error, result) => {
 });
 ```
 
+### DLL Injection:
+
+Inject DLL (sync):
+```javascript
+const success = memoryjs.injectDll(handle, dllPath);
+```
+
+Inject DLL (async):
+```javascript
+memoryjs.injectDll(handle, dllPath, (error, success) => {
+
+});
+```
+
+Unload DLL (sync):
+```javascript
+const success = memoryjs.unloadDll(handle, moduleBaseAddress);
+const success = memoryjs.unloadDll(handle, moduleName);
+```
+
+Unload DLL (async):
+```javascript
+memoryjs.unloadDll(handle, moduleBaseAddress, (error, success) => {
+
+});
+memoryjs.unloadDll(handle, moduleName, (error, success) => {
+
+});
+```
+
 Click [here](#user-content-result-object) to see what a result object looks like.
-Clicklick [here](#user-content-function-execution-1) for details about how to format the arguments and the return type.
+Click [here](#user-content-function-execution-1) for details about how to format the arguments and the return type.
 
 ### Hardware Breakpoints
 

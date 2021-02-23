@@ -1,3 +1,4 @@
+const fs = require('fs');
 const memoryjs = require('./build/Release/memoryjs');
 const Debugger = require('./debugger');
 
@@ -214,6 +215,30 @@ module.exports = {
   handleDebugEvent: memoryjs.handleDebugEvent,
   setHardwareBreakpoint: memoryjs.setHardwareBreakpoint,
   removeHardwareBreakpoint: memoryjs.removeHardwareBreakpoint,
+
+  injectDll(handle, dllPath, callback) {
+    if (!dllPath.endsWith('.dll')) {
+      throw new Error("Given path is invalid: file is not of type 'dll'.");
+    }
+
+    if (!fs.existsSync(dllPath)) {
+      throw new Error('Given path is invaild: file does not exist.');
+    }
+
+    if (arguments.length === 2) {
+      return memoryjs.injectDll(handle, dllPath);
+    }
+
+    memoryjs.injectDll(handle, dllPath, callback);
+  },
+
+  unloadDll(handle, module, callback) {
+    if (arguments.length === 2) {
+      return memoryjs.unloadDll(handle, module);
+    }
+
+    memoryjs.unloadDll(handle, module, callback);
+  },
 
   Debugger: new Debugger(memoryjs),
 

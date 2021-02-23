@@ -7,6 +7,7 @@
 #include "memory.h"
 #include "pattern.h"
 #include "functions.h"
+#include "dll.h"
 #include "debugger.h"
 
 #pragma comment(lib, "psapi.lib")
@@ -1197,6 +1198,108 @@ Napi::Value removeHardwareBreakpoint(const Napi::CallbackInfo& args) {
   return Napi::Boolean::New(env, success);
 }
 
+Napi::Value injectDll(const Napi::CallbackInfo& args) {
+  Napi::Env env = args.Env();
+
+  if (args.Length() != 2 && args.Length() != 3) {
+    Napi::Error::New(env, "requires 2 arguments, or 3 with a callback").ThrowAsJavaScriptException();
+    return env.Null();
+  }
+
+  if (!args[0].IsNumber() || !args[1].IsString()) {
+    Napi::Error::New(env, "first argument needs to be a number, second argument needs to be a string").ThrowAsJavaScriptException();
+    return env.Null();
+  }
+
+  if (args.Length() == 3 && !args[2].IsFunction()) {
+    Napi::Error::New(env, "callback needs to be a function").ThrowAsJavaScriptException();
+    return env.Null();
+  }
+
+  HANDLE handle = (HANDLE)args[0].As<Napi::Number>().Int64Value();
+  std::string dllPath(args[1].As<Napi::String>().Utf8Value());
+  Napi::Function callback = args[2].As<Napi::Function>();
+
+  char* errorMessage = "";
+  DWORD moduleHandle = -1;
+  bool success = dll::inject(handle, dllPath, &errorMessage, &moduleHandle);
+
+  // `moduleHandle` above is the return value of the `LoadLibrary` procedure,
+  // which we retrieve through `GetExitCode`. This value can become truncated
+  // in large address spaces such as 64 bit since `GetExitCode` just returns BOOL,
+  // so it's unreliable to use as the handle. Since the handle of a module is just a pointer
+  // to the address of the DLL mapped in the process' virtual address space, we can fetch
+  // this separately, so we won't return it to prevent it being passed to `unloadDll`
+  // and in some cases unexpectedly failing when it is truncated.
+
+  if (args.Length() == 3) {
+    callback.Call(env.Global(), { Napi::String::New(env, errorMessage), Napi::Boolean::New(env, success) });
+    return env.Null();
+  } else {
+    return Napi::Boolean::New(env, success);
+  }
+}
+
+Napi::Value unloadDll(const Napi::CallbackInfo& args) {
+  Napi::Env env = args.Env();
+
+  if (args.Length() != 2 && args.Length() != 3) {
+    Napi::Error::New(env, "requires 2 arguments, or 3 with a callback").ThrowAsJavaScriptException();
+    return env.Null();
+  }
+
+  if (!args[0].IsNumber()) {
+    Napi::Error::New(env, "first argument needs to be a number").ThrowAsJavaScriptException();
+    return env.Null();
+  }
+
+  if (!args[1].IsNumber() && !args[1].IsString()) {
+    Napi::Error::New(env, "second argument needs to be a number or a string").ThrowAsJavaScriptException();
+    return env.Null();
+  }
+
+  if (args.Length() == 3 && !args[2].IsFunction()) {
+    Napi::Error::New(env, "callback needs to be a function").ThrowAsJavaScriptException();
+    return env.Null();
+  }
+
+  HANDLE handle = (HANDLE)args[0].As<Napi::Number>().Int64Value();
+  Napi::Function callback = args[2].As<Napi::Function>();
+
+  HMODULE moduleHandle;
+
+  // get module handle (module base address) directly
+  if (args[1].IsNumber()) {
+    moduleHandle = (HMODULE)args[1].As<Napi::Number>().Int64Value();
+  }
+
+  // find module handle from name of DLL
+  if (args[1].IsString()) {
+    std::string moduleName(args[1].As<Napi::String>().Utf8Value());
+    DWORD processId = GetProcessId(handle);
+    char* errorMessage = "";
+
+    MODULEENTRY32 module = module::findModule(moduleName.c_str(), processId, &errorMessage);
+
+    if (strcmp(errorMessage, "")) {
+      Napi::Error::New(env, "unable to find specified module").ThrowAsJavaScriptException();
+      return env.Null();
+    }
+
+    moduleHandle = (HMODULE) module.modBaseAddr;
+  }
+
+  char* errorMessage = "";
+  bool success = dll::unload(handle, &errorMessage, moduleHandle);
+
+  if (args.Length() == 3) {
+    callback.Call(env.Global(), { Napi::String::New(env, errorMessage), Napi::Boolean::New(env, success) });
+    return env.Null();
+  } else {
+    return Napi::Boolean::New(env, success);
+  }
+}
+
 // https://stackoverflow.com/a/17387176
 std::string GetLastErrorToString() {
   DWORD errorMessageID = ::GetLastError();
@@ -1247,6 +1350,8 @@ Napi::Object init(Napi::Env env, Napi::Object exports) {
   exports.Set(Napi::String::New(env, "handleDebugEvent"), Napi::Function::New(env, handleDebugEvent));
   exports.Set(Napi::String::New(env, "setHardwareBreakpoint"), Napi::Function::New(env, setHardwareBreakpoint));
   exports.Set(Napi::String::New(env, "removeHardwareBreakpoint"), Napi::Function::New(env, removeHardwareBreakpoint));
+  exports.Set(Napi::String::New(env, "injectDll"), Napi::Function::New(env, injectDll));
+  exports.Set(Napi::String::New(env, "unloadDll"), Napi::Function::New(env, unloadDll));
   return exports;
 }
 
