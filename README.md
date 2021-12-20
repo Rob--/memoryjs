@@ -295,7 +295,8 @@ The `handle` and `modBaseAddr` properties are only available when opening a proc
   modBaseSize: 80302080,
   szExePath: 'c:\\program files (x86)\\steam\\steamapps\\common\\counter-strike global offensive\\csgo\\bin\\client.dll',
   szModule: 'client.dll',
-  th32ProcessID: 10316 }
+  th32ProcessID: 10316,
+  GlblcntUsage: 2 }
   ```
 
 ### Result Object:

@@ -219,7 +219,8 @@ Napi::Value getModules(const Napi::CallbackInfo& args) {
     module.Set(Napi::String::New(env, "modBaseSize"), Napi::Value::From(env, (int)moduleEntries[i].modBaseSize));
     module.Set(Napi::String::New(env, "szExePath"), Napi::String::New(env, moduleEntries[i].szExePath));
     module.Set(Napi::String::New(env, "szModule"), Napi::String::New(env, moduleEntries[i].szModule));
-    module.Set(Napi::String::New(env, "th32ModuleID"), Napi::Value::From(env, (int)moduleEntries[i].th32ProcessID));
+    module.Set(Napi::String::New(env, "th32ProcessID"), Napi::Value::From(env, (int)moduleEntries[i].th32ProcessID));
+    module.Set(Napi::String::New(env, "GlblcntUsage"), Napi::Value::From(env, (int)moduleEntries[i].GlblcntUsage));
 
     // Push the object to the array
     modules.Set(i, module);
@@ -283,7 +284,7 @@ Napi::Value findModule(const Napi::CallbackInfo& args) {
   moduleInfo.Set(Napi::String::New(env, "szExePath"), Napi::String::New(env, module.szExePath));
   moduleInfo.Set(Napi::String::New(env, "szModule"), Napi::String::New(env, module.szModule));
   moduleInfo.Set(Napi::String::New(env, "th32ProcessID"), Napi::Value::From(env, (int)module.th32ProcessID));
-  moduleInfo.Set(Napi::String::New(env, "hModule"), Napi::Value::From(env, (uintptr_t)module.hModule));
+  moduleInfo.Set(Napi::String::New(env, "GlblcntUsage"), Napi::Value::From(env, (int)module.GlblcntUsage));
 
   // findModule can either take one or two arguments,
   // three arguments for asychronous use (third argument is the callback)
