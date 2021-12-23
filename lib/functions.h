@@ -153,7 +153,7 @@ namespace functions {
     // Execute the shellcode
     HANDLE thread = CreateRemoteThread(pHandle, NULL, NULL, (LPTHREAD_START_ROUTINE)pShellcode, NULL, NULL, NULL);
 
-    Call data = { 0, "", -1 };
+    Call data = { 0, "", (DWORD) -1 };
 
     if (thread == NULL) {
       *errorMessage = "Unable to create remote thread.";

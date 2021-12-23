@@ -1,4 +1,9 @@
 build
 test.js
 npm-debug.log
-/.npmignore
+.vscode
+node_modules
+test/vcxproj/Debug
+test/vcxproj/Release
+test/*.exe
+test/.vs

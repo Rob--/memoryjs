@@ -1,4 +1,4 @@
-# memoryjs &middot; [![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/Rob--/memoryjs/blob/master/LICENSE.md) [![npm version](https://img.shields.io/npm/v/memoryjs.svg?style=flat)](https://www.npmjs.com/package/memoryjs)
+# memoryjs &middot; [![GitHub license](https://img.shields.io/github/license/Rob--/memoryjs)](https://github.com/Rob--/memoryjs/blob/master/LICENSE.md) [![npm version](https://img.shields.io/npm/v/memoryjs.svg?style=flat)](https://www.npmjs.com/package/memoryjs) ![npm](https://img.shields.io/npm/dm/memoryjs)
 
 memoryjs is an NPM package for reading and writing process memory! (finally!)
 
@@ -74,6 +74,11 @@ Open a process (async):
 memoryjs.openProcess(processIdentifier, (error, processObject) => {
 
 });
+```
+
+Close/release process handle:
+``` javascript
+memoryjs.closeProcess(handle);
 ```
 
 Get all processes (sync):
