@@ -317,11 +317,10 @@ Napi::Value readMemory(const Napi::CallbackInfo& args) {
     return env.Null();
   }
 
-  std::string dataTypeArg(args[2].As<Napi::String>().Utf8Value());
-  const char* dataType = dataTypeArg.c_str();
+  const char* dataType = args[2].As<Napi::String>().Utf8Value().c_str();
 
   // Define the error message that will be set if no data type is recognised
-  std::string errorMessage;
+  char* errorMessage = "";
   Napi::Value retVal = env.Null();
 
   HANDLE handle = (HANDLE)args[0].As<Napi::Number>().Int64Value();
@@ -394,6 +393,9 @@ Napi::Value readMemory(const Napi::CallbackInfo& args) {
 
   } else if (!strcmp(dataType, "string") || !strcmp(dataType, "str")) {
 
+    // This is not an ideal solution. Ideal solution is to read until we hit
+    // a null-terminator in a single read. However, since we don't know the length
+    // the memory read may fail if we read into an invalid region.
     std::vector<char> chars;
     int offset = 0x0;
     while (true) {
@@ -411,23 +413,15 @@ Napi::Value readMemory(const Napi::CallbackInfo& args) {
         break;
       }
 
-	  // go to next char
+	    // go to next char
       offset += sizeof(char);
     }
 
     if (chars.size() == 0) {
-
-      if (args.Length() == 4) errorMessage = "unable to read string (no null-terminator found after 1 million chars)";
-      else
-      {
-        Napi::Error::New(env, "unable to read string (no null-terminator found after 1 million chars)").ThrowAsJavaScriptException();
-        return env.Null();
-      }
-
+      errorMessage = "unable to read string (no null-terminator found after 1 million chars)";
     } else {
       // vector -> string
       std::string str(chars.begin(), chars.end());
-
       retVal = Napi::String::New(env, str.c_str());
     }
 
@@ -438,8 +432,8 @@ Napi::Value readMemory(const Napi::CallbackInfo& args) {
     moduleInfo.Set(Napi::String::New(env, "x"), Napi::Value::From(env, result.x));
     moduleInfo.Set(Napi::String::New(env, "y"), Napi::Value::From(env, result.y));
     moduleInfo.Set(Napi::String::New(env, "z"), Napi::Value::From(env, result.z));
-
     retVal = moduleInfo;
+
   } else if (!strcmp(dataType, "vector4") || !strcmp(dataType, "vec4")) {
 
     Vector4 result = Memory.readMemory<Vector4>(handle, address);
@@ -448,29 +442,22 @@ Napi::Value readMemory(const Napi::CallbackInfo& args) {
     moduleInfo.Set(Napi::String::New(env, "x"), Napi::Value::From(env, result.x));
     moduleInfo.Set(Napi::String::New(env, "y"), Napi::Value::From(env, result.y));
     moduleInfo.Set(Napi::String::New(env, "z"), Napi::Value::From(env, result.z));
-
     retVal = moduleInfo;
-  } else {
 
-    if (args.Length() == 4) errorMessage = "unexpected data type";
-    else
-    {
-      Napi::Error::New(env, "unexpected data type").ThrowAsJavaScriptException();
-      return env.Null();
-    }
+  } else {
+    errorMessage = "unexpected data type";
   }
 
-  if (args.Length() == 4)
-  {
-    Napi::Function callback = args[3].As<Napi::Function>();
-    if (!errorMessage.empty())
-      callback.Call(env.Global(), { Napi::String::New(env, errorMessage) });
-    else
-      callback.Call(env.Global(), { Napi::String::New(env, ""), retVal });
+  if (strcmp(errorMessage, "") && args.Length() != 4) {
+    Napi::Error::New(env, errorMessage).ThrowAsJavaScriptException();
     return env.Null();
   }
-  else
-  {
+
+  if (args.Length() == 4) {
+    Napi::Function callback = args[3].As<Napi::Function>();
+    callback.Call(env.Global(), { Napi::String::New(env, errorMessage), retVal });
+    return env.Null();
+  } else {
     return retVal;
   }
 }
@@ -533,8 +520,7 @@ Napi::Value writeMemory(const Napi::CallbackInfo& args) {
     return env.Null();
   }
 
-  std::string dataTypeArg(args[3].As<Napi::String>().Utf8Value());
-  const char* dataType = dataTypeArg.c_str();
+  const char* dataType = args[3].As<Napi::String>().Utf8Value().c_str();
 
   HANDLE handle = (HANDLE)args[0].As<Napi::Number>().Int64Value();
   DWORD64 address = args[1].As<Napi::Number>().Int64Value();
@@ -620,7 +606,6 @@ Napi::Value writeMemory(const Napi::CallbackInfo& args) {
     Memory.writeMemory<Vector4>(handle, address, vector);
 
   } else {
-
     Napi::Error::New(env, "unexpected data type").ThrowAsJavaScriptException();
   }
 
@@ -652,20 +637,20 @@ Napi::Value writeBuffer(const Napi::CallbackInfo& args) {
 Napi::Value findPattern(const Napi::CallbackInfo& args) {
   Napi::Env env = args.Env();
 
-  // if (args.Length() != 5 && args.Length() != 6) {
-  //   Napi::Error::New(env, "requires 5 arguments, or 6 arguments if a callback is being used").ThrowAsJavaScriptException();
-  //   return env.Null();
-  // }
+  if (args.Length() != 5 && args.Length() != 6) {
+    Napi::Error::New(env, "requires 5 arguments, or 6 arguments if a callback is being used").ThrowAsJavaScriptException();
+    return env.Null();
+  }
 
-  // if (!args[0].IsNumber() && !args[1].IsString() && !args[2].IsNumber() && !args[3].IsNumber() && !args[4].IsNumber()) {
-  //   Napi::Error::New(env, "first argument must be a number, the remaining arguments must be numbers apart from the callback").ThrowAsJavaScriptException();
-  //   return env.Null();
-  // }
+  if (!args[0].IsNumber() && !args[1].IsString() && !args[2].IsNumber() && !args[3].IsNumber() && !args[4].IsNumber()) {
+    Napi::Error::New(env, "first argument must be a number, the remaining arguments must be numbers apart from the callback").ThrowAsJavaScriptException();
+    return env.Null();
+  }
 
-  // if (args.Length() == 6 && !args[5].IsFunction()) {
-  //   Napi::Error::New(env, "sixth argument must be a function").ThrowAsJavaScriptException();
-  //   return env.Null();
-  // }
+  if (args.Length() == 6 && !args[5].IsFunction()) {
+    Napi::Error::New(env, "sixth argument must be a function").ThrowAsJavaScriptException();
+    return env.Null();
+  }
 
   // Address of findPattern result
   uintptr_t address = -1;
@@ -701,10 +686,19 @@ Napi::Value findPattern(const Napi::CallbackInfo& args) {
   }
 
   // If no error was set by getModules and the address is still the value we set it as, it probably means we couldn't find the module
-  if (strcmp(errorMessage, "") && address == -1) errorMessage = "unable to find module";
+  if (strcmp(errorMessage, "") && address == -1) {
+    errorMessage = "unable to find module";
+  }
 
   // If no error was set by getModules and the address is -2 this means there was no match to the pattern
-  if (strcmp(errorMessage, "") && address == -2) errorMessage = "no match found";
+  if (strcmp(errorMessage, "") && address == -2) {
+    errorMessage = "no match found";
+  }
+
+  if (strcmp(errorMessage, "") && args.Length() != 7) {
+    Napi::Error::New(env, errorMessage).ThrowAsJavaScriptException();
+    return env.Null();
+  }
 
   // findPattern can be asynchronous
   if (args.Length() == 7) {
@@ -788,6 +782,11 @@ Napi::Value callFunction(const Napi::CallbackInfo& args) {
   }
 
   heap.clear();
+
+  if (strcmp(errorMessage, "") && args.Length() != 5) {
+    Napi::Error::New(env, errorMessage).ThrowAsJavaScriptException();
+    return env.Null();
+  }
 
   Napi::Object info = Napi::Object::New(env);
 
@@ -1236,6 +1235,11 @@ Napi::Value injectDll(const Napi::CallbackInfo& args) {
   DWORD moduleHandle = -1;
   bool success = dll::inject(handle, dllPath, &errorMessage, &moduleHandle);
 
+  if (strcmp(errorMessage, "") && args.Length() != 3) {
+    Napi::Error::New(env, errorMessage).ThrowAsJavaScriptException();
+    return env.Null();
+  }
+
   // `moduleHandle` above is the return value of the `LoadLibrary` procedure,
   // which we retrieve through `GetExitCode`. This value can become truncated
   // in large address spaces such as 64 bit since `GetExitCode` just returns BOOL,
@@ -1294,8 +1298,13 @@ Napi::Value unloadDll(const Napi::CallbackInfo& args) {
     MODULEENTRY32 module = module::findModule(moduleName.c_str(), processId, &errorMessage);
 
     if (strcmp(errorMessage, "")) {
-      Napi::Error::New(env, "unable to find specified module").ThrowAsJavaScriptException();
-      return env.Null();
+      if (args.Length() != 3) {
+        Napi::Error::New(env, "unable to find specified module").ThrowAsJavaScriptException();
+        return env.Null();
+      } else {
+        callback.Call(env.Global(), { Napi::String::New(env, errorMessage) });
+        return Napi::Boolean::New(env, false);
+      }
     }
 
     moduleHandle = (HMODULE) module.modBaseAddr;
@@ -1303,6 +1312,11 @@ Napi::Value unloadDll(const Napi::CallbackInfo& args) {
 
   char* errorMessage = "";
   bool success = dll::unload(handle, &errorMessage, moduleHandle);
+
+  if (strcmp(errorMessage, "") && args.Length() != 3) {
+    Napi::Error::New(env, errorMessage).ThrowAsJavaScriptException();
+    return Napi::Boolean::New(env, false);
+  }
 
   if (args.Length() == 3) {
     callback.Call(env.Global(), { Napi::String::New(env, errorMessage), Napi::Boolean::New(env, success) });
