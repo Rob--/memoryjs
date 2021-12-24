@@ -20,10 +20,8 @@ public:
     return cRead;
   }
 
-  char* readBuffer(HANDLE hProcess, DWORD64 address, SIZE_T size) {
-    char* buffer = new char[size];
-    ReadProcessMemory(hProcess, (LPVOID)address, buffer, size, NULL);
-    return buffer;
+  void readBuffer(HANDLE hProcess, DWORD64 address, SIZE_T size, char* dstBuffer) {
+    ReadProcessMemory(hProcess, (LPVOID)address, dstBuffer, size, NULL);
   }
 
   char readChar(HANDLE hProcess, DWORD64 address) {

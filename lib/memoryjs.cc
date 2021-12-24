@@ -496,10 +496,21 @@ Napi::Value readBuffer(const Napi::CallbackInfo& args) {
   HANDLE handle = (HANDLE)args[0].As<Napi::Number>().Int64Value();
   DWORD64 address = args[1].As<Napi::Number>().Int64Value();
   SIZE_T size = args[2].As<Napi::Number>().Int64Value();
-  char* data = Memory.readBuffer(handle, address, size);
 
-  Napi::Buffer<char> buffer = Napi::Buffer<char>::New(env, data, size);
+  // To fix the memory leak problem that was happening here, we need to release the
+  // temporary buffer we create after we're done creating a Napi::Buffer from it.
+  // Napi::Buffer::New doesn't free the memory, so it has be done manually
+  // but it can segfault when the memory is freed before being accessed.
+  // The solution is to use Napi::Buffer::Copy, and then we can manually free it.
+  //
+  // see: https://github.com/nodejs/node/issues/40936
+  // see: https://sagivo.com/2015/09/30/Go-Native-Calling-C-From-NodeJS.html
+  char* data = (char*) malloc(sizeof(char) * size);
+  Memory.readBuffer(handle, address, size, data);
 
+  Napi::Buffer<char> buffer = Napi::Buffer<char>::Copy(env, data, size);
+  free(data);
+  
   if (args.Length() == 4) {
     Napi::Function callback = args[3].As<Napi::Function>();
     callback.Call(env.Global(), { Napi::String::New(env, ""), buffer });
