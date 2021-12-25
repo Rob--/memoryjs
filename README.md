@@ -1,4 +1,4 @@
-# memoryjs &middot; [![GitHub license](https://img.shields.io/github/license/Rob--/memoryjs)](https://github.com/Rob--/memoryjs/blob/master/LICENSE.md) [![npm version](https://img.shields.io/npm/v/memoryjs.svg?style=flat)](https://www.npmjs.com/package/memoryjs) ![npm](https://img.shields.io/npm/dm/memoryjs)
+# memoryjs &middot; [![GitHub license](https://img.shields.io/github/license/Rob--/memoryjs)](https://github.com/Rob--/memoryjs/blob/master/LICENSE.md) [![npm version](https://img.shields.io/npm/v/memoryjs.svg?style=flat)](https://www.npmjs.com/package/memoryjs) ![npm](https://img.shields.io/npm/dy/memoryjs)
 
 memoryjs is an NPM package for reading and writing process memory! (finally!)
 
@@ -342,12 +342,21 @@ memoryjs.writeMemory(address, vector4);
 
 If you have a structure you want to write to memory, you can use buffers. For an example on how to do this, view the [buffers example](https://github.com/Rob--/memoryjs/blob/master/examples/buffers.js).
 
-To write a structure to memory, you can use the [concentrate](https://github.com/deoxxa/concentrate) library to describe the structure as a buffer
-and then write the buffer to memory using the `writeBuffer` function.
+To write/read a structure to/from memory, you can use [structron](https://github.com/LordVonAdel/structron) to define your structures and use them to write or parse buffers.
 
-To read a structure from memory, you will need to read a buffer from memory using the `readBuffer` function, and then you can use the [dissolve](https://github.com/deoxxa/dissolve) library to parse the buffer into a structure.
+If you want to read a `std::string` using `structron`, the library exposes a custom type that can be used to read/write strings:
+```javascript
+// To create the type, we need to pass the process handle, base address of the
+// structure, and the target process architecture (either "32" or "64").
+const stringType = memoryjs.STRUCTRON_TYPE_STRING(processObject.handle, structAddress, '64');
 
-In either case you don't need to use the two libraries mentioned above, they just make it easy to turn your structure into a buffer, and your buffer into a structure.
+// Create a custom structure using the custom type, full example in /examples/buffers.js
+const Struct = require('structron');
+const Player = new Struct()
+  .addMember(string, 'name');
+```
+
+Alternatively, you can use the [concentrate](https://github.com/deoxxa/concentrate) and [dissolve](https://github.com/deoxxa/dissolve) libraries to achieve the same thing. An old example of this is [here](https://github.com/Rob--/memoryjs/blob/aa6ed7d302fb1ac315aaa90558db43d128746912/examples/buffers.js).
 
 ### Protection Type:
 

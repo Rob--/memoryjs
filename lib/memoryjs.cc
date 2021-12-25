@@ -317,7 +317,8 @@ Napi::Value readMemory(const Napi::CallbackInfo& args) {
     return env.Null();
   }
 
-  const char* dataType = args[2].As<Napi::String>().Utf8Value().c_str();
+  std::string dataTypeArg(args[2].As<Napi::String>().Utf8Value());
+  const char* dataType = dataTypeArg.c_str();
 
   // Define the error message that will be set if no data type is recognised
   char* errorMessage = "";
@@ -520,7 +521,8 @@ Napi::Value writeMemory(const Napi::CallbackInfo& args) {
     return env.Null();
   }
 
-  const char* dataType = args[3].As<Napi::String>().Utf8Value().c_str();
+  std::string dataTypeArg(args[3].As<Napi::String>().Utf8Value());
+  const char* dataType = dataTypeArg.c_str();
 
   HANDLE handle = (HANDLE)args[0].As<Napi::Number>().Int64Value();
   DWORD64 address = args[1].As<Napi::Number>().Int64Value();

@@ -1,9 +1,10 @@
 const fs = require('fs');
 const memoryjs = require('./build/Release/memoryjs');
-const Debugger = require('./debugger');
-const constants = require('./consts');
+const Debugger = require('./src/debugger');
+const constants = require('./src/consts');
+const { STRUCTRON_TYPE_STRING } = require('./src/utils');
 
-module.exports = {
+const library = {
   ...constants,
 
   openProcess(processIdentifier, callback) {
@@ -167,4 +168,9 @@ module.exports = {
   },
 
   Debugger: new Debugger(memoryjs),
+};
+
+module.exports = {
+  ...library,
+  STRUCTRON_TYPE_STRING: STRUCTRON_TYPE_STRING(library),
 };
