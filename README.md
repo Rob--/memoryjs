@@ -44,11 +44,18 @@ You may also need to [follow these steps](https://github.com/nodejs/node-gyp#use
 When using memoryjs, the target process should match the platform architecture of the Node version running.
 For example if you want to target a 64 bit process, you should try and use a 64 bit version of Node.
 
-You also need to recompile the library and target the platform you want. Head to the memoryjs node module directory, open up a terminal and to run the compile scripts, type:
+You also need to recompile the library and target the platform you want. Head to the memoryjs node module directory, open up a terminal and to run the compile scripts, type one of the following:
 
-`npm run build32` if you want to target 32 bit processes
+```bash
+# will automatically compile based on the detected Node architecture
+npm run build
 
-`npm run build64` if you want to target 64 bit processes
+# compile to target 32 bit processes
+npm run build32
+
+# compile to target 64 bit processes
+npm run build64
+```
 
 # Node Webkit / Electron
 
@@ -581,3 +588,53 @@ setInterval(() => {
 
 Note: a loop is not required, e.g. no loop required if you want to simply wait until the first detection of the address being accessed or written to.
 
+# Debug
+
+### 1. Re-compile the project to be debugged
+
+Go to the root directory of the module and run one of the following commands:
+```bash
+# will automatically compile based on the detected Node architecture
+npm run debug
+
+# compile to target 32 bit processes
+npm run debug32
+
+# compile to target 64 bit processes
+npm run debug64
+```
+
+### 2. Change the `index.js` file to require the debug module
+
+Go to the root directory and change the line in `index.js` from:
+```javascript
+const memoryjs = require('./build/Release/memoryjs');
+```
+
+To the following:
+```javascript
+const memoryjs = require('./build/Debug/memoryjs');
+```
+
+### 3. Open the project in Visual Studio
+
+Open the `binding.sln` solution in Visual Studio, found in the `build` folder in the project's root directory.
+
+### 4. Setup Visual Studio debug configuration
+
+  1. In the toolbar, click "Project" then "Properties"
+  2. Under "Configuration Properties", click "Debugging"
+  3. Set the "Command" property to the location of your `node.exe` file (e.g. `C:\nodejs\node.exe`)
+  4. Set the "Command Arguments" property to the location of your script file (e.g. `C:\project\test.js`)
+
+### 5. Set breakpoints
+
+Explore the project files in Visual Studio (by expanding `..` and then `lib` in the Solution Explorer). Header files can be viewed by holding `Alt` and cilcking on the header file names at the top of the source code files.
+
+Breakpoints are set by clicking to the left of the line number.
+
+### 6. Run the debugger
+
+Start debugging by either pressing `F5`, by clicking "Debug" in the toolbar and then "Start Debugging" or by clicking "Local Windows Debugger".
+
+The script you've set as the command argument in step 4 will be run, and Visual Studio will pause on the breakpoints set and allow you to step through the code line by line and inspect variables.

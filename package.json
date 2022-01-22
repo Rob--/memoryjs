@@ -5,10 +5,14 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "install": "node ./scripts/install.js",
+    "install": "npm run build",
+    "build": "node ./scripts/install.js",
     "build32": "node-gyp clean configure build --arch=ia32",
     "build64": "node-gyp clean configure build --arch=x64",
-    "buildtest": "cd test && MSBuild.exe project.sln //p:Configuration=Release"
+    "buildtest": "cd test && MSBuild.exe project.sln //p:Configuration=Release",
+    "debug": "node ./scripts/debug.js",
+    "debug32": "node-gyp configure rebuild --debug --arch=xia32",
+    "debug64": "node-gyp configure rebuild --debug --arch=x64"
   },
   "repository": {
     "type": "git",
