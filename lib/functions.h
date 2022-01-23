@@ -3,25 +3,9 @@
 #define FUNCTIONS_H
 #define WIN32_LEAN_AND_MEAN
 
-#include <node.h>
 #include <windows.h>
 #include <TlHelp32.h>
 #include <vector>
-
-enum Type {
-  T_VOID = 0x0,
-  T_STRING = 0x1,
-  T_CHAR = 0x2,
-  T_BOOL = 0x3,
-  T_INT = 0x4,
-  T_DOUBLE = 0x5,
-  T_FLOAT = 0x6
-};
-
-struct Arg {
-  Type type;
-  LPVOID value;
-};
 
 struct Call {
   int returnValue;
@@ -30,6 +14,21 @@ struct Call {
 };
 
 namespace functions {
+  enum class Type {
+    T_VOID = 0x0,
+    T_STRING = 0x1,
+    T_CHAR = 0x2,
+    T_BOOL = 0x3,
+    T_INT = 0x4,
+    T_DOUBLE = 0x5,
+    T_FLOAT = 0x6
+  };
+
+  struct Arg {
+    Type type;
+    LPVOID value;
+  };
+
   LPVOID reserveString(HANDLE hProcess, const char* value, SIZE_T size);
   char readChar(HANDLE hProcess, DWORD64 address);
 
@@ -43,7 +42,7 @@ namespace functions {
       // 0x68: PUSH imm16/imm32
       // 0x6A: PUSH imm8
 
-      if (arg.type == T_INT || arg.type == T_FLOAT) {
+      if (arg.type == Type::T_INT || arg.type == Type::T_FLOAT) {
         argShellcode.push_back(0x68);
         int value = *static_cast<int*>(arg.value);
 
@@ -56,7 +55,7 @@ namespace functions {
         continue;
       }
 
-      if (arg.type == T_STRING) {
+      if (arg.type == Type::T_STRING) {
         argShellcode.push_back(0x68);
         std::string value = *static_cast<std::string*>(arg.value);
         LPVOID address = functions::reserveString(pHandle, value.c_str(), value.length());
@@ -84,12 +83,12 @@ namespace functions {
     };
 
     LPVOID returnValuePointer = 0;
-    if (returnType != T_VOID) {
+    if (returnType != Type::T_VOID) {
       // We will reserve memory for where we want to store the result,
       // and move the return value to this address.
       returnValuePointer = VirtualAllocEx(pHandle, NULL, sizeof(returnDataType), MEM_RESERVE | MEM_COMMIT, PAGE_EXECUTE_READWRITE);
 
-      if (returnType == T_FLOAT) {
+      if (returnType == Type::T_FLOAT) {
         // fstp DWORD PTR [0x12345678]
         // when `call` is executed, if return type is float, it's stored
         // in fpu registers (st0 through st7). we can use the `fst`
@@ -99,7 +98,7 @@ namespace functions {
         callShellcode.push_back(0xD9);
         callShellcode.push_back(0x1C);
         callShellcode.push_back(0x25);
-      } else if (returnType == T_DOUBLE) {
+      } else if (returnType == Type::T_DOUBLE) {
         // fstp QWORD PTR [0x12345678]
         // DD FSTP m64real ST Store Floating Point Value and Pop
         // DD = for m64
@@ -156,20 +155,19 @@ namespace functions {
     Call data = { 0, "", (DWORD) -1 };
 
     if (thread == NULL) {
-      *errorMessage = "Unable to create remote thread.";
-      getchar();
+      *errorMessage = "unable to create remote thread.";
       return data;
     }
 
     WaitForSingleObject(thread, INFINITE);
     GetExitCodeThread(thread, &data.exitCode);
 
-    if (returnType != T_VOID && returnType != T_STRING) {
+    if (returnType != Type::T_VOID && returnType != Type::T_STRING) {
       ReadProcessMemory(pHandle, (LPVOID)returnValuePointer, &data.returnValue, sizeof(int), NULL);
-      VirtualFreeEx(pHandle, returnValuePointer, sizeof(int), MEM_RELEASE);
+      VirtualFreeEx(pHandle, returnValuePointer, 0, MEM_RELEASE);
     }
 
-    if (returnType == T_STRING) {
+    if (returnType == Type::T_STRING) {
       // String is stored in memory somewhere
       // When returning a string, the address of the string is placed in EAX.
       // So we read the current returnValuePointer address to get the actual address of the string
@@ -201,7 +199,7 @@ namespace functions {
       data.returnString = str;
     }
 
-    VirtualFreeEx(pHandle, pShellcode, size, MEM_RELEASE);
+    VirtualFreeEx(pHandle, pShellcode, 0, MEM_RELEASE);
 
     return data;
   }

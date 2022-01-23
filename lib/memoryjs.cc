@@ -394,36 +394,11 @@ Napi::Value readMemory(const Napi::CallbackInfo& args) {
 
   } else if (!strcmp(dataType, "string") || !strcmp(dataType, "str")) {
 
-    // This is not an ideal solution. Ideal solution is to read until we hit
-    // a null-terminator in a single read. However, since we don't know the length
-    // the memory read may fail if we read into an invalid region.
-    std::vector<char> chars;
-    int offset = 0x0;
-    while (true) {
-      char c = Memory.readChar(handle, address + offset);
-      chars.push_back(c);
-
-      // break at 1 million chars
-      if (offset == (sizeof(char) * 1000000)) {
-        chars.clear();
-        break;
-      }
-
-      // break at terminator (end of string)
-      if (c == '\0') {
-        break;
-      }
-
-	    // go to next char
-      offset += sizeof(char);
-    }
-
-    if (chars.size() == 0) {
-      errorMessage = "unable to read string (no null-terminator found after 1 million chars)";
+    std::string str;
+    if (!Memory.readString(handle, address, &str)) {
+      errorMessage = "unable to read string";
     } else {
-      // vector -> string
-      std::string str(chars.begin(), chars.end());
-      retVal = Napi::String::New(env, str.c_str());
+      retVal = Napi::String::New(env, str);
     }
 
   } else if (!strcmp(dataType, "vector3") || !strcmp(dataType, "vec3")) {
@@ -733,19 +708,19 @@ Napi::Value callFunction(const Napi::CallbackInfo& args) {
   // Another solution: do `int x = new int(4)` and then use `&x` for the address
   std::vector<LPVOID> heap;
 
-  std::vector<Arg> parsedArgs;
+  std::vector<functions::Arg> parsedArgs;
   Napi::Array arguments = args[1].As<Napi::Array>();
   for (unsigned int i = 0; i < arguments.Length(); i++) {
     Napi::Object argument = arguments.Get(i).As<Napi::Object>();
 
-    Type type = (Type) argument.Get(Napi::String::New(env, "type")).As<Napi::Number>().Uint32Value();
+    functions::Type type = (functions::Type) argument.Get(Napi::String::New(env, "type")).As<Napi::Number>().Uint32Value();
 
-    if (type == T_STRING) {
+    if (type == functions::Type::T_STRING) {
       std::string stringValue = argument.Get(Napi::String::New(env, "value")).As<Napi::String>().Utf8Value();
       parsedArgs.push_back({ type, &stringValue });
     }
 
-    if (type == T_INT) {
+    if (type == functions::Type::T_INT) {
       int data = argument.Get(Napi::String::New(env, "value")).As<Napi::Number>().Int32Value();
 
       // As we only pass the addresses of the variable to the `call` function and not a copy
@@ -760,7 +735,7 @@ Napi::Value callFunction(const Napi::CallbackInfo& args) {
       parsedArgs.push_back({ type, memory });
     }
 
-    if (type == T_FLOAT) {
+    if (type == functions::Type::T_FLOAT) {
       float data = argument.Get(Napi::String::New(env, "value")).As<Napi::Number>().FloatValue();
 
       float* memory = (float*) malloc(sizeof(float));
@@ -772,7 +747,7 @@ Napi::Value callFunction(const Napi::CallbackInfo& args) {
   }
 
   HANDLE handle = (HANDLE)args[0].As<Napi::Number>().Int64Value();
-  Type returnType = (Type) args[2].As<Napi::Number>().Uint32Value();
+  functions::Type returnType = (functions::Type) args[2].As<Napi::Number>().Uint32Value();
   DWORD64 address = args[3].As<Napi::Number>().Int64Value();
 
   char* errorMessage = "";
@@ -794,28 +769,28 @@ Napi::Value callFunction(const Napi::CallbackInfo& args) {
 
   Napi::String keyString = Napi::String::New(env, "returnValue");
 
-  if (returnType == T_STRING) {
+  if (returnType == functions::Type::T_STRING) {
     info.Set(keyString, Napi::String::New(env, data.returnString.c_str()));
   }
 
-  if (returnType == T_CHAR) {
+  if (returnType == functions::Type::T_CHAR) {
     info.Set(keyString, Napi::Value::From(env, (char) data.returnValue));
   }
 
-  if (returnType == T_BOOL) {
+  if (returnType == functions::Type::T_BOOL) {
     info.Set(keyString, Napi::Value::From(env, (bool) data.returnValue));
   }
 
-  if (returnType == T_INT) {
+  if (returnType == functions::Type::T_INT) {
     info.Set(keyString, Napi::Value::From(env, (int) data.returnValue));
   }
 
-  if (returnType == T_FLOAT) {
+  if (returnType == functions::Type::T_FLOAT) {
     float value = *(float *)&data.returnValue;
     info.Set(keyString, Napi::Value::From(env, value));
   }
 
-  if (returnType == T_DOUBLE) {
+  if (returnType == functions::Type::T_DOUBLE) {
     double value = *(double *)&data.returnValue;
     info.Set(keyString, Napi::Value::From(env, value));
   }

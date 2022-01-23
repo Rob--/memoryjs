@@ -39,6 +39,10 @@ bool debugger::setHardwareBreakpoint(DWORD processId, DWORD64 address, Register 
 
     HANDLE threadHandle = OpenThread(THREAD_SUSPEND_RESUME | THREAD_GET_CONTEXT | THREAD_SET_CONTEXT, false, threads[i].th32ThreadID);
 
+    if (threadHandle == 0) {
+        continue;
+    }
+
     SuspendThread(threadHandle);
 
     CONTEXT context = { 0 };
@@ -113,6 +117,10 @@ bool debugger::awaitDebugEvent(DWORD millisTimeout, DebugEvent *info) {
     info->exceptionFlags = exception.ExceptionRecord.ExceptionFlags;
 
     HANDLE handle = OpenThread(THREAD_GET_CONTEXT, false, debugEvent.dwThreadId);
+
+    if (handle == 0) {
+      return false;
+    }
     
     CONTEXT context = {};
     context.ContextFlags = CONTEXT_CONTROL | CONTEXT_INTEGER | CONTEXT_DEBUG_REGISTERS;

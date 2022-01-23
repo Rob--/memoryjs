@@ -2,6 +2,7 @@ build
 test.js
 npm-debug.log
 .vscode
+.vs
 node_modules
 test/vcxproj/Debug
 test/vcxproj/Release

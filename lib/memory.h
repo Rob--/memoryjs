@@ -3,7 +3,6 @@
 #define MEMORY_H
 #define WIN32_LEAN_AND_MEAN
 
-#include <node.h>
 #include <windows.h>
 #include <TlHelp32.h>
 
@@ -20,8 +19,8 @@ public:
     return cRead;
   }
 
-  void readBuffer(HANDLE hProcess, DWORD64 address, SIZE_T size, char* dstBuffer) {
-    ReadProcessMemory(hProcess, (LPVOID)address, dstBuffer, size, NULL);
+  BOOL readBuffer(HANDLE hProcess, DWORD64 address, SIZE_T size, char* dstBuffer) {
+    return ReadProcessMemory(hProcess, (LPVOID)address, dstBuffer, size, NULL);
   }
 
   char readChar(HANDLE hProcess, DWORD64 address) {
@@ -29,6 +28,40 @@ public:
     ReadProcessMemory(hProcess, (LPVOID)address, &value, sizeof(char), NULL);
     return value;
 	}
+
+  BOOL readString(HANDLE hProcess, DWORD64 address, std::string* pString) {
+    int length = 0;
+    int BATCH_SIZE = 256;
+    char* data = (char*) malloc(sizeof(char) * BATCH_SIZE);
+    while (length <= BATCH_SIZE * 4096) {
+      BOOL success = readBuffer(hProcess, address + length, BATCH_SIZE, data);
+
+      if (success == 0) {
+        free(data);
+        break;
+      }
+
+      for (const char* ptr = data; ptr - data < BATCH_SIZE; ++ptr) {
+        if (*ptr == '\0') {
+          length += ptr - data + 1;
+
+          char* buffer = (char*) malloc(length);
+          readBuffer(hProcess, address, length, buffer);
+
+          *pString = std::string(buffer);
+
+          free(data);
+          free(buffer);
+
+          return TRUE;
+        }
+      }
+
+      length += BATCH_SIZE;
+    }
+
+    return FALSE;
+  }
 
   template <class dataType>
   void writeMemory(HANDLE hProcess, DWORD64 address, dataType value) {

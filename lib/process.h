@@ -3,12 +3,9 @@
 #define PROCESS_H
 #define WIN32_LEAN_AND_MEAN
 
-#include <node.h>
 #include <windows.h>
 #include <TlHelp32.h>
 #include <vector>
-
-using v8::Isolate;
 
 class process {
 public:

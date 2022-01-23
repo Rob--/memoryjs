@@ -629,12 +629,12 @@ Open the `binding.sln` solution in Visual Studio, found in the `build` folder in
 
 ### 5. Set breakpoints
 
-Explore the project files in Visual Studio (by expanding `..` and then `lib` in the Solution Explorer). Header files can be viewed by holding `Alt` and cilcking on the header file names at the top of the source code files.
+Explore the project files in Visual Studio (by expanding `..` and then `lib` in the Solution Explorer). Header files can be viewed by holding `Alt` and clicking on the header file names at the top of the source code files.
 
 Breakpoints are set by clicking to the left of the line number.
 
 ### 6. Run the debugger
 
-Start debugging by either pressing `F5`, by clicking "Debug" in the toolbar and then "Start Debugging" or by clicking "Local Windows Debugger".
+Start debugging by either pressing `F5`, by clicking "Debug" in the toolbar and then "Start Debugging", or by clicking "Local Windows Debugger".
 
 The script you've set as the command argument in step 4 will be run, and Visual Studio will pause on the breakpoints set and allow you to step through the code line by line and inspect variables.

@@ -3,7 +3,7 @@
 #define DLL_H
 #define WIN32_LEAN_AND_MEAN
 
-#include <node.h>
+#include <napi.h>
 #include <windows.h>
 #include <TlHelp32.h>
 #include <string>
@@ -21,17 +21,25 @@ namespace dll {
     // write DLL path to reserved memory space
     if (WriteProcessMemory(handle, targetProcessPath, dllPath.c_str(), dllPath.length() + 1, 0) == 0) {
       *errorMessage = "unable to to write dll path to target process";
-      VirtualFreeEx(handle, targetProcessPath, dllPath.length() + 1, MEM_RELEASE);
+      VirtualFreeEx(handle, targetProcessPath, 0, MEM_RELEASE);
+      return false;
+    }
+
+    HMODULE kernel32 = LoadLibrary("kernel32");
+
+    if (kernel32 == 0) {
+      VirtualFreeEx(handle, targetProcessPath, 0, MEM_RELEASE);
+      *errorMessage = "unable to load kernel32";
       return false;
     }
 
     // call LoadLibrary from target process
-    LPTHREAD_START_ROUTINE loadLibraryAddress = (LPTHREAD_START_ROUTINE) GetProcAddress(LoadLibrary("kernel32"), "LoadLibraryA");
+    LPTHREAD_START_ROUTINE loadLibraryAddress = (LPTHREAD_START_ROUTINE) GetProcAddress(kernel32, "LoadLibraryA");
     HANDLE thread = CreateRemoteThread(handle, NULL, NULL, loadLibraryAddress, targetProcessPath, NULL, NULL);
 
     if (thread == NULL) {
       *errorMessage = "unable to call LoadLibrary from target process";
-      VirtualFreeEx(handle, targetProcessPath, dllPath.length() + 1, MEM_RELEASE);
+      VirtualFreeEx(handle, targetProcessPath, 0, MEM_RELEASE);
       return false;
     }
 
@@ -39,15 +47,22 @@ namespace dll {
     GetExitCodeThread(thread, moduleHandle);
 
     // free memory reserved in target process
-    VirtualFreeEx(handle, targetProcessPath, dllPath.length() + 1, MEM_RELEASE);
+    VirtualFreeEx(handle, targetProcessPath, 0, MEM_RELEASE);
     CloseHandle(thread);
 
     return *moduleHandle > 0;
   }
 
   bool unload(HANDLE handle, char** errorMessage, HMODULE moduleHandle) {
+    HMODULE kernel32 = LoadLibrary("kernel32");
+
+    if (kernel32 == 0) {
+      *errorMessage = "unable to load kernel32";
+      return false;
+    }
+
     // call FreeLibrary from target process
-    LPTHREAD_START_ROUTINE freeLibraryAddress = (LPTHREAD_START_ROUTINE) GetProcAddress(LoadLibrary("kernel32"), "FreeLibrary");
+    LPTHREAD_START_ROUTINE freeLibraryAddress = (LPTHREAD_START_ROUTINE) GetProcAddress(kernel32, "FreeLibrary");
     HANDLE thread = CreateRemoteThread(handle, NULL, NULL, freeLibraryAddress, (void*)moduleHandle, NULL, NULL);
 
     if (thread == NULL) {
