@@ -194,14 +194,16 @@ See the [Documentation](#user-content-protection-type) section of this README to
 
 Pattern scanning (sync):
 ``` javascript
-const offset = memoryjs.findPattern(handle, moduleName, signature, signatureType, patternOffset, addressOffset);
+const address = memoryjs.findPattern(handle, pattern, flags, patternOffset);
+const address = memoryjs.findPattern(handle, moduleName, pattern, flags, patternOffset);
+const address = memoryjs.findPattern(handle, baseAddress, pattern, flags, patternOffset);
 ```
 
 Pattern scanning (async):
 ``` javascript
-memoryjs.findPattern(handle, moduleName, signature, signatureType, patternOffset, addressOffset, (error, offset) => {
-
-})
+memoryjs.findPattern(handle, pattern, flags, patternOffset, (error, address) => {});
+memoryjs.findPattern(handle, moduleName, pattern, flags, patternOffset, (error, address) => {});
+memoryjs.findPattern(handle, baseAddress, pattern, flags, patternOffset, (error, address) => {});
 ```
 
 ### Function Execution:

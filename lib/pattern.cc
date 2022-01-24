@@ -14,43 +14,87 @@
 pattern::pattern() {}
 pattern::~pattern() {}
 
-/* based off Y3t1y3t's implementation */
-uintptr_t pattern::findPattern(HANDLE handle, MODULEENTRY32 module, const char* pattern, short sigType, uintptr_t patternOffset, uintptr_t addressOffset) { 
-  auto moduleSize = uintptr_t(module.modBaseSize);
-  auto moduleBase = uintptr_t(module.hModule);
+bool pattern::search(HANDLE handle, std::vector<MEMORY_BASIC_INFORMATION> regions, DWORD64 searchAddress, const char* pattern, short flags, uint32_t patternOffset, uintptr_t* pAddress) {
+  for (std::vector<MEMORY_BASIC_INFORMATION>::size_type i = 0; i != regions.size(); i++) {
+    uintptr_t baseAddress = (uintptr_t) regions[i].BaseAddress;
+    DWORD baseSize = regions[i].RegionSize;
 
-  auto moduleBytes = std::vector<unsigned char>(moduleSize);
-  ReadProcessMemory(handle, LPCVOID(moduleBase), &moduleBytes[0], moduleSize, nullptr);
+    // if `searchAddress` has been set, only pattern match if the address lies inside of this region
+    if (searchAddress != 0 && (searchAddress < baseAddress || searchAddress > (baseAddress + baseSize))) {
+      continue;
+    }
 
-  auto byteBase = const_cast<unsigned char*>(&moduleBytes.at(0));
-  auto maxOffset = moduleSize - 0x1000;
+    // read memory region to pattern match inside
+    std::vector<unsigned char> regionBytes = std::vector<unsigned char>(baseSize);
+    ReadProcessMemory(handle, (LPVOID)baseAddress, &regionBytes[0], baseSize, nullptr);
+    unsigned char* byteBase = const_cast<unsigned char*>(&regionBytes.at(0));
 
-  for (auto offset = 0UL; offset < maxOffset; ++offset) {
-    if (compareBytes(byteBase + offset, pattern)) {
-      auto address = moduleBase + offset + patternOffset;
-
-      /* read memory at pattern if flag is raised*/
-      if (sigType & ST_READ) ReadProcessMemory(handle, LPCVOID(address), &address, sizeof(uintptr_t), nullptr);
-
-      /* subtract image base if flag is raised */
-      if (sigType & ST_SUBTRACT) address -= moduleBase;
-
-      return address + addressOffset;
+    if (findPattern(handle, baseAddress, byteBase, baseSize, pattern, flags, patternOffset, pAddress)) {
+      return true;
     }
   }
 
-  // the method that calls this will check to see if the value is -2
-	// and throw a 'no match' error
-  return -2;
+  return false;
+}
+
+bool pattern::search(HANDLE handle, std::vector<MODULEENTRY32> modules, DWORD64 searchAddress, const char* pattern, short flags, uint32_t patternOffset, uintptr_t* pAddress) {
+  for (std::vector<MODULEENTRY32>::size_type i = 0; i != modules.size(); i++) {
+    uintptr_t baseAddress = (uintptr_t) modules[i].modBaseAddr;
+    DWORD baseSize = modules[i].modBaseSize;
+
+    // if `searchAddress` has been set, only pattern match if the address lies inside of this module
+    if (searchAddress != 0 && (searchAddress < baseAddress || searchAddress > (baseAddress + baseSize))) {
+      continue;
+    }
+
+    // read memory region occupied by the module to pattern match inside
+    std::vector<unsigned char> moduleBytes = std::vector<unsigned char>(baseSize);
+    ReadProcessMemory(handle, (LPVOID)baseAddress, &moduleBytes[0], baseSize, nullptr);
+    unsigned char* byteBase = const_cast<unsigned char*>(&moduleBytes.at(0));
+
+    if (findPattern(handle, baseAddress, byteBase, baseSize, pattern, flags, patternOffset, pAddress)) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+/* based off Y3t1y3t's implementation */
+bool pattern::findPattern(HANDLE handle, uintptr_t memoryBase, unsigned char* byteBase, DWORD memorySize, const char* pattern, short flags, uint32_t patternOffset, uintptr_t* pAddress) {
+  // uintptr_t moduleBase = (uintptr_t)module.hModule;
+  auto maxOffset = memorySize - 0x1000;
+
+  for (uintptr_t offset = 0; offset < maxOffset; ++offset) {
+    if (compareBytes(byteBase + offset, pattern)) {
+      uintptr_t address = memoryBase + offset + patternOffset;
+
+      if (flags & ST_READ) {
+        ReadProcessMemory(handle, LPCVOID(address), &address, sizeof(uintptr_t), nullptr);
+      }
+
+      if (flags & ST_SUBTRACT) {
+        address -= memoryBase;
+      }
+
+      *pAddress = address;
+
+      return true;
+    }
+  }
+
+  return false;
 };
 
 bool pattern::compareBytes(const unsigned char* bytes, const char* pattern) {
   for (; *pattern; *pattern != ' ' ? ++bytes : bytes, ++pattern) {
-    if (*pattern == ' ' || *pattern == '?')
+    if (*pattern == ' ' || *pattern == '?') {
       continue;
+    }
 		
-    if (*bytes != getByte(pattern))
+    if (*bytes != getByte(pattern)) {
       return false;
+    }
     
     ++pattern;
   }

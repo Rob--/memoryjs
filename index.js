@@ -73,27 +73,32 @@ const library = {
   },
 
   // eslint-disable-next-line max-len
-  findPattern(handle, moduleName, signature, signatureType, patternOffset, addressOffset, callback) {
-    if (arguments.length === 6) {
-      return memoryjs.findPattern(
-        handle,
-        moduleName,
-        signature,
-        signatureType,
-        patternOffset,
-        addressOffset,
-      );
+  findPattern() {
+    const findPattern           = ['number', 'string', 'number', 'number'].toString();
+    const findPatternByModule   = ['number', 'string', 'string', 'number', 'number'].toString();
+    const findPatternByAddress  = ['number', 'number', 'string', 'number', 'number'].toString();
+
+    const args = Array.from(arguments).map(arg => typeof arg);
+
+    if (args.slice(0, 4).toString() === findPattern) {
+      if (args.length === 4 || (args.length === 5 && args[4] === 'function')) {
+        return memoryjs.findPattern(...arguments);
+      }
     }
 
-    return memoryjs.findPattern(
-      handle,
-      moduleName,
-      signature,
-      signatureType,
-      patternOffset,
-      addressOffset,
-      callback,
-    );
+    if (args.slice(0, 5).toString() === findPatternByModule) {
+      if (args.length === 5 || (args.length === 6 && args[5] === 'function')) {
+        return memoryjs.findPatternByModule(...arguments);
+      }
+    }
+
+    if (args.slice(0, 5).toString() === findPatternByAddress) {
+      if (args.length === 5 || (args.length === 6 && args[5] === 'function')) {
+        return memoryjs.findPatternByAddress(...arguments);
+      }
+    }
+
+    throw new Error('invalid arguments!');
   },
 
   callFunction(handle, args, returnType, address, callback) {

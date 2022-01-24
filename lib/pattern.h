@@ -21,7 +21,9 @@ public:
     ST_SUBTRACT = 0x2
   };
 
-  uintptr_t findPattern(HANDLE handle, MODULEENTRY32 module, const char* pattern, short sigType, uintptr_t patternOffset, uintptr_t addressOffset);
+  bool search(HANDLE handle, std::vector<MEMORY_BASIC_INFORMATION> regions, DWORD64 searchAddress, const char* pattern, short flags, uint32_t patternOffset, uintptr_t* pAddress);
+  bool search(HANDLE handle, std::vector<MODULEENTRY32> modules, DWORD64 searchAddress, const char* pattern, short flags, uint32_t patternOffset, uintptr_t* pAddress);
+  bool findPattern(HANDLE handle, uintptr_t memoryBase, unsigned char* module, DWORD memorySize, const char* pattern, short flags, uint32_t patternOffset, uintptr_t* pAddress);
   bool compareBytes(const unsigned char* bytes, const char* pattern);
 };
 

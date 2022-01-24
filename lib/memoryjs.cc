@@ -611,80 +611,187 @@ Napi::Value writeBuffer(const Napi::CallbackInfo& args) {
   return env.Null();
 }
 
+// Napi::Value findPattern(const Napi::CallbackInfo& args) {
+//   Napi::Env env = args.Env();
+
+//   HANDLE handle = (HANDLE)args[0].As<Napi::Number>().Int64Value();
+//   DWORD64 baseAddress = args[1].As<Napi::Number>().Int64Value();
+//   DWORD64 baseSize = args[2].As<Napi::Number>().Int64Value();
+//   std::string signature(args[3].As<Napi::String>().Utf8Value());
+//   short flags = args[4].As<Napi::Number>().Uint32Value();
+//   uint32_t patternOffset = args[5].As<Napi::Number>().Uint32Value();
+
+//   // matching address
+//   uintptr_t address = 0;
+//   char* errorMessage = "";
+
+//   // read memory region occupied by the module to pattern match inside
+//   std::vector<unsigned char> moduleBytes = std::vector<unsigned char>(baseSize);
+//   ReadProcessMemory(handle, (LPVOID)baseAddress, &moduleBytes[0], baseSize, nullptr);
+//   unsigned char* byteBase = const_cast<unsigned char*>(&moduleBytes.at(0));
+
+//   Pattern.findPattern(handle, baseAddress, byteBase, baseSize, signature.c_str(), flags, patternOffset, &address);
+
+//   if (address == 0) {
+//     errorMessage = "unable to match pattern inside any modules or regions";
+//   }
+
+//   if (args.Length() == 5) {
+//     Napi::Function callback = args[4].As<Napi::Function>();
+//     callback.Call(env.Global(), { Napi::String::New(env, errorMessage), Napi::Value::From(env, address) });
+//     return env.Null();
+//   } else {
+//     return Napi::Value::From(env, address);
+//   }
+// }
+
 Napi::Value findPattern(const Napi::CallbackInfo& args) {
   Napi::Env env = args.Env();
 
-  if (args.Length() != 5 && args.Length() != 6) {
-    Napi::Error::New(env, "requires 5 arguments, or 6 arguments if a callback is being used").ThrowAsJavaScriptException();
+  if (args.Length() != 4 && args.Length() != 5) {
+    Napi::Error::New(env, "requires 4 arguments, 5 with callback").ThrowAsJavaScriptException();
     return env.Null();
   }
 
-  if (!args[0].IsNumber() && !args[1].IsString() && !args[2].IsNumber() && !args[3].IsNumber() && !args[4].IsNumber()) {
-    Napi::Error::New(env, "first argument must be a number, the remaining arguments must be numbers apart from the callback").ThrowAsJavaScriptException();
+  if (!args[0].IsNumber() || !args[1].IsString() || !args[2].IsNumber() || !args[3].IsNumber()) {
+    Napi::Error::New(env, "expected: number, string, string, number").ThrowAsJavaScriptException();
+    return env.Null();
+  }
+
+  if (args.Length() == 5 && !args[4].IsFunction()) {
+    Napi::Error::New(env, "callback argument must be a function").ThrowAsJavaScriptException();
+    return env.Null();
+  }
+
+  HANDLE handle = (HANDLE)args[0].As<Napi::Number>().Int64Value();
+  std::string pattern(args[1].As<Napi::String>().Utf8Value());
+  short flags = args[2].As<Napi::Number>().Uint32Value();
+  uint32_t patternOffset = args[3].As<Napi::Number>().Uint32Value();
+
+  // matching address
+  uintptr_t address = 0;
+  char* errorMessage = "";
+
+  std::vector<MODULEENTRY32> modules = module::getModules(GetProcessId(handle), &errorMessage);
+  Pattern.search(handle, modules, 0, pattern.c_str(), flags, patternOffset, &address);
+
+  // if no match found inside any modules, search memory regions
+  if (address == 0) {
+    std::vector<MEMORY_BASIC_INFORMATION> regions = Memory.getRegions(handle);
+    Pattern.search(handle, regions, 0, pattern.c_str(), flags, patternOffset, &address);
+  }
+
+  if (address == 0) {
+    errorMessage = "unable to match pattern inside any modules or regions";
+  }
+
+  if (args.Length() == 5) {
+    Napi::Function callback = args[4].As<Napi::Function>();
+    callback.Call(env.Global(), { Napi::String::New(env, errorMessage), Napi::Value::From(env, address) });
+    return env.Null();
+  } else {
+    return Napi::Value::From(env, address);
+  }
+}
+
+Napi::Value findPatternByModule(const Napi::CallbackInfo& args) {
+  Napi::Env env = args.Env();
+
+  if (args.Length() != 5 && args.Length() != 6) {
+    Napi::Error::New(env, "requires 5 arguments, 6 with callback").ThrowAsJavaScriptException();
+    return env.Null();
+  }
+
+  if (!args[0].IsNumber() || !args[1].IsString() || !args[2].IsString() || !args[3].IsNumber() || !args[4].IsNumber()) {
+    Napi::Error::New(env, "expected: number, string, string, number, number").ThrowAsJavaScriptException();
     return env.Null();
   }
 
   if (args.Length() == 6 && !args[5].IsFunction()) {
-    Napi::Error::New(env, "sixth argument must be a function").ThrowAsJavaScriptException();
+    Napi::Error::New(env, "callback argument must be a function").ThrowAsJavaScriptException();
     return env.Null();
   }
-
-  // Address of findPattern result
-  uintptr_t address = -1;
-
-  // Define error message that may be set by the function that gets the modules
-  char* errorMessage = "";
 
   HANDLE handle = (HANDLE)args[0].As<Napi::Number>().Int64Value();
+  std::string moduleName(args[1].As<Napi::String>().Utf8Value());
+  std::string pattern(args[2].As<Napi::String>().Utf8Value());
+  short flags = args[3].As<Napi::Number>().Uint32Value();
+  uint32_t patternOffset = args[4].As<Napi::Number>().Uint32Value();
 
-  std::vector<MODULEENTRY32> moduleEntries = module::getModules(GetProcessId(handle), &errorMessage);
+  // matching address
+  uintptr_t address = 0;
+  char* errorMessage = "";
 
-  // If an error message was returned from the function getting the modules, throw the error.
-  // Only throw an error if there is no callback (if there's a callback, the error is passed there).
-  if (strcmp(errorMessage, "") && args.Length() != 7) {
-    Napi::Error::New(env, errorMessage).ThrowAsJavaScriptException();
-    return env.Null();
+  MODULEENTRY32 module = module::findModule(moduleName.c_str(), GetProcessId(handle), &errorMessage);
+
+  uintptr_t baseAddress = (uintptr_t) module.modBaseAddr;
+  DWORD baseSize = module.modBaseSize;
+
+  // read memory region occupied by the module to pattern match inside
+  std::vector<unsigned char> moduleBytes = std::vector<unsigned char>(baseSize);
+  ReadProcessMemory(handle, (LPVOID)baseAddress, &moduleBytes[0], baseSize, nullptr);
+  unsigned char* byteBase = const_cast<unsigned char*>(&moduleBytes.at(0));
+
+  Pattern.findPattern(handle, baseAddress, byteBase, baseSize, pattern.c_str(), flags, patternOffset, &address);
+
+  if (address == 0) {
+    errorMessage = "unable to match pattern inside any modules or regions";
   }
 
-  for (std::vector<MODULEENTRY32>::size_type i = 0; i != moduleEntries.size(); i++) {
-    std::string moduleName(args[1].As<Napi::String>().Utf8Value());
-
-    if (!strcmp(moduleEntries[i].szModule, moduleName.c_str())) {
-      std::string signature(args[2].As<Napi::String>().Utf8Value());
-
-      // const char* pattern = signature.c_str();
-      short sigType = args[3].As<Napi::Number>().Uint32Value();
-      uint32_t patternOffset = args[4].As<Napi::Number>().Uint32Value();
-      uint32_t addressOffset = args[5].As<Napi::Number>().Uint32Value();
-
-      address = Pattern.findPattern(handle, moduleEntries[i], signature.c_str(), sigType, patternOffset, addressOffset);
-      break;
-    }
-  }
-
-  // If no error was set by getModules and the address is still the value we set it as, it probably means we couldn't find the module
-  if (strcmp(errorMessage, "") && address == -1) {
-    errorMessage = "unable to find module";
-  }
-
-  // If no error was set by getModules and the address is -2 this means there was no match to the pattern
-  if (strcmp(errorMessage, "") && address == -2) {
-    errorMessage = "no match found";
-  }
-
-  if (strcmp(errorMessage, "") && args.Length() != 7) {
-    Napi::Error::New(env, errorMessage).ThrowAsJavaScriptException();
-    return env.Null();
-  }
-
-  // findPattern can be asynchronous
-  if (args.Length() == 7) {
-    // Callback to let the user handle with the information
-    Napi::Function callback = args[6].As<Napi::Function>();
+  if (args.Length() == 6) {
+    Napi::Function callback = args[5].As<Napi::Function>();
     callback.Call(env.Global(), { Napi::String::New(env, errorMessage), Napi::Value::From(env, address) });
     return env.Null();
   } else {
-    // return JSON
+    return Napi::Value::From(env, address);
+  }
+}
+
+Napi::Value findPatternByAddress(const Napi::CallbackInfo& args) {
+  Napi::Env env = args.Env();
+
+  if (args.Length() != 5 && args.Length() != 6) {
+    Napi::Error::New(env, "requires 5 arguments, 6 with callback").ThrowAsJavaScriptException();
+    return env.Null();
+  }
+
+  if (!args[0].IsNumber() || !args[1].IsNumber() || !args[2].IsString() || !args[3].IsNumber() || !args[4].IsNumber()) {
+    Napi::Error::New(env, "expected: number, number, string, number, number").ThrowAsJavaScriptException();
+    return env.Null();
+  }
+
+  if (args.Length() == 6 && !args[5].IsFunction()) {
+    Napi::Error::New(env, "callback argument must be a function").ThrowAsJavaScriptException();
+    return env.Null();
+  }
+
+  HANDLE handle = (HANDLE)args[0].As<Napi::Number>().Int64Value();
+  DWORD64 baseAddress = args[1].As<Napi::Number>().Int64Value();
+  std::string pattern(args[2].As<Napi::String>().Utf8Value());
+  short flags = args[3].As<Napi::Number>().Uint32Value();
+  uint32_t patternOffset = args[4].As<Napi::Number>().Uint32Value();
+
+  // matching address
+  uintptr_t address = 0;
+  char* errorMessage = "";
+
+  std::vector<MODULEENTRY32> modules = module::getModules(GetProcessId(handle), &errorMessage);
+  Pattern.search(handle, modules, baseAddress, pattern.c_str(), flags, patternOffset, &address);
+
+  if (address == 0) {
+    std::vector<MEMORY_BASIC_INFORMATION> regions = Memory.getRegions(handle);
+    Pattern.search(handle, regions, baseAddress, pattern.c_str(), flags, patternOffset, &address);
+  }
+
+  if (address == 0) {
+    errorMessage = "unable to match pattern inside any modules or regions";
+  }
+
+  if (args.Length() == 6) {
+    Napi::Function callback = args[5].As<Napi::Function>();
+    callback.Call(env.Global(), { Napi::String::New(env, errorMessage), Napi::Value::From(env, address) });
+    return env.Null();
+  } else {
     return Napi::Value::From(env, address);
   }
 }
@@ -901,7 +1008,6 @@ Napi::Value getRegions(const Napi::CallbackInfo& args) {
     if (size != 0) {
       region.Set(Napi::String::New(env, "szExeFile"), Napi::String::New(env, moduleName));
     }
-
 
     regionsArray.Set(i, region);
   }
@@ -1269,10 +1375,9 @@ Napi::Value unloadDll(const Napi::CallbackInfo& args) {
   // find module handle from name of DLL
   if (args[1].IsString()) {
     std::string moduleName(args[1].As<Napi::String>().Utf8Value());
-    DWORD processId = GetProcessId(handle);
     char* errorMessage = "";
 
-    MODULEENTRY32 module = module::findModule(moduleName.c_str(), processId, &errorMessage);
+    MODULEENTRY32 module = module::findModule(moduleName.c_str(), GetProcessId(handle), &errorMessage);
 
     if (strcmp(errorMessage, "")) {
       if (args.Length() != 3) {
@@ -1342,6 +1447,8 @@ Napi::Object init(Napi::Env env, Napi::Object exports) {
   exports.Set(Napi::String::New(env, "writeMemory"), Napi::Function::New(env, writeMemory));
   exports.Set(Napi::String::New(env, "writeBuffer"), Napi::Function::New(env, writeBuffer));
   exports.Set(Napi::String::New(env, "findPattern"), Napi::Function::New(env, findPattern));
+  exports.Set(Napi::String::New(env, "findPatternByModule"), Napi::Function::New(env, findPatternByModule));
+  exports.Set(Napi::String::New(env, "findPatternByAddress"), Napi::Function::New(env, findPatternByAddress));
   exports.Set(Napi::String::New(env, "virtualProtectEx"), Napi::Function::New(env, virtualProtectEx));
   exports.Set(Napi::String::New(env, "callFunction"), Napi::Function::New(env, callFunction));
   exports.Set(Napi::String::New(env, "virtualAllocEx"), Napi::Function::New(env, virtualAllocEx));
