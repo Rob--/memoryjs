@@ -257,12 +257,12 @@ Click [here](#user-content-function-execution-1) for details about how to format
 
 Attach a debugger:
 ``` javascript
-const success = memoryjs.attatchDebugger(processId, exitOnDetatch);
+const success = memoryjs.attatchDebugger(processId, exitOnDetach);
 ```
 
-Detatch debugger:
+Detach debugger:
 ``` javascript
-const success = memoryjs.detatchDebugger(processId);
+const success = memoryjs.detachDebugger(processId);
 ```
 
 Wait for debug devent:
@@ -504,8 +504,8 @@ To summarise:
 
 For more reading about debugging and hardware breakpoints, checkout the following links:
 - [DebugActiveProcess](https://msdn.microsoft.com/en-us/library/windows/desktop/ms679295(v=vs.85).aspx) - attatching the debugger
-- [DebugSetProcessKillOnExit](https://docs.microsoft.com/en-us/windows/desktop/api/winbase/nf-winbase-debugsetprocesskillonexit) - kill the process when detatching
-- [DebugActiveProcessStop](https://msdn.microsoft.com/en-us/library/windows/desktop/ms679296(v=vs.85).aspx) - detatching the debugger
+- [DebugSetProcessKillOnExit](https://docs.microsoft.com/en-us/windows/desktop/api/winbase/nf-winbase-debugsetprocesskillonexit) - kill the process when detaching
+- [DebugActiveProcessStop](https://msdn.microsoft.com/en-us/library/windows/desktop/ms679296(v=vs.85).aspx) - detaching the debugger
 - [WaitForDebugEvent](https://msdn.microsoft.com/en-us/library/windows/desktop/ms681423(v=vs.85).aspx) - waiting for the breakpoint to be triggered
 - [ContinueDebugEvent](https://msdn.microsoft.com/en-us/library/windows/desktop/ms679285(v=vs.85).aspx) - handling the event
 
@@ -515,8 +515,8 @@ The Debugger wrapper contains these functions you should use:
 
 ``` javascript
 class Debugger {
-  attatch(processId, killOnDetatch = false);
-  detatch(processId);
+  attatch(processId, killOnDetach = false);
+  detach(processId);
   setHardwareBreakpoint(processId, address, trigger, dataType);
   removeHardwareBreakpoint(processId, register);
 }

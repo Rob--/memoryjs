@@ -20,7 +20,7 @@ bool debugger::attach(DWORD processId, bool killOnDetatch) {
   return true;
 }
 
-bool debugger::detatch(DWORD processId) {
+bool debugger::detach(DWORD processId) {
   return DebugActiveProcessStop(processId) != 0;
 }
 
@@ -92,7 +92,7 @@ bool debugger::setHardwareBreakpoint(DWORD processId, DWORD64 address, Register 
   return false;
 }
 
-bool debugger::awaitDebugEvent(DWORD millisTimeout, DebugEvent *info) {
+bool debugger::awaitDebugEvent(DWORD millisTimeout, DebugEvent* info) {
   DEBUG_EVENT debugEvent = {};
 
   if (WaitForDebugEvent(&debugEvent, millisTimeout) == 0) {
@@ -125,6 +125,8 @@ bool debugger::awaitDebugEvent(DWORD millisTimeout, DebugEvent *info) {
     CONTEXT context = {};
     context.ContextFlags = CONTEXT_CONTROL | CONTEXT_INTEGER | CONTEXT_DEBUG_REGISTERS;
     GetThreadContext(handle, &context);
+
+    info->context = context;
 
     DebugRegister6 dr6;
     dr6.Value = context.Dr6;
@@ -166,4 +168,55 @@ bool debugger::handleDebugEvent(DWORD processId, DWORD threadId) {
   // if (status == DebugContinueStatus::NotHandled) {
   //   return ContinueDebugEvent(processId, threadId, DBG_EXCEPTION_NOT_HANDLED) != 0;
   // }
+}
+
+Napi::Object debugger::fromContext(Napi::Env env, CONTEXT context) {
+  Napi::Object obj = Napi::Object::New(env);
+
+  obj.Set(Napi::String::New(env, "P1Home"), Napi::Value::From(env, context.P1Home));
+  obj.Set(Napi::String::New(env, "P2Home"), Napi::Value::From(env, context.P2Home));
+  obj.Set(Napi::String::New(env, "P3Home"), Napi::Value::From(env, context.P3Home));
+  obj.Set(Napi::String::New(env, "P4Home"), Napi::Value::From(env, context.P4Home));
+  obj.Set(Napi::String::New(env, "P5Home"), Napi::Value::From(env, context.P5Home));
+  obj.Set(Napi::String::New(env, "P6Home"), Napi::Value::From(env, context.P6Home));
+  obj.Set(Napi::String::New(env, "ContextFlags"), Napi::Value::From(env, context.ContextFlags));
+  obj.Set(Napi::String::New(env, "MxCsr"), Napi::Value::From(env, context.MxCsr));
+  obj.Set(Napi::String::New(env, "SegCs"), Napi::Value::From(env, context.SegCs));
+  obj.Set(Napi::String::New(env, "SegDs"), Napi::Value::From(env, context.SegDs));
+  obj.Set(Napi::String::New(env, "SegEs"), Napi::Value::From(env, context.SegEs));
+  obj.Set(Napi::String::New(env, "SegFs"), Napi::Value::From(env, context.SegFs));
+  obj.Set(Napi::String::New(env, "SegGs"), Napi::Value::From(env, context.SegGs));
+  obj.Set(Napi::String::New(env, "SegSs"), Napi::Value::From(env, context.SegSs));
+  obj.Set(Napi::String::New(env, "EFlags"), Napi::Value::From(env, context.EFlags));
+  obj.Set(Napi::String::New(env, "Dr0"), Napi::Value::From(env, context.Dr0));
+  obj.Set(Napi::String::New(env, "Dr1"), Napi::Value::From(env, context.Dr1));
+  obj.Set(Napi::String::New(env, "Dr2"), Napi::Value::From(env, context.Dr2));
+  obj.Set(Napi::String::New(env, "Dr3"), Napi::Value::From(env, context.Dr3));
+  obj.Set(Napi::String::New(env, "Dr6"), Napi::Value::From(env, context.Dr6));
+  obj.Set(Napi::String::New(env, "Dr7"), Napi::Value::From(env, context.Dr7));
+  obj.Set(Napi::String::New(env, "Rax"), Napi::Value::From(env, context.Rax));
+  obj.Set(Napi::String::New(env, "Rcx"), Napi::Value::From(env, context.Rcx));
+  obj.Set(Napi::String::New(env, "Rdx"), Napi::Value::From(env, context.Rdx));
+  obj.Set(Napi::String::New(env, "Rbx"), Napi::Value::From(env, context.Rbx));
+  obj.Set(Napi::String::New(env, "Rsp"), Napi::Value::From(env, context.Rsp));
+  obj.Set(Napi::String::New(env, "Rbp"), Napi::Value::From(env, context.Rbp));
+  obj.Set(Napi::String::New(env, "Rsi"), Napi::Value::From(env, context.Rsi));
+  obj.Set(Napi::String::New(env, "Rdi"), Napi::Value::From(env, context.Rdi));
+  obj.Set(Napi::String::New(env, "R8"), Napi::Value::From(env, context.R8));
+  obj.Set(Napi::String::New(env, "R9"), Napi::Value::From(env, context.R9));
+  obj.Set(Napi::String::New(env, "R10"), Napi::Value::From(env, context.R10));
+  obj.Set(Napi::String::New(env, "R11"), Napi::Value::From(env, context.R11));
+  obj.Set(Napi::String::New(env, "R12"), Napi::Value::From(env, context.R12));
+  obj.Set(Napi::String::New(env, "R13"), Napi::Value::From(env, context.R13));
+  obj.Set(Napi::String::New(env, "R14"), Napi::Value::From(env, context.R14));
+  obj.Set(Napi::String::New(env, "R15"), Napi::Value::From(env, context.R15));
+  obj.Set(Napi::String::New(env, "Rip"), Napi::Value::From(env, context.Rip));
+  obj.Set(Napi::String::New(env, "VectorControl"), Napi::Value::From(env, context.VectorControl));
+  obj.Set(Napi::String::New(env, "DebugControl"), Napi::Value::From(env, context.DebugControl));
+  obj.Set(Napi::String::New(env, "LastBranchToRip"), Napi::Value::From(env, context.LastBranchToRip));
+  obj.Set(Napi::String::New(env, "LastBranchFromRip"), Napi::Value::From(env, context.LastBranchFromRip));
+  obj.Set(Napi::String::New(env, "LastExceptionToRip"), Napi::Value::From(env, context.LastExceptionToRip));
+  obj.Set(Napi::String::New(env, "LastExceptionFromRip"), Napi::Value::From(env, context.LastExceptionFromRip));
+
+  return obj;
 }

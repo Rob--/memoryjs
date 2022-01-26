@@ -6,6 +6,7 @@
 #include <windows.h>
 #include <TlHelp32.h>
 #include <vector>
+#include <napi.h>
 
 enum class Register {
   Invalid = -0x1,
@@ -65,14 +66,16 @@ struct DebugEvent {
   DWORD exceptionFlags;
   void* exceptionAddress;
   Register hardwareRegister;
+  CONTEXT context;
 };
 
 namespace debugger {
   bool attach(DWORD processId, bool killOnDetatch);
-  bool detatch(DWORD processId);
+  bool detach(DWORD processId);
   bool setHardwareBreakpoint(DWORD processId, DWORD64 address, Register reg, int trigger, int size);
   bool awaitDebugEvent(DWORD millisTimeout, DebugEvent *info);
   bool handleDebugEvent(DWORD processId, DWORD threadId);
+  Napi::Object fromContext(Napi::Env env, CONTEXT context);
 }
 
 #endif

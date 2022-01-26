@@ -1,8 +1,10 @@
 const fs = require('fs');
 const memoryjs = require('./build/Release/memoryjs');
-const Debugger = require('./src/debugger');
+const DebuggerClass = require('./src/debugger');
 const constants = require('./src/consts');
 const { STRUCTRON_TYPE_STRING } = require('./src/utils');
+
+const Debugger = new DebuggerClass(memoryjs);
 
 const library = {
   ...constants,
@@ -172,7 +174,26 @@ const library = {
     return memoryjs.unloadDll(handle, module, callback);
   },
 
-  Debugger: new Debugger(memoryjs),
+  getContext(processId, address, trigger, callback) {
+    Debugger.attach(processId);
+    const register = Debugger.setHardwareBreakpoint(processId, address, trigger, constants.BYTE);
+
+    const debugEvent = memoryjs.awaitDebugEvent(register, 1000);
+
+    if (debugEvent) {
+      memoryjs.handleDebugEvent(debugEvent.processId, debugEvent.threadId);
+      Debugger.detach(processId);
+
+      if (typeof callback === 'function') {
+        callback(debugEvent.context);
+        return;
+      }
+
+      return debugEvent.context;
+    }
+  },
+
+  Debugger,
 };
 
 module.exports = {

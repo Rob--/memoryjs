@@ -1161,7 +1161,7 @@ Napi::Value attachDebugger(const Napi::CallbackInfo& args) {
   return Napi::Boolean::New(env, success);
 }
 
-Napi::Value detatchDebugger(const Napi::CallbackInfo& args) {
+Napi::Value detachDebugger(const Napi::CallbackInfo& args) {
   Napi::Env env = args.Env();
 
   DWORD processId = args[0].As<Napi::Number>().Uint32Value();
@@ -1176,7 +1176,7 @@ Napi::Value detatchDebugger(const Napi::CallbackInfo& args) {
     return env.Null();
   }
 
-  bool success = debugger::detatch(processId);
+  bool success = debugger::detach(processId);
   return Napi::Boolean::New(env, success);
 }
 
@@ -1209,6 +1209,7 @@ Napi::Value awaitDebugEvent(const Napi::CallbackInfo& args) {
     info.Set(Napi::String::New(env, "exceptionFlags"), Napi::Value::From(env, (DWORD) debugEvent.exceptionFlags));
     info.Set(Napi::String::New(env, "exceptionAddress"), Napi::Value::From(env, (DWORD64) debugEvent.exceptionAddress));
     info.Set(Napi::String::New(env, "hardwareRegister"), Napi::Value::From(env, static_cast<int>(debugEvent.hardwareRegister)));
+    info.Set(Napi::String::New(env, "context"), debugger::fromContext(env, debugEvent.context));
 
     return info;
   }
@@ -1455,7 +1456,7 @@ Napi::Object init(Napi::Env env, Napi::Object exports) {
   exports.Set(Napi::String::New(env, "getRegions"), Napi::Function::New(env, getRegions));
   exports.Set(Napi::String::New(env, "virtualQueryEx"), Napi::Function::New(env, virtualQueryEx));
   exports.Set(Napi::String::New(env, "attachDebugger"), Napi::Function::New(env, attachDebugger));
-  exports.Set(Napi::String::New(env, "detatchDebugger"), Napi::Function::New(env, detatchDebugger));
+  exports.Set(Napi::String::New(env, "detachDebugger"), Napi::Function::New(env, detachDebugger));
   exports.Set(Napi::String::New(env, "awaitDebugEvent"), Napi::Function::New(env, awaitDebugEvent));
   exports.Set(Napi::String::New(env, "handleDebugEvent"), Napi::Function::New(env, handleDebugEvent));
   exports.Set(Napi::String::New(env, "setHardwareBreakpoint"), Napi::Function::New(env, setHardwareBreakpoint));
