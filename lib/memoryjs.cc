@@ -327,22 +327,32 @@ Napi::Value readMemory(const Napi::CallbackInfo& args) {
   HANDLE handle = (HANDLE)args[0].As<Napi::Number>().Int64Value();
   DWORD64 address = args[1].As<Napi::Number>().Int64Value();
 
-  if (!strcmp(dataType, "byte")) {
+  if (!strcmp(dataType, "int8") || !strcmp(dataType, "byte") || !strcmp(dataType, "char")) {
 
-    unsigned char result = Memory.readMemory<unsigned char>(handle, address);
+    int8_t result = Memory.readMemory<int8_t>(handle, address);
     retVal = Napi::Value::From(env, result);
 
-  } else if (!strcmp(dataType, "int")) {
+  } else if (!strcmp(dataType, "uint8")) || !strcmp(dataType, "ubyte") || !strcmp(dataType, "uchar")) {
 
-    int result = Memory.readMemory<int>(handle, address);
+    uint8_t result = Memory.readMemory<uint8_t>(handle, address);
     retVal = Napi::Value::From(env, result);
 
-  } else if (!strcmp(dataType, "int32")) {
+  } else if (!strcmp(dataType, "int16") || !strcmp(dataType, "short")) {
+
+    int16_t result = Memory.readMemory<int16_t>(handle, address);
+    retVal = Napi::Value::From(env, result);
+
+  } else if (!strcmp(dataType, "uint16") || !strcmp(dataType, "ushort") || !strcmp(dataType, "word")) {
+
+    uint16_t result = Memory.readMemory<uint16_t>(handle, address);
+    retVal = Napi::Value::From(env, result);
+
+  } else if (!strcmp(dataType, "int32") || !strcmp(dataType, "int") || !strcmp(dataType, "long")) {
 
     int32_t result = Memory.readMemory<int32_t>(handle, address);
     retVal = Napi::Value::From(env, result);
 
-  } else if (!strcmp(dataType, "uint32")) {
+  } else if (!strcmp(dataType, "uint32") || !strcmp(dataType, "uint") || !strcmp(dataType, "ulong") || !strcmp(dataType, "dword")) {
 
     uint32_t result = Memory.readMemory<uint32_t>(handle, address);
     retVal = Napi::Value::From(env, result);
@@ -355,21 +365,6 @@ Napi::Value readMemory(const Napi::CallbackInfo& args) {
   } else if (!strcmp(dataType, "uint64")) {
 
     uint64_t result = Memory.readMemory<uint64_t>(handle, address);
-    retVal = Napi::Value::From(env, result);
-
-  } else if (!strcmp(dataType, "dword")) {
-
-    DWORD result = Memory.readMemory<DWORD>(handle, address);
-    retVal = Napi::Value::From(env, result);
-
-  } else if (!strcmp(dataType, "short")) {
-
-    short result = Memory.readMemory<short>(handle, address);
-    retVal = Napi::Value::From(env, result);
-
-  } else if (!strcmp(dataType, "long")) {
-
-    long result = Memory.readMemory<long>(handle, address);
     retVal = Napi::Value::From(env, result);
 
   } else if (!strcmp(dataType, "float")) {
@@ -385,6 +380,11 @@ Napi::Value readMemory(const Napi::CallbackInfo& args) {
   } else if (!strcmp(dataType, "ptr") || !strcmp(dataType, "pointer")) {
 
     intptr_t result = Memory.readMemory<intptr_t>(handle, address);
+    retVal = Napi::Value::From(env, result);
+
+  } else if (!strcmp(dataType, "uptr") || !strcmp(dataType, "upointer")) {
+
+    uintptr_t result = Memory.readMemory<uintptr_t>(handle, address);
     retVal = Napi::Value::From(env, result);
 
   } else if (!strcmp(dataType, "bool") || !strcmp(dataType, "boolean")) {
@@ -502,19 +502,27 @@ Napi::Value writeMemory(const Napi::CallbackInfo& args) {
   HANDLE handle = (HANDLE)args[0].As<Napi::Number>().Int64Value();
   DWORD64 address = args[1].As<Napi::Number>().Int64Value();
 
-  if (!strcmp(dataType, "byte")) {
+  if (!strcmp(dataType, "int8") || !strcmp(dataType, "byte") || !strcmp(dataType, "char")) {
 
-    Memory.writeMemory<unsigned char>(handle, address, args[2].As<Napi::Number>().Uint32Value());
+    Memory.writeMemory<int8_t>(handle, address, args[2].As<Napi::Number>().Int32Value());
 
-  } else if (!strcmp(dataType, "int")) {
+  } else if (!strcmp(dataType, "uint8") || !strcmp(dataType, "ubyte") || !strcmp(dataType, "uchar")) {
 
-    Memory.writeMemory<int>(handle, address, args[2].As<Napi::Number>().Int32Value());
+    Memory.writeMemory<uint8_t>(handle, address, args[2].As<Napi::Number>().Uint32Value());
 
-  } else if (!strcmp(dataType, "int32")) {
+  } else if (!strcmp(dataType, "int16") || !strcmp(dataType, "short")) {
+
+    Memory.writeMemory<int16_t>(handle, address, args[2].As<Napi::Number>().Int32Value());
+
+  } else if (!strcmp(dataType, "uint16") || !strcmp(dataType, "ushort") || !strcmp(dataType, "word")) {
+
+    Memory.writeMemory<uint16_t>(handle, address, args[2].As<Napi::Number>().Uint32Value());
+
+  } else if (!strcmp(dataType, "int32") || !strcmp(dataType, "int") || !strcmp(dataType, "long")) {
 
     Memory.writeMemory<int32_t>(handle, address, args[2].As<Napi::Number>().Int32Value());
 
-  } else if (!strcmp(dataType, "uint32")) {
+  } else if (!strcmp(dataType, "uint32") || !strcmp(dataType, "uint") || !strcmp(dataType, "ulong") || !strcmp(dataType, "dword")) {
 
     Memory.writeMemory<uint32_t>(handle, address, args[2].As<Napi::Number>().Uint32Value());
 
@@ -526,18 +534,6 @@ Napi::Value writeMemory(const Napi::CallbackInfo& args) {
 
     Memory.writeMemory<uint64_t>(handle, address, args[2].As<Napi::Number>().Int64Value());
 
-  } else if (!strcmp(dataType, "dword")) {
-
-    Memory.writeMemory<DWORD>(handle, address, args[2].As<Napi::Number>().Uint32Value());
-
-  } else if (!strcmp(dataType, "short")) {
-
-    Memory.writeMemory<short>(handle, address, args[2].As<Napi::Number>().Int32Value());
-
-  } else if (!strcmp(dataType, "long")) {
-
-    Memory.writeMemory<long>(handle, address, args[2].As<Napi::Number>().Int32Value());
-
   } else if (!strcmp(dataType, "float")) {
 
     Memory.writeMemory<float>(handle, address, args[2].As<Napi::Number>().FloatValue());
@@ -545,6 +541,14 @@ Napi::Value writeMemory(const Napi::CallbackInfo& args) {
   } else if (!strcmp(dataType, "double")) {
 
     Memory.writeMemory<double>(handle, address, args[2].As<Napi::Number>().DoubleValue());
+
+  } else if (!strcmp(dataType, "ptr") || !strcmp(dataType, "pointer")) {
+
+    Memory.writeMemory<intptr_t>(handle, address, args[2].As<Napi::Number>().Int32Value());
+
+  } else if (!strcmp(dataType, "uptr") || !strcmp(DataType, "upointer")) {
+
+    Memory.writeMemory<uintptr_t>(handle, address, args[2].As<Napi::Number>().Uint32Value());
 
   } else if (!strcmp(dataType, "bool") || !strcmp(dataType, "boolean")) {
 

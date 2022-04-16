@@ -323,13 +323,28 @@ The `returnValue` is the value returned from the function that was called. `exit
 
 ### Data Type:
 
-When using the write or read functions, the data type (dataType) parameter can either be a string and be one of the following:
+When using the write or read functions, the data type (dataType) parameter should reference a constant from within the library:
 
-`"byte", "int", "int32", "uint32", "int64", "uint64", "dword", "short", "long", "float", "double", "bool", "boolean", "ptr", "pointer", "str", "string", "vec3", "vector3", "vec4", "vector4"`
+| Constant          | Bytes | Aliases                            | Range |
+|-------------------|-------|------------------------------------|-------|
+| `memoryjs.BOOL`   | 1     | `memoryjs.BOOLEAN`                 | 0 to 1 |
+| `memoryjs.INT8`   | 1     | `memoryjs.BYTE`, `memoryjs.CHAR`   | -128 to 127 |
+| `memoryjs.UINT8`  | 1     | `memoryjs.UBYTE`, `memoryjs.UCHAR` | 0 to 255 |
+| `memoryjs.INT16`  | 2     | `memoryjs.SHORT`                   | -32,768 to 32,767 |
+| `memoryjs.UINT16` | 2     | `memoryjs.USHORT`, `memoryjs.WORD` | 0 to 65,535 |
+| `memoryjs.INT32`  | 4     | `memoryjs.INT`, `memoryjs.LONG`    | -2,147,483,648 to 2,147,483,647 |
+| `memoryjs.UINT32` | 4     | `memoryjs.UINT`, `memoryjs.ULONG`, `memoryjs.DWORD` |	0 to 4,294,967,295 |
+| `memoryjs.INT64`  | 8     | n/a                                | -9,223,372,036,854,775,808 to 9,223,372,036,854,775,807 |
+| `memoryjs.UINT64` | 8     | n/a                                | 0 to 18,446,744,073,709,551,615 |
+| `memoryjs.FLOAT`  | 4     | n/a                                | 3.4E +/- 38 (7 digits) |
+| `memoryjs.DOUBLE` | 8     | n/a                                | 1.7E +/- 308 (15 digits) |
+| `memoryjs.PTR`    | 4/8   | `memoryjs.POINTER`                 | n/a |
+| `memoryjs.UPTR`   | 4/8   | `memoryjs.UPOINTER`                | n/a |
+| `memoryjs.STR`    | n/a   | `memoryjs.STRING`                  | n/a |
+| `memoryjs.VEC3`   | 12    | `memoryjs.VECTOR3`                 | n/a |
+| `memoryjs.VEC4`   | 16    | `memoryjs.VECTOR4`                 | n/a |
 
-or can reference constants from within the library:
-
-`memoryjs.BYTE, memoryjs.INT, memoryjs.INT32, memoryjs.UINT32, memoryjs.INT64, memoryjs.UINT64, memoryjs.DWORD, memoryjs.SHORT, memoryjs.LONG, memoryjs.FLOAT, memoryjs.DOUBLE, memoryjs.BOOL, memoryjs.BOOLEAN, memoryjs.PTR, memoryjs.POINTER, memoryjs.STR, memoryjs.STRING, memoryjs.VEC3, memoryjs.VECTOR3, memoryjs.VEC4, memoryjs.VECTOR4`
+**Note: pointer will be 4 bytes in a 32 bit build, and 8 bytes in a 64 bit build**
 
 This is simply used to denote the type of data being read or written.
 
