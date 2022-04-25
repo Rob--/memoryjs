@@ -1,6 +1,7 @@
 #include <windows.h>
 #include <psapi.h>
 #include <napi.h>
+#include <string>
 #include "module.h"
 #include "process.h"
 #include "memoryjs.h"
@@ -332,7 +333,7 @@ Napi::Value readMemory(const Napi::CallbackInfo& args) {
     int8_t result = Memory.readMemory<int8_t>(handle, address);
     retVal = Napi::Value::From(env, result);
 
-  } else if (!strcmp(dataType, "uint8")) || !strcmp(dataType, "ubyte") || !strcmp(dataType, "uchar")) {
+  } else if (!strcmp(dataType, "uint8") || !strcmp(dataType, "ubyte") || !strcmp(dataType, "uchar")) {
 
     uint8_t result = Memory.readMemory<uint8_t>(handle, address);
     retVal = Napi::Value::From(env, result);
@@ -360,12 +361,12 @@ Napi::Value readMemory(const Napi::CallbackInfo& args) {
   } else if (!strcmp(dataType, "int64")) {
 
     int64_t result = Memory.readMemory<int64_t>(handle, address);
-    retVal = Napi::Value::From(env, result);
+    retVal = Napi::Value::From(env, Napi::BigInt::New(env, result));
 
   } else if (!strcmp(dataType, "uint64")) {
 
     uint64_t result = Memory.readMemory<uint64_t>(handle, address);
-    retVal = Napi::Value::From(env, result);
+    retVal = Napi::Value::From(env, Napi::BigInt::New(env, result));
 
   } else if (!strcmp(dataType, "float")) {
 
@@ -380,12 +381,22 @@ Napi::Value readMemory(const Napi::CallbackInfo& args) {
   } else if (!strcmp(dataType, "ptr") || !strcmp(dataType, "pointer")) {
 
     intptr_t result = Memory.readMemory<intptr_t>(handle, address);
-    retVal = Napi::Value::From(env, result);
+
+    if (sizeof(intptr_t) == 8) {
+      retVal = Napi::Value::From(env, Napi::BigInt::New(env, (int64_t) result));
+    } else {
+      retVal = Napi::Value::From(env, result);
+    }
 
   } else if (!strcmp(dataType, "uptr") || !strcmp(dataType, "upointer")) {
 
     uintptr_t result = Memory.readMemory<uintptr_t>(handle, address);
-    retVal = Napi::Value::From(env, result);
+
+    if (sizeof(uintptr_t) == 8) {
+      retVal = Napi::Value::From(env, Napi::BigInt::New(env, (uint64_t) result));
+    } else {
+      retVal = Napi::Value::From(env, result);
+    }
 
   } else if (!strcmp(dataType, "bool") || !strcmp(dataType, "boolean")) {
 
@@ -528,11 +539,15 @@ Napi::Value writeMemory(const Napi::CallbackInfo& args) {
 
   } else if (!strcmp(dataType, "int64")) {
 
-    Memory.writeMemory<int64_t>(handle, address, args[2].As<Napi::Number>().Int64Value());
+    Napi::BigInt bigInt = args[2].As<Napi::BigInt>();
+    bool lossless;
+    Memory.writeMemory<int64_t>(handle, address, bigInt.Int64Value(&lossless));
 
   } else if (!strcmp(dataType, "uint64")) {
 
-    Memory.writeMemory<uint64_t>(handle, address, args[2].As<Napi::Number>().Int64Value());
+    Napi::BigInt bigInt = args[2].As<Napi::BigInt>();
+    bool lossless;
+    Memory.writeMemory<uint64_t>(handle, address, bigInt.Uint64Value(&lossless));
 
   } else if (!strcmp(dataType, "float")) {
 
@@ -544,11 +559,39 @@ Napi::Value writeMemory(const Napi::CallbackInfo& args) {
 
   } else if (!strcmp(dataType, "ptr") || !strcmp(dataType, "pointer")) {
 
-    Memory.writeMemory<intptr_t>(handle, address, args[2].As<Napi::Number>().Int32Value());
+    Napi::BigInt bigInt = args[2].As<Napi::BigInt>();
 
-  } else if (!strcmp(dataType, "uptr") || !strcmp(DataType, "upointer")) {
+    if (sizeof(intptr_t) == 8 && !bigInt.IsBigInt()) {
+      std::string error = "Writing memoryjs.PTR or memoryjs.POINTER on 64 bit target build requires you to supply a BigInt.";
+      error += " Rebuild the library with `npm run build32` to target 32 bit applications.";
+      Napi::Error::New(env, error).ThrowAsJavaScriptException();
+      return env.Null();
+    }
 
-    Memory.writeMemory<uintptr_t>(handle, address, args[2].As<Napi::Number>().Uint32Value());
+    if (bigInt.IsBigInt()) {
+      bool lossless;
+      Memory.writeMemory<intptr_t>(handle, address, bigInt.Int64Value(&lossless));
+    } else {
+      Memory.writeMemory<intptr_t>(handle, address, args[2].As<Napi::Number>().Int32Value());
+    }
+
+  } else if (!strcmp(dataType, "uptr") || !strcmp(dataType, "upointer")) {
+
+    Napi::BigInt bigInt = args[2].As<Napi::BigInt>();
+
+    if (sizeof(uintptr_t) == 8 && !bigInt.IsBigInt()) {
+      std::string error = "Writing memoryjs.PTR or memoryjs.POINTER on 64 bit target build requires you to supply a BigInt.";
+      error += " Rebuild the library with `npm run build32` to target 32 bit applications.";
+      Napi::Error::New(env, error).ThrowAsJavaScriptException();
+      return env.Null();
+    }
+
+    if (bigInt.IsBigInt()) {
+      bool lossless;
+      Memory.writeMemory<uintptr_t>(handle, address, bigInt.Uint64Value(&lossless));
+    } else {
+      Memory.writeMemory<uintptr_t>(handle, address, args[2].As<Napi::Number>().Uint32Value());
+    }
 
   } else if (!strcmp(dataType, "bool") || !strcmp(dataType, "boolean")) {
 

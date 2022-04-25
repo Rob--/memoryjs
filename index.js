@@ -120,8 +120,13 @@ function writeMemory(handle, address, value, dataType) {
     dataValue += '\0'; // add terminator
   }
 
+  const bigintTypes = [constants.INT64, constants.INT64_BE, constants.UINT64, constants.UINT64_BE];
+  if (bigintTypes.indexOf(dataType) != -1 && typeof value !== 'bigint') {
+    throw new Error(`${dataType.toUpperCase()} expects type BigInt`);
+  }
+
   if (dataType.endsWith('_be')) {
-    return writeMemoryBE(handle, address, value, dataType);
+    return writeMemoryBE(handle, address, dataValue, dataType);
   }
 
   return memoryjs.writeMemory(handle, address, dataValue, dataType.toLowerCase());

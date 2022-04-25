@@ -346,18 +346,25 @@ When using the write or read functions, the data type (dataType) parameter shoul
 
 **Note: pointer will be 4 bytes in a 32 bit build, and 8 bytes in a 64 bit build**
 
-This is simply used to denote the type of data being read or written.
+**Note: when writing 64 bit integers (`INT64`, `UINT64`, `INT64_BE`, `UINT64_BE`) you will need to supply a [BigInt](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/BigInt). When reading a 64 bit integer, you will receive a BigInt**
+
+These data types are to used to denote the type of data being read or written.
+
+64 bit integer example:
+```javascript
+const value = memoryjs.readMemory(handle, address, memoryjs.INT64);
+console.log(typeof value); // bigint
+memoryjs.writeMemory(handle, address, value + 1n, memoryjs.INT64);
+```
 
 Vector3 is a data structure of three floats:
-
-``` javascript
+```javascript
 const vector3 = { x: 0.0, y: 0.0, z: 0.0 };
 memoryjs.writeMemory(address, vector3);
 ```
 
 Vector4 is a data structure of four floats:
-
-``` javascript
+```javascript
 const vector4 = { w: 0.0, x: 0.0, y: 0.0, z: 0.0 };
 memoryjs.writeMemory(address, vector4);
 ```
