@@ -1,6 +1,5 @@
 <p align="center">
-  <img width="600" src="https://raw.githubusercontent.com/Rob--/memoryjs/master/assets/logo_dark_mode.png#gh-dark-mode-only">
-  <img width="600" src="https://raw.githubusercontent.com/Rob--/memoryjs/master/assets/logo_light_mode.png#gh-light-mode-only">
+  <img width="600" src="assets/logo.png">
   <br>
   <code>memoryjs</code> is a an NPM package to read and write process memory!
 </p>
