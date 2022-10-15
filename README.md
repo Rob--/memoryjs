@@ -1,50 +1,62 @@
-# memoryjs &middot; [![GitHub license](https://img.shields.io/github/license/Rob--/memoryjs)](https://github.com/Rob--/memoryjs/blob/master/LICENSE.md) [![npm version](https://img.shields.io/npm/v/memoryjs.svg?style=flat)](https://www.npmjs.com/package/memoryjs) ![npm](https://img.shields.io/npm/dy/memoryjs)
+<p align="center">
+  <img width="600" src="assets/logo_light_mode.png">
+  <br>
+  <code>memoryjs</code> is a an NPM package to read and write process memory!
+</p>
 
-memoryjs is an NPM package for reading and writing process memory! (finally!)
+<p align="center">
+  <img src="https://img.shields.io/github/license/Rob--/memoryjs" alt="GitHub License">
+  <img src="https://img.shields.io/npm/v/memoryjs.svg?style=flat" alt="NPM Version">
+  <img src="https://img.shields.io/npm/dy/memoryjs" alt="NPM Downloads">
+</p>
 
-NOTE: version 3 of this library introduces breaking changes that are incompatible with previous versions.
-The notable change is that when reading memory, writing memory and pattern scanning you are required to pass the handle
-through for the process (that is returned from `memoryjs.openProcess`). This allows for multi-process support.
+---
+
+<p align="center">
+  <a href="#user-content-features">Features</a> •
+  <a href="#user-content-getting-started">Getting Started</a> •
+  <a href="#user-content-usage">Usage</a> •
+  <a href="#user-content-documentation">Documentation</a> •
+  <a href="#user-content-debug">Debug</a>
+</p>
+
 
 # Features
 
 - List all open processes
 - List all modules associated with a process
 - Find a specific module within a process
-- Read process memory
-- Write process memory
-- Read buffers from memory
-- Write buffer to memory
+- Read and write process memory (w/big-endian support)
+- Read and write buffers (arbitrary structs)
 - Change memory protection
 - Reserve/allocate, commit or change regions of memory
 - Fetch a list of memory regions within a process
 - Pattern scanning
 - Execute a function within a process
-- Hardware breakpoints (find out what accesses/writes to this address etc)
-- Inject DLLs
-- Unload DLLs
-
-Functions that this library directly exposes from the WinAPI:
-- [ReadProcessMemory](https://docs.microsoft.com/en-us/windows/desktop/api/memoryapi/nf-memoryapi-readprocessmemory)
-- [WriteProcessMemory](https://docs.microsoft.com/en-us/windows/desktop/api/memoryapi/nf-memoryapi-writeprocessmemory)
-- [VirtualProtectEx](https://docs.microsoft.com/en-us/windows/desktop/api/memoryapi/nf-memoryapi-virtualprotectex)
-- [VirtualAllocEx](https://docs.microsoft.com/en-us/windows/desktop/api/memoryapi/nf-memoryapi-virtualallocex)
+- Hardware breakpoints (find out what accesses/writes to this address, etc)
+- Inject & Unload DLLs
 
 TODO:
 - WriteFile support (for driver interactions)
+- BigInt64 support for memory addresses
+- Async/await support
 
-# Install
+# Getting Started
+
+## Install
 
 This is a Node add-on (last tested to be working on `v14.15.0`) and therefore requires [node-gyp](https://github.com/nodejs/node-gyp) to use.
 
-You may also need to [follow these steps](https://github.com/nodejs/node-gyp#user-content-installation).
+You may also need to [follow these steps](https://github.com/nodejs/node-gyp#user-content-installation) to install and setup `node-gyp`.
 
-`npm install memoryjs`
+```bash
+npm install memoryjs
+```
 
 When using memoryjs, the target process should match the platform architecture of the Node version running.
 For example if you want to target a 64 bit process, you should try and use a 64 bit version of Node.
 
-You also need to recompile the library and target the platform you want. Head to the memoryjs node module directory, open up a terminal and to run the compile scripts, type one of the following:
+You also need to recompile the library and target the platform you want. Head to the memoryjs node module directory, open up a terminal and run one of the following compile scripts:
 
 ```bash
 # will automatically compile based on the detected Node architecture
@@ -57,231 +69,209 @@ npm run build32
 npm run build64
 ```
 
-# Node Webkit / Electron
+## Node Webkit / Electron
 
 If you are planning to use this module with Node Webkit or Electron, take a look at [Liam Mitchell](https://github.com/LiamKarlMitchell)'s build notes [here](https://github.com/Rob--/memoryjs/issues/23).
 
 # Usage
 
-Initialise:
+## Initialise
 ``` javascript
 const memoryjs = require('memoryjs');
 const processName = "csgo.exe";
 ```
 
-### Processes:
+## Processes
+- Open a process
+- Get all processes
+- Close a process (release handle)
 
-Open a process (sync):
-``` javascript
-const processObject = memoryjs.openProcess(processIdentifier);
-```
+```javascript
+// sync: open a process
+const processObject = memoryjs.openProcess(processName);
 
-Open a process (async):
-``` javascript
-memoryjs.openProcess(processIdentifier, (error, processObject) => {
+// async: open a process
+memoryjs.openProcess(processName, (error, processObject) => {});
 
-});
-```
 
-Close/release process handle:
-``` javascript
-memoryjs.closeProcess(handle);
-```
-
-Get all processes (sync):
-``` javascript
+// sync: get all processes
 const processes = memoryjs.getProcesses();
-```
 
-Get all processes (async):
-``` javascript
-memoryjs.getProcesses((error, processes) => {
+// async: get all processes
+memoryjs.getProcesses((error, processes) => {});
 
-});
+
+// close a process (release handle)
+memoryjs.closeProcess(handle);
 ```
 
 See the [Documentation](#user-content-process-object) section of this README to see what a process object looks like.
 
-### Modules: 
+## Modules 
+- Find a module
+- Get all modules
 
-Find a module (sync):
 ``` javascript
-const module = memoryjs.findModule(moduleName, processId);
-```
+// sync: find a module
+const moduleObject = memoryjs.findModule(moduleName, processId);
 
-Find a module (async):
-``` javascript
-memoryjs.findModule(moduleName, processId, (error, module) => {
+// async: find a module
+memoryjs.findModule(moduleName, processId, (error, moduleObject) => {});
 
-});
-```
 
-Get all modules (sync):
-``` javascript
+// sync: get all modules
 const modules = memoryjs.getModules(processId);
-```
 
-Get all modules (async):
-``` javascript
-memoryjs.getModules(processId, (error, modules) => {
-
-});
+// async: get all modules
+memoryjs.getModules(processId, (error, modules) => {});
 ```
 
 See the [Documentation](#user-content-module-object) section of this README to see what a module object looks like.
 
-### Memory:
+## Memory
+- Read data type from memory
+- Read buffer from memory
+- Write data type to memory
+- Write buffer to memory
+- Fetch memory regions
 
-Read from memory (sync):
+Read from memory:
 ``` javascript
+// sync: read data type from memory
 const value = memoryjs.readMemory(handle, address, dataType);
-```
 
-Read from memory (async):
-``` javascript
-memoryjs.readMemory(handle, address, dataType, (error, value) => {
+// async: read data type from memory
+memoryjs.readMemory(handle, address, dataType, (error, value) => {});
 
-});
-```
 
-Read buffer from memory (sync):
-``` javascript
+// sync: read buffer from memory
 const buffer = memoryjs.readBuffer(handle, address, size);
-```
 
-Read buffer from memory (async):
-``` javascript
-memoryjs.readBuffer(handle, address, size, (error, buffer) => {
+// async: read buffer from memory
+memoryjs.readBuffer(handle, address, size, (error, buffer) => {});
 
-});
-```
 
-Write to memory:
-``` javascript
+// sync: write data type to memory
 memoryjs.writeMemory(handle, address, value, dataType);
-```
 
-Write buffer to memory:
-``` javascript
+
+// sync: write buffer to memory
 memoryjs.writeBuffer(handle, address, buffer);
-```
 
-Fetch memory regions (sync):
-``` javascript
+
+// sync: fetch memory regions
 const regions = memoryjs.getRegions(handle);
-```
 
-Fetch memory regions (async):
-``` javascript
-memoryjs.getRegions(handle, (regions) => {
-
-});
+// async: fetch memory regions
+memoryjs.getRegions(handle, (regions) => {});
 ```
 
 See the [Documentation](#user-content-documentation) section of this README to see what values `dataType` can be.
 
-### Protection:
-
-Set protection of memory:
-``` javascript
+## Protection
+- Change/set the protection on a region of memory
+  
+```javascript
+// sync: change/set the protection on a region of memory
 const oldProtection = memoryjs.virtualProtectEx(handle, address, size, protection);
 ```
 
 See the [Documentation](#user-content-protection-type) section of this README to see what values `protection` can be.
 
+## Pattern Scanning
+- Pattern scan all modules and memory regions
+- Pattern scan a given module
+- Pattern scan a memory region or module at the given base address
 
-### Pattern Scanning:
-
-Pattern scanning (sync):
-``` javascript
+```javascript
+// sync: pattern scan all modules and memory regions
 const address = memoryjs.findPattern(handle, pattern, flags, patternOffset);
-const address = memoryjs.findPattern(handle, moduleName, pattern, flags, patternOffset);
-const address = memoryjs.findPattern(handle, baseAddress, pattern, flags, patternOffset);
-```
 
-Pattern scanning (async):
-``` javascript
+// async: pattern scan all modules and memory regions
 memoryjs.findPattern(handle, pattern, flags, patternOffset, (error, address) => {});
+
+
+// sync: pattern scan a given module
+const address = memoryjs.findPattern(handle, moduleName, pattern, flags, patternOffset);
+
+// async: pattern scan a given module
 memoryjs.findPattern(handle, moduleName, pattern, flags, patternOffset, (error, address) => {});
+
+
+// sync: pattern scan a memory region or module at the given base address
+const address = memoryjs.findPattern(handle, baseAddress, pattern, flags, patternOffset);
+
+// async: pattern scan a memory region or module at the given base address
 memoryjs.findPattern(handle, baseAddress, pattern, flags, patternOffset, (error, address) => {});
 ```
 
-### Function Execution:
+## Function Execution
+- Execute a function in a remote process
 
-Function execution (sync):
 ``` javascript
+// sync: execute a function in a remote process
 const result = memoryjs.callFunction(handle, args, returnType, address);
-```
 
-Function execution (async):
-``` javascript
-memoryjs.callFunction(handle, args, returnType, address, (error, result) => {
-
-});
-```
-
-### DLL Injection:
-
-Inject DLL (sync):
-```javascript
-const success = memoryjs.injectDll(handle, dllPath);
-```
-
-Inject DLL (async):
-```javascript
-memoryjs.injectDll(handle, dllPath, (error, success) => {
-
-});
-```
-
-Unload DLL (sync):
-```javascript
-const success = memoryjs.unloadDll(handle, moduleBaseAddress);
-const success = memoryjs.unloadDll(handle, moduleName);
-```
-
-Unload DLL (async):
-```javascript
-memoryjs.unloadDll(handle, moduleBaseAddress, (error, success) => {
-
-});
-memoryjs.unloadDll(handle, moduleName, (error, success) => {
-
-});
+// async: execute a function in a remote process
+memoryjs.callFunction(handle, args, returnType, address, (error, result) => {});
 ```
 
 Click [here](#user-content-result-object) to see what a result object looks like.
+
 Click [here](#user-content-function-execution-1) for details about how to format the arguments and the return type.
 
-### Hardware Breakpoints
+## DLL Injection
+- Inject a DLL
+- Unload a DLL by module base address
+- Unload a DLL by module name
 
-Attach a debugger:
+```javascript
+// sync: inject a DLL
+const success = memoryjs.injectDll(handle, dllPath);
+
+// async: inject a dLL
+memoryjs.injectDll(handle, dllPath, (error, success) => {});
+
+
+// sync: unload a DLL by module base address
+const success = memoryjs.unloadDll(handle, moduleBaseAddress);
+
+// async: unload a DLL by module base address
+memoryjs.unloadDll(handle, moduleBaseAddress, (error, success) => {});
+
+
+// sync: unload a DLL by module name
+const success = memoryjs.unloadDll(handle, moduleName);
+
+// async: unload a DLL by module name
+memoryjs.unloadDll(handle, moduleName, (error, success) => {});
+```
+
+## Hardware Breakpoints
+- Attach debugger
+- Detach debugger
+- Wait for debug event
+- Handle debug event
+- Set hardware breakpoint
+- Remove hardware breakpoint
+
 ``` javascript
+// sync: attach debugger
 const success = memoryjs.attatchDebugger(processId, exitOnDetatch);
-```
 
-Detatch debugger:
-``` javascript
+// sync: detach debugger
 const success = memoryjs.detatchDebugger(processId);
-```
 
-Wait for debug devent:
-``` javascript
+// sync: wait for debug event
 const success = memoryjs.awaitDebugEvent(hardwareRegister, millisTimeout);
-```
 
-Handle debug event:
-``` javascript
+// sync: handle debug event
 const success = memoryjs.handleDebugEvent(processId, threadId);
-```
 
-Set a hardware breakpoint:
-``` javascript
+// sync: set hardware breakpoint
 const success = memoryjs.setHardwareBreakpoint(processId, address, hardwareRegister, trigger, length);
-```
 
-Remove a hardware breakpoint:
-``` javascript
+// sync: remove hardware breakpoint
 const success = memoryjs.removeHardwareBreakpoint(processId, hardwareRegister);
 ```
 
@@ -289,7 +279,7 @@ const success = memoryjs.removeHardwareBreakpoint(processId, hardwareRegister);
 
 Note: this documentation is currently being updated, refer to the [Wiki](https://github.com/Rob--/memoryjs/wiki) for more information.
 
-### Process Object:
+## Process Object
 ``` javascript
 { dwSize: 304,
   th32ProcessID: 10316,
@@ -303,7 +293,7 @@ Note: this documentation is currently being updated, refer to the [Wiki](https:/
 
 The `handle` and `modBaseAddr` properties are only available when opening a process and not when listing processes.
 
-### Module Object:
+## Module Object
 ``` javascript
 { modBaseAddr: 468123648,
   modBaseSize: 80302080,
@@ -313,15 +303,17 @@ The `handle` and `modBaseAddr` properties are only available when opening a proc
   GlblcntUsage: 2 }
   ```
 
-### Result Object:
+## Result Object
 ``` javascript
 { returnValue: 1.23,
   exitCode: 2 }
 ```
 
-The `returnValue` is the value returned from the function that was called. `exitCode` is the termination status of the thread.
+This object is returned when a function is executed in a remote process:
+- `returnValue` is the value returned from the function that was called
+- `exitCode` is the termination status of the thread
 
-### Data Type:
+## Data Types
 
 When using the write or read functions, the data type (dataType) parameter should reference a constant from within the library:
 
@@ -344,9 +336,11 @@ When using the write or read functions, the data type (dataType) parameter shoul
 | `memoryjs.VEC3`   | 12    | `memoryjs.VECTOR3`                 | n/a |
 | `memoryjs.VEC4`   | 16    | `memoryjs.VECTOR4`                 | n/a |
 
-**Note: pointer will be 4 bytes in a 32 bit build, and 8 bytes in a 64 bit build**
 
-**Note: when writing 64 bit integers (`INT64`, `UINT64`, `INT64_BE`, `UINT64_BE`) you will need to supply a [BigInt](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/BigInt). When reading a 64 bit integer, you will receive a BigInt**
+Notes:
+- pointer will be 4 bytes in a 32 bit build, and 8 bytes in a 64 bit build.
+- to read in bid-endian mode, append `_BE` to the data type. For example: `memoryjs.DOUBLE_BE`.
+- when writing 64 bit integers (`INT64`, `UINT64`, `INT64_BE`, `UINT64_BE`) you will need to supply a [BigInt](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/BigInt). When reading a 64 bit integer, you will receive a BigInt.
 
 These data types are to used to denote the type of data being read or written.
 
@@ -369,7 +363,7 @@ const vector4 = { w: 0.0, x: 0.0, y: 0.0, z: 0.0 };
 memoryjs.writeMemory(address, vector4);
 ```
 
-### Generic Structures:
+## Generic Structures
 
 If you have a structure you want to write to memory, you can use buffers. For an example on how to do this, view the [buffers example](https://github.com/Rob--/memoryjs/blob/master/examples/buffers.js).
 
@@ -389,7 +383,7 @@ const Player = new Struct()
 
 Alternatively, you can use the [concentrate](https://github.com/deoxxa/concentrate) and [dissolve](https://github.com/deoxxa/dissolve) libraries to achieve the same thing. An old example of this is [here](https://github.com/Rob--/memoryjs/blob/aa6ed7d302fb1ac315aaa90558db43d128746912/examples/buffers.js).
 
-### Protection Type:
+## Protection Type
 
 Protection type is a bit flag DWORD value.
 
@@ -399,7 +393,7 @@ This parameter should reference a constant from the library:
 
 Refer to MSDN's [Memory Protection Constants](https://docs.microsoft.com/en-gb/windows/desktop/Memory/memory-protection-constants) for more information.
 
-### Memory Allocation Type:
+## Memory Allocation Type
 
 Memory allocation type is a bit flag DWORD value.
 
@@ -409,7 +403,7 @@ This parameter should reference a constat from the library:
 
 Refer to MSDN's [VirtualAllocEx](https://docs.microsoft.com/en-us/windows/desktop/api/memoryapi/nf-memoryapi-virtualallocex) documentation for more information.
 
-### Strings:
+## Strings
 
 You can use this library to read either a "string", or "char*" and to write a string.
 
@@ -444,7 +438,7 @@ When pattern scanning, flags need to be raised for the signature types. The sign
 
 To raise multiple flags, use the bitwise OR operator: `memoryjs.READ | memoryjs.SUBTRACT`.
 
-### Function Execution:
+## Function Execution
 
 Remote function execution works by building an array of arguments and dynamically generating shellcode that is injected into the target process and executed, for this reason crashes may occur.
 
@@ -499,7 +493,7 @@ Notes: currently passing a `double` as an argument is not supported, but returni
 
 Much thanks to the [various contributors](https://github.com/Rob--/memoryjs/issues/6) that made this feature possible.
 
-### Hardware Breakpoints:
+## Hardware Breakpoints
 
 Hardware breakpoints work by attaching a debugger to the process, setting a breakpoint on a certain address and declaring a trigger type (e.g. breakpoint on writing to the address) and then continuously waiting for a debug event to arise (and then consequently handling it).
 
@@ -531,7 +525,7 @@ For more reading about debugging and hardware breakpoints, checkout the followin
 - [WaitForDebugEvent](https://msdn.microsoft.com/en-us/library/windows/desktop/ms681423(v=vs.85).aspx) - waiting for the breakpoint to be triggered
 - [ContinueDebugEvent](https://msdn.microsoft.com/en-us/library/windows/desktop/ms679285(v=vs.85).aspx) - handling the event
 
-#### Using the Debugger Wrapper
+### Using the Debugger Wrapper:
 
 The Debugger wrapper contains these functions you should use:
 
@@ -573,7 +567,7 @@ hardwareDebugger.on(register, (event) => {
 });
 ```
 
-#### When Manually Debugging
+### When Manually Debugging:
 
 1. Attatch the debugger
 ``` javascript
