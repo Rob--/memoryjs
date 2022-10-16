@@ -257,10 +257,10 @@ memoryjs.unloadDll(handle, moduleName, (error, success) => {});
 
 ``` javascript
 // sync: attach debugger
-const success = memoryjs.attatchDebugger(processId, exitOnDetatch);
+const success = memoryjs.attachDebugger(processId, exitOnDetach);
 
 // sync: detach debugger
-const success = memoryjs.detatchDebugger(processId);
+const success = memoryjs.detachDebugger(processId);
 
 // sync: wait for debug event
 const success = memoryjs.awaitDebugEvent(hardwareRegister, millisTimeout);
@@ -339,7 +339,7 @@ When using the write or read functions, the data type (dataType) parameter shoul
 
 Notes:
 - pointer will be 4 bytes in a 32 bit build, and 8 bytes in a 64 bit build.
-- to read in bid-endian mode, append `_BE` to the data type. For example: `memoryjs.DOUBLE_BE`.
+- to read in big-endian mode, append `_BE` to the data type. For example: `memoryjs.DOUBLE_BE`.
 - when writing 64 bit integers (`INT64`, `UINT64`, `INT64_BE`, `UINT64_BE`) you will need to supply a [BigInt](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/BigInt). When reading a 64 bit integer, you will receive a BigInt.
 
 These data types are to used to denote the type of data being read or written.
@@ -354,13 +354,13 @@ memoryjs.writeMemory(handle, address, value + 1n, memoryjs.INT64);
 Vector3 is a data structure of three floats:
 ```javascript
 const vector3 = { x: 0.0, y: 0.0, z: 0.0 };
-memoryjs.writeMemory(address, vector3);
+memoryjs.writeMemory(handle, address, vector3, memoryjs.VEC3);
 ```
 
 Vector4 is a data structure of four floats:
 ```javascript
 const vector4 = { w: 0.0, x: 0.0, y: 0.0, z: 0.0 };
-memoryjs.writeMemory(address, vector4);
+memoryjs.writeMemory(handle, address, vector4, memoryjs.VEC4);
 ```
 
 ## Generic Structures
@@ -519,9 +519,9 @@ To summarise:
   - `setHardwareBreakpoint` returns a boolean stating whether the operation as successful
 
 For more reading about debugging and hardware breakpoints, checkout the following links:
-- [DebugActiveProcess](https://msdn.microsoft.com/en-us/library/windows/desktop/ms679295(v=vs.85).aspx) - attatching the debugger
-- [DebugSetProcessKillOnExit](https://docs.microsoft.com/en-us/windows/desktop/api/winbase/nf-winbase-debugsetprocesskillonexit) - kill the process when detatching
-- [DebugActiveProcessStop](https://msdn.microsoft.com/en-us/library/windows/desktop/ms679296(v=vs.85).aspx) - detatching the debugger
+- [DebugActiveProcess](https://msdn.microsoft.com/en-us/library/windows/desktop/ms679295(v=vs.85).aspx) - attaching the debugger
+- [DebugSetProcessKillOnExit](https://docs.microsoft.com/en-us/windows/desktop/api/winbase/nf-winbase-debugsetprocesskillonexit) - kill the process when detaching
+- [DebugActiveProcessStop](https://msdn.microsoft.com/en-us/library/windows/desktop/ms679296(v=vs.85).aspx) - detaching the debugger
 - [WaitForDebugEvent](https://msdn.microsoft.com/en-us/library/windows/desktop/ms681423(v=vs.85).aspx) - waiting for the breakpoint to be triggered
 - [ContinueDebugEvent](https://msdn.microsoft.com/en-us/library/windows/desktop/ms679285(v=vs.85).aspx) - handling the event
 
@@ -531,8 +531,8 @@ The Debugger wrapper contains these functions you should use:
 
 ``` javascript
 class Debugger {
-  attatch(processId, killOnDetatch = false);
-  detatch(processId);
+  attach(processId, killOnDetach = false);
+  detach(processId);
   setHardwareBreakpoint(processId, address, trigger, dataType);
   removeHardwareBreakpoint(processId, register);
 }
@@ -569,7 +569,7 @@ hardwareDebugger.on(register, (event) => {
 
 ### When Manually Debugging:
 
-1. Attatch the debugger
+1. Attach the debugger
 ``` javascript
 const hardwareDebugger = memoryjs.Debugger;
 hardwareDebugger.attach(processId);

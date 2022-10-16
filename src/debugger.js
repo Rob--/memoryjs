@@ -63,8 +63,8 @@ class Debugger extends EventEmitter {
     this.intervals = [];
   }
 
-  attach(processId, killOnDetatch = false) {
-    const success = this.memoryjs.attachDebugger(processId, killOnDetatch);
+  attach(processId, killOnDetach = false) {
+    const success = this.memoryjs.attachDebugger(processId, killOnDetach);
 
     if (success) {
       this.attached = true;
@@ -73,9 +73,9 @@ class Debugger extends EventEmitter {
     return success;
   }
 
-  detatch(processId) {
+  detach(processId) {
     this.intervals.map(({ id }) => clearInterval(id));
-    return this.memoryjs.detatchDebugger(processId);
+    return this.memoryjs.detachDebugger(processId);
   }
 
   removeHardwareBreakpoint(processId, register) {
