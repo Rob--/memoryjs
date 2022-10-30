@@ -34,11 +34,10 @@
 - Pattern scanning
 - Execute a function within a process
 - Hardware breakpoints (find out what accesses/writes to this address, etc)
-- Inject & Unload DLLs
+- Inject & unload DLLs
 
 TODO:
 - WriteFile support (for driver interactions)
-- BigInt64 support for memory addresses
 - Async/await support
 
 # Getting Started
@@ -229,7 +228,7 @@ Click [here](#user-content-function-execution-1) for details about how to format
 // sync: inject a DLL
 const success = memoryjs.injectDll(handle, dllPath);
 
-// async: inject a dLL
+// async: inject a DLL
 memoryjs.injectDll(handle, dllPath, (error, success) => {});
 
 
@@ -338,6 +337,7 @@ When using the write or read functions, the data type (dataType) parameter shoul
 
 
 Notes:
+- all functions that accept an address also accept the address as a BigInt
 - pointer will be 4 bytes in a 32 bit build, and 8 bytes in a 64 bit build.
 - to read in big-endian mode, append `_BE` to the data type. For example: `memoryjs.DOUBLE_BE`.
 - when writing 64 bit integers (`INT64`, `UINT64`, `INT64_BE`, `UINT64_BE`) you will need to supply a [BigInt](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/BigInt). When reading a 64 bit integer, you will receive a BigInt.
