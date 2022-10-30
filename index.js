@@ -311,7 +311,7 @@ const library = {
   injectDll,
   unloadDll,
   attachDebugger: memoryjs.attachDebugger,
-  detatchDebugger: memoryjs.detatchDebugger,
+  detachDebugger: memoryjs.detachDebugger,
   awaitDebugEvent: memoryjs.awaitDebugEvent,
   handleDebugEvent: memoryjs.handleDebugEvent,
   setHardwareBreakpoint: memoryjs.setHardwareBreakpoint,

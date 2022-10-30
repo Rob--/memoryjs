@@ -326,7 +326,14 @@ Napi::Value readMemory(const Napi::CallbackInfo& args) {
   Napi::Value retVal = env.Null();
 
   HANDLE handle = (HANDLE)args[0].As<Napi::Number>().Int64Value();
-  DWORD64 address = args[1].As<Napi::Number>().Int64Value();
+
+  DWORD64 address;
+  if (args[1].As<Napi::BigInt>().IsBigInt()) {
+    bool lossless;
+    address = args[1].As<Napi::BigInt>().Uint64Value(&lossless);
+  } else {
+    address = args[1].As<Napi::Number>().Int64Value();
+  }
 
   if (!strcmp(dataType, "int8") || !strcmp(dataType, "byte") || !strcmp(dataType, "char")) {
 
@@ -468,7 +475,15 @@ Napi::Value readBuffer(const Napi::CallbackInfo& args) {
   }
 
   HANDLE handle = (HANDLE)args[0].As<Napi::Number>().Int64Value();
-  DWORD64 address = args[1].As<Napi::Number>().Int64Value();
+
+  DWORD64 address;
+  if (args[1].As<Napi::BigInt>().IsBigInt()) {
+    bool lossless;
+    address = args[1].As<Napi::BigInt>().Uint64Value(&lossless);
+  } else {
+    address = args[1].As<Napi::Number>().Int64Value();
+  }
+
   SIZE_T size = args[2].As<Napi::Number>().Int64Value();
 
   // To fix the memory leak problem that was happening here, we need to release the
@@ -511,7 +526,14 @@ Napi::Value writeMemory(const Napi::CallbackInfo& args) {
   const char* dataType = dataTypeArg.c_str();
 
   HANDLE handle = (HANDLE)args[0].As<Napi::Number>().Int64Value();
-  DWORD64 address = args[1].As<Napi::Number>().Int64Value();
+
+  DWORD64 address;
+  if (args[1].As<Napi::BigInt>().IsBigInt()) {
+    bool lossless;
+    address = args[1].As<Napi::BigInt>().Uint64Value(&lossless);
+  } else {
+    address = args[1].As<Napi::Number>().Int64Value();
+  }
 
   if (!strcmp(dataType, "int8") || !strcmp(dataType, "byte") || !strcmp(dataType, "char")) {
 
@@ -539,15 +561,21 @@ Napi::Value writeMemory(const Napi::CallbackInfo& args) {
 
   } else if (!strcmp(dataType, "int64")) {
 
-    Napi::BigInt bigInt = args[2].As<Napi::BigInt>();
-    bool lossless;
-    Memory.writeMemory<int64_t>(handle, address, bigInt.Int64Value(&lossless));
+    if (args[2].As<Napi::BigInt>().IsBigInt()) {
+      bool lossless;
+      Memory.writeMemory<int64_t>(handle, address, args[2].As<Napi::BigInt>().Int64Value(&lossless));
+    } else {
+      Memory.writeMemory<int64_t>(handle, address, args[2].As<Napi::Number>().Int64Value());
+    }
 
   } else if (!strcmp(dataType, "uint64")) {
 
-    Napi::BigInt bigInt = args[2].As<Napi::BigInt>();
-    bool lossless;
-    Memory.writeMemory<uint64_t>(handle, address, bigInt.Uint64Value(&lossless));
+    if (args[2].As<Napi::BigInt>().IsBigInt()) {
+      bool lossless;
+      Memory.writeMemory<int64_t>(handle, address,  args[2].As<Napi::BigInt>().Uint64Value(&lossless));
+    } else {
+      Memory.writeMemory<int64_t>(handle, address, args[2].As<Napi::Number>().Int64Value());
+    }
 
   } else if (!strcmp(dataType, "float")) {
 
@@ -559,36 +587,36 @@ Napi::Value writeMemory(const Napi::CallbackInfo& args) {
 
   } else if (!strcmp(dataType, "ptr") || !strcmp(dataType, "pointer")) {
 
-    Napi::BigInt bigInt = args[2].As<Napi::BigInt>();
+    Napi::BigInt valueBigInt = args[2].As<Napi::BigInt>();
 
-    if (sizeof(intptr_t) == 8 && !bigInt.IsBigInt()) {
+    if (sizeof(intptr_t) == 8 && !valueBigInt.IsBigInt()) {
       std::string error = "Writing memoryjs.PTR or memoryjs.POINTER on 64 bit target build requires you to supply a BigInt.";
       error += " Rebuild the library with `npm run build32` to target 32 bit applications.";
       Napi::Error::New(env, error).ThrowAsJavaScriptException();
       return env.Null();
     }
 
-    if (bigInt.IsBigInt()) {
+    if (valueBigInt.IsBigInt()) {
       bool lossless;
-      Memory.writeMemory<intptr_t>(handle, address, bigInt.Int64Value(&lossless));
+      Memory.writeMemory<intptr_t>(handle, address, valueBigInt.Int64Value(&lossless));
     } else {
       Memory.writeMemory<intptr_t>(handle, address, args[2].As<Napi::Number>().Int32Value());
     }
 
   } else if (!strcmp(dataType, "uptr") || !strcmp(dataType, "upointer")) {
 
-    Napi::BigInt bigInt = args[2].As<Napi::BigInt>();
+    Napi::BigInt valueBigInt = args[2].As<Napi::BigInt>();
 
-    if (sizeof(uintptr_t) == 8 && !bigInt.IsBigInt()) {
+    if (sizeof(uintptr_t) == 8 && !valueBigInt.IsBigInt()) {
       std::string error = "Writing memoryjs.PTR or memoryjs.POINTER on 64 bit target build requires you to supply a BigInt.";
       error += " Rebuild the library with `npm run build32` to target 32 bit applications.";
       Napi::Error::New(env, error).ThrowAsJavaScriptException();
       return env.Null();
     }
 
-    if (bigInt.IsBigInt()) {
+    if (valueBigInt.IsBigInt()) {
       bool lossless;
-      Memory.writeMemory<uintptr_t>(handle, address, bigInt.Uint64Value(&lossless));
+      Memory.writeMemory<uintptr_t>(handle, address, valueBigInt.Uint64Value(&lossless));
     } else {
       Memory.writeMemory<uintptr_t>(handle, address, args[2].As<Napi::Number>().Uint32Value());
     }
@@ -650,7 +678,15 @@ Napi::Value writeBuffer(const Napi::CallbackInfo& args) {
   }
 
   HANDLE handle = (HANDLE)args[0].As<Napi::Number>().Int64Value();
-  DWORD64 address = args[1].As<Napi::Number>().Int64Value();
+
+  DWORD64 address;
+  if (args[1].As<Napi::BigInt>().IsBigInt()) {
+    bool lossless;
+    address = args[1].As<Napi::BigInt>().Uint64Value(&lossless);
+  } else {
+    address = args[1].As<Napi::Number>().Int64Value();
+  }
+
   SIZE_T length = args[2].As<Napi::Buffer<char>>().Length();
   char* data = args[2].As<Napi::Buffer<char>>().Data();
   Memory.writeMemory<char*>(handle, address, data, length);
@@ -813,7 +849,15 @@ Napi::Value findPatternByAddress(const Napi::CallbackInfo& args) {
   }
 
   HANDLE handle = (HANDLE)args[0].As<Napi::Number>().Int64Value();
-  DWORD64 baseAddress = args[1].As<Napi::Number>().Int64Value();
+
+  DWORD64 baseAddress;
+  if (args[1].As<Napi::BigInt>().IsBigInt()) {
+    bool lossless;
+    baseAddress = args[1].As<Napi::BigInt>().Uint64Value(&lossless);
+  } else {
+    baseAddress = args[1].As<Napi::Number>().Int64Value();
+  }
+
   std::string pattern(args[2].As<Napi::String>().Utf8Value());
   short flags = args[3].As<Napi::Number>().Uint32Value();
   uint32_t patternOffset = args[4].As<Napi::Number>().Uint32Value();
@@ -902,7 +946,14 @@ Napi::Value callFunction(const Napi::CallbackInfo& args) {
 
   HANDLE handle = (HANDLE)args[0].As<Napi::Number>().Int64Value();
   functions::Type returnType = (functions::Type) args[2].As<Napi::Number>().Uint32Value();
-  DWORD64 address = args[3].As<Napi::Number>().Int64Value();
+
+  DWORD64 address;
+  if (args[3].As<Napi::BigInt>().IsBigInt()) {
+    bool lossless;
+    address = args[3].As<Napi::BigInt>().Uint64Value(&lossless);
+  } else {
+    address = args[3].As<Napi::Number>().Int64Value();
+  }
 
   char* errorMessage = "";
   Call data = functions::call<int>(handle, parsedArgs, returnType, address, &errorMessage);
@@ -1208,7 +1259,7 @@ Napi::Value attachDebugger(const Napi::CallbackInfo& args) {
   return Napi::Boolean::New(env, success);
 }
 
-Napi::Value detatchDebugger(const Napi::CallbackInfo& args) {
+Napi::Value detachDebugger(const Napi::CallbackInfo& args) {
   Napi::Env env = args.Env();
 
   DWORD processId = args[0].As<Napi::Number>().Uint32Value();
@@ -1502,7 +1553,7 @@ Napi::Object init(Napi::Env env, Napi::Object exports) {
   exports.Set(Napi::String::New(env, "getRegions"), Napi::Function::New(env, getRegions));
   exports.Set(Napi::String::New(env, "virtualQueryEx"), Napi::Function::New(env, virtualQueryEx));
   exports.Set(Napi::String::New(env, "attachDebugger"), Napi::Function::New(env, attachDebugger));
-  exports.Set(Napi::String::New(env, "detatchDebugger"), Napi::Function::New(env, detatchDebugger));
+  exports.Set(Napi::String::New(env, "detachDebugger"), Napi::Function::New(env, detachDebugger));
   exports.Set(Napi::String::New(env, "awaitDebugEvent"), Napi::Function::New(env, awaitDebugEvent));
   exports.Set(Napi::String::New(env, "handleDebugEvent"), Napi::Function::New(env, handleDebugEvent));
   exports.Set(Napi::String::New(env, "setHardwareBreakpoint"), Napi::Function::New(env, setHardwareBreakpoint));
