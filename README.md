@@ -187,7 +187,7 @@ const baseAddress = memoryjs.mapViewOfFile(processHandle, fileName, offset, view
 
 
 // sync: close handle to a file mapping object
-memoryjs.closeHandle(fileHandle);
+const success = memoryjs.closeHandle(fileHandle);
 ```
 
 See the [Documentation](#user-content-documentation) section of this README to see details on the parameters and return values for these functions.
@@ -513,7 +513,12 @@ const baseAddress = memoryjs.mapViewOfFile(processObject.handle, fileHandle.hand
 const buffer = memoryjs.readBuffer(processObject.handle, baseAddress, 10);
 const data = buffer.toString();
 
-memoryjs.closeHandle(fileHandle);
+const success = memoryjs.closeHandle(fileHandle);
+```
+
+If you want to read a memory mapped file without having a target process to map the file to, you can map it to the current Node process with global variable `process.pid`:
+```javascript
+const processObject = memoryjs.openProcess(process.pid);
 ```
 
 ## Function Execution
