@@ -25,6 +25,7 @@
 
 - List all open processes
 - List all modules associated with a process
+- Close process/file handles
 - Find a specific module within a process
 - Read and write process memory (w/big-endian support)
 - Read and write buffers (arbitrary structs)
@@ -35,6 +36,7 @@
 - Execute a function within a process
 - Hardware breakpoints (find out what accesses/writes to this address, etc)
 - Inject & unload DLLs
+- Read memory mapped files
 
 TODO:
 - WriteFile support (for driver interactions)
@@ -101,7 +103,7 @@ memoryjs.getProcesses((error, processes) => {});
 
 
 // close a process (release handle)
-memoryjs.closeProcess(handle);
+memoryjs.closeHandle(handle);
 ```
 
 See the [Documentation](#user-content-process-object) section of this README to see what a process object looks like.
@@ -134,7 +136,6 @@ See the [Documentation](#user-content-module-object) section of this README to s
 - Write buffer to memory
 - Fetch memory regions
 
-Read from memory:
 ``` javascript
 // sync: read data type from memory
 const value = memoryjs.readMemory(handle, address, dataType);
@@ -166,6 +167,30 @@ memoryjs.getRegions(handle, (regions) => {});
 ```
 
 See the [Documentation](#user-content-documentation) section of this README to see what values `dataType` can be.
+
+## Memory Mapped Files
+- Open a named file mapping object
+- Map a view of a file into a specified process
+- Close handle to the file mapping object
+
+```javascript
+// sync: open a named file mapping object
+const fileHandle = memoryjs.openFileMapping(fileName);
+
+
+// sync: map entire file into a specified process
+const baseAddress = memoryjs.mapViewOfFile(processHandle, fileName);
+
+
+// sync: map portion of a file into a specified process
+const baseAddress = memoryjs.mapViewOfFile(processHandle, fileName, offset, viewSize, pageProtection);
+
+
+// sync: close handle to a file mapping object
+memoryjs.closeHandle(fileHandle);
+```
+
+See the [Documentation](#user-content-documentation) section of this README to see details on the parameters and return values for these functions.
 
 ## Protection
 - Change/set the protection on a region of memory
@@ -426,7 +451,7 @@ infinite loop, it will stop reading if it has not found a null-terminator after 
 One way to bypass this limitation in the future would be to allow a parameter to let users set the maximum
 character count.
 
-### Signature Type:
+### Signature Type
 
 When pattern scanning, flags need to be raised for the signature types. The signature type parameter needs to be one of the following:
 
@@ -437,6 +462,59 @@ When pattern scanning, flags need to be raised for the signature types. The sign
 `0x2` or `memoryjs.SUBSTRACT` which will subtract the image base from the address.
 
 To raise multiple flags, use the bitwise OR operator: `memoryjs.READ | memoryjs.SUBTRACT`.
+
+## Memory Mapped Files
+
+The library exposes functions to map obtain a handle to and read a memory mapped file.
+
+**openFileMapping(fileName)**
+- *fileName*: name of the file mapping object to be opened
+- returns: handle to the file mapping object
+
+Refer to [MSDN's OpenFileMappingA](https://learn.microsoft.com/en-us/windows/win32/api/winbase/nf-winbase-openfilemappinga) documentation for more information.
+
+**mapViewOfFile(processHandle, fileName)**
+- *processHandle*: the target process to map the file to
+- *fileHandle*: handle of the file mapping object, obtained by `memoryjs.openFileMapping`
+- Description: maps the entire file to target process' memory. Page protection defaults to `constants.PAGE_READONLY`.
+- Returns: the base address of the mapped file
+
+**mapViewOfFile(processHandle, fileName, offset, viewSize, pageProtection)**
+- *processHandle*: the target process to map the file to
+- *fileHandle*: handle of the file mapping object, obtained by `memoryjs.openFileMapping`
+- *offset* (`number` or `bigint`): the offset from the beginning of the file (has to be multiple of 64KB)
+- *viewSize* (`number` or `bigint`): the number of bytes to map (if `0`, the entire file will be read, regardless of offset)
+- *pageProtection*: desired page protection
+- Description: maps a view of the file to the target process' memory
+- Returns: the base address of the mapped file
+
+Refer to [MSDN's MapViewOfFile2](https://learn.microsoft.com/en-us/windows/win32/api/memoryapi/nf-memoryapi-mapviewoffile2) documentation for more information.
+
+See [Protection Type](#user-content-protection-type) for page protection types.
+
+### Example
+We have a process that creates a file mapping:
+```c++
+HANDLE fileHandle = CreateFileA("C:\\foo.txt", GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+HANDLE fileMappingHandle = CreateFileMappingA(fileHandle, NULL, PAGE_READONLY, 0, 0, "MappedFooFile");
+```
+
+We can map the file to a specified target process and read the file with `memoryjs`:
+```javascript
+const processObject = memoryjs.openProcess("example.exe");
+const fileHandle = memoryjs.openFileMapping("MappedFooFile");
+
+// read entire file
+const baseAddress = memoryjs.mapViewOfFile(processObject.handle, fileHandle.handle);
+const data = memoryjs.readMemory(processObject.handle, baseAddress, memoryjs.STR);
+
+// read 10 bytes after 64KB
+const baseAddress = memoryjs.mapViewOfFile(processObject.handle, fileHandle.handle, constants.PAGE_READONLY);
+const buffer = memoryjs.readBuffer(processObject.handle, baseAddress, 10);
+const data = buffer.toString();
+
+memoryjs.closeHandle(fileHandle);
+```
 
 ## Function Execution
 

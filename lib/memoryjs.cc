@@ -12,6 +12,7 @@
 #include "debugger.h"
 
 #pragma comment(lib, "psapi.lib")
+#pragma comment(lib, "onecore.lib")
 
 
 process Process;
@@ -104,21 +105,10 @@ Napi::Value openProcess(const Napi::CallbackInfo& args) {
   }
 }
 
-Napi::Value closeProcess(const Napi::CallbackInfo& args) {
+Napi::Value closeHandle(const Napi::CallbackInfo& args) {
   Napi::Env env = args.Env();
-
-  if (args.Length() != 1) {
-    Napi::Error::New(env, "requires 1 argument").ThrowAsJavaScriptException();
-    return env.Null();
-  }
-
-  if (!args[0].IsNumber()) {
-    Napi::Error::New(env, "first argument must be a number").ThrowAsJavaScriptException();
-    return env.Null();
-  }
-
-  Process.closeProcess((HANDLE)args[0].As<Napi::Number>().Int64Value());
-  return env.Null();
+  BOOL success = CloseHandle((HANDLE)args[0].As<Napi::Number>().Int64Value());
+  return Napi::Boolean::New(env, success);
 }
 
 Napi::Value getProcesses(const Napi::CallbackInfo& args) {
@@ -1506,6 +1496,55 @@ Napi::Value unloadDll(const Napi::CallbackInfo& args) {
   }
 }
 
+Napi::Value openFileMapping(const Napi::CallbackInfo& args) {
+  Napi::Env env = args.Env();
+
+  std::string fileName(args[0].As<Napi::String>().Utf8Value());
+
+  HANDLE fileHandle = OpenFileMappingA(FILE_MAP_ALL_ACCESS, FALSE, fileName.c_str());
+
+  if (fileHandle == NULL) {
+    Napi::Error::New(env, Napi::String::New(env, "Error opening handle to file!")).ThrowAsJavaScriptException();
+    return env.Null();
+  }
+
+  return Napi::Value::From(env, (uintptr_t) fileHandle);
+}
+
+Napi::Value mapViewOfFile(const Napi::CallbackInfo& args) {
+  Napi::Env env = args.Env();
+
+  HANDLE processHandle = (HANDLE)args[0].As<Napi::Number>().Int64Value();
+  HANDLE fileHandle = (HANDLE)args[1].As<Napi::Number>().Int64Value();
+
+  uint64_t offset;
+  if (args[2].As<Napi::BigInt>().IsBigInt()) {
+    bool lossless;
+    offset = args[2].As<Napi::BigInt>().Uint64Value(&lossless);
+  } else {
+    offset = args[2].As<Napi::Number>().Int64Value();
+  }
+  
+  size_t viewSize;
+  if (args[3].As<Napi::BigInt>().IsBigInt()) {
+    bool lossless;
+    viewSize = args[3].As<Napi::BigInt>().Uint64Value(&lossless);
+  } else {
+    viewSize = args[3].As<Napi::Number>().Int64Value();
+  }
+
+  ULONG pageProtection = args[4].As<Napi::Number>().Int64Value();
+
+  LPVOID baseAddress = MapViewOfFile2(fileHandle, processHandle, offset, NULL, viewSize, 0, pageProtection);
+
+  if (baseAddress == NULL) {
+    Napi::Error::New(env, Napi::String::New(env, "Error mapping file to process!")).ThrowAsJavaScriptException();
+    return env.Null();
+  }
+
+  return Napi::Value::From(env, (uintptr_t) baseAddress);
+}
+
 // https://stackoverflow.com/a/17387176
 std::string GetLastErrorToString() {
   DWORD errorMessageID = ::GetLastError();
@@ -1536,7 +1575,6 @@ std::string GetLastErrorToString() {
 
 Napi::Object init(Napi::Env env, Napi::Object exports) {
   exports.Set(Napi::String::New(env, "openProcess"), Napi::Function::New(env, openProcess));
-  exports.Set(Napi::String::New(env, "closeProcess"), Napi::Function::New(env, closeProcess));
   exports.Set(Napi::String::New(env, "getProcesses"), Napi::Function::New(env, getProcesses));
   exports.Set(Napi::String::New(env, "getModules"), Napi::Function::New(env, getModules));
   exports.Set(Napi::String::New(env, "findModule"), Napi::Function::New(env, findModule));
@@ -1560,6 +1598,8 @@ Napi::Object init(Napi::Env env, Napi::Object exports) {
   exports.Set(Napi::String::New(env, "removeHardwareBreakpoint"), Napi::Function::New(env, removeHardwareBreakpoint));
   exports.Set(Napi::String::New(env, "injectDll"), Napi::Function::New(env, injectDll));
   exports.Set(Napi::String::New(env, "unloadDll"), Napi::Function::New(env, unloadDll));
+  exports.Set(Napi::String::New(env, "openFileMapping"), Napi::Function::New(env, openFileMapping));
+  exports.Set(Napi::String::New(env, "mapViewOfFile"), Napi::Function::New(env, mapViewOfFile));
   return exports;
 }
 
