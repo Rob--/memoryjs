@@ -509,7 +509,7 @@ const baseAddress = memoryjs.mapViewOfFile(processObject.handle, fileHandle.hand
 const data = memoryjs.readMemory(processObject.handle, baseAddress, memoryjs.STR);
 
 // read 10 bytes after 64KB
-const baseAddress = memoryjs.mapViewOfFile(processObject.handle, fileHandle.handle, constants.PAGE_READONLY);
+const baseAddress = memoryjs.mapViewOfFile(processObject.handle, fileHandle.handle, 65536, 10, constants.PAGE_READONLY);
 const buffer = memoryjs.readBuffer(processObject.handle, baseAddress, 10);
 const data = buffer.toString();
 
