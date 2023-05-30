@@ -1575,6 +1575,7 @@ std::string GetLastErrorToString() {
 
 Napi::Object init(Napi::Env env, Napi::Object exports) {
   exports.Set(Napi::String::New(env, "openProcess"), Napi::Function::New(env, openProcess));
+  exports.Set(Napi::String::New(env, "closeHandle"), Napi::Function::New(env, closeHandle));
   exports.Set(Napi::String::New(env, "getProcesses"), Napi::Function::New(env, getProcesses));
   exports.Set(Napi::String::New(env, "getModules"), Napi::Function::New(env, getModules));
   exports.Set(Napi::String::New(env, "findModule"), Napi::Function::New(env, findModule));
