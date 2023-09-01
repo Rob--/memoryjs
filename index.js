@@ -4,6 +4,13 @@ const Debugger = require('./src/debugger');
 const constants = require('./src/consts');
 const { STRUCTRON_TYPE_STRING } = require('./src/utils');
 
+/* TODO:
+ * - remove callbacks from all functions and implement promise support using Napi
+ * - validate argument types in JS space instead of C++
+ * - refactor read/write memory functions to use buffers instead?
+ * - remove `closeProcess` in favour of `closeHandle`
+ */
+
 function openProcess(processIdentifier, callback) {
   if (arguments.length === 1) {
     return memoryjs.openProcess(processIdentifier);
@@ -13,7 +20,7 @@ function openProcess(processIdentifier, callback) {
 }
 
 function closeProcess(handle) {
-  return memoryjs.closeProcess(handle);
+  return memoryjs.closeHandle(handle);
 }
 
 function getProcesses(callback) {
@@ -292,6 +299,33 @@ function unloadDll(handle, module, callback) {
   return memoryjs.unloadDll(handle, module, callback);
 }
 
+function openFileMapping(fileName) {
+  if (arguments.length !== 1 || typeof fileName !== 'string') {
+    throw new Error('invalid arguments!');
+  }
+
+  return memoryjs.openFileMapping(fileName);
+}
+
+function mapViewOfFile(processHandle, fileHandle, offset, viewSize, pageProtection) {
+  const validArgs = [
+    ['number', 'number'],
+    ['number', 'number', 'number', 'number', 'number'],
+    ['number', 'number', 'bigint', 'bigint', 'number']
+  ];
+  const receivedArgs = Array.from(arguments).map(arg => typeof arg);
+
+  if (!validArgs.some(args => args.join(",") == receivedArgs.join(","))) {
+    throw new Error('invalid arguments!');
+  }
+
+  if (arguments.length == 2) {
+    return memoryjs.mapViewOfFile(processHandle, fileHandle, 0, 0, constants.PAGE_READONLY);
+  }
+
+  return memoryjs.mapViewOfFile(processHandle, fileHandle, offset, viewSize, pageProtection);
+}
+
 const library = {
   openProcess,
   closeProcess,
@@ -310,8 +344,10 @@ const library = {
   virtualQueryEx,
   injectDll,
   unloadDll,
+  openFileMapping,
+  mapViewOfFile,
   attachDebugger: memoryjs.attachDebugger,
-  detatchDebugger: memoryjs.detatchDebugger,
+  detachDebugger: memoryjs.detachDebugger,
   awaitDebugEvent: memoryjs.awaitDebugEvent,
   handleDebugEvent: memoryjs.handleDebugEvent,
   setHardwareBreakpoint: memoryjs.setHardwareBreakpoint,
