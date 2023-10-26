@@ -127,7 +127,7 @@ Napi::Value getProcesses(const Napi::CallbackInfo& args) {
   // Define error message that may be set by the function that gets the processes
   char* errorMessage = "";
 
-  std::vector<PROCESSENTRY32> processEntries = Process.getProcesses(&errorMessage);
+  std::vector<PROCESSENTRY32A> processEntries = Process.getProcesses(&errorMessage);
 
   // If an error message was returned from the function that gets the processes, throw the error.
   // Only throw an error if there is no callback (if there's a callback, the error is passed there).
@@ -140,7 +140,7 @@ Napi::Value getProcesses(const Napi::CallbackInfo& args) {
   Napi::Array processes = Napi::Array::New(env, processEntries.size());
 
   // Loop over all processes found
-  for (std::vector<PROCESSENTRY32>::size_type i = 0; i != processEntries.size(); i++) {
+  for (std::vector<PROCESSENTRY32A>::size_type i = 0; i != processEntries.size(); i++) {
     // Create a v8 object to store the current process' information
     Napi::Object process = Napi::Object::New(env);
 
