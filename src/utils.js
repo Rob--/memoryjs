@@ -72,4 +72,29 @@ const STRUCTRON_TYPE_STRING = memoryjs => (handle, structAddress, platform, enco
   SIZE: platform === '64' ? SIZEOF_STDSTRING_64BIT : SIZEOF_STDSTRING_32BIT,
 });
 
-module.exports = { STRUCTRON_TYPE_STRING };
+/**
+ * Reads the memory pointer from the specified address with optional offsets.
+ *
+ * @param {number} handle - The handle or identifier for the memory region.
+ * @param {number} address - The memory address to read.
+ * @param {number[]} [offsets] - Optional array of offsets to traverse.
+ * @returns {number} The value read from the memory address.
+ */
+const readPointer = memoryjs => (handle, address, offsets) => {
+  let addr = address
+
+  if (offsets) {
+    addr = memoryjs.readMemory(handle, addr, memoryjs.INT)
+    for (let offset of offsets) {
+      if (offset == offsets.at(-1)) {
+        addr += offset
+        continue
+      }
+      addr = memoryjs.readMemory(handle, addr + offset, memoryjs.INT)
+    }
+  }
+
+  return addr
+}
+
+module.exports = { STRUCTRON_TYPE_STRING, readPointer };
