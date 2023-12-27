@@ -103,7 +103,7 @@ memoryjs.getProcesses((error, processes) => {});
 
 
 // close a process (release handle)
-memoryjs.closeHandle(handle);
+memoryjs.closeProcess(handle);
 ```
 
 See the [Documentation](#user-content-process-object) section of this README to see what a process object looks like.
@@ -187,7 +187,7 @@ const baseAddress = memoryjs.mapViewOfFile(processHandle, fileName, offset, view
 
 
 // sync: close handle to a file mapping object
-const success = memoryjs.closeHandle(fileHandle);
+const success = memoryjs.closeProcess(fileHandle);
 ```
 
 See the [Documentation](#user-content-documentation) section of this README to see details on the parameters and return values for these functions.
@@ -513,7 +513,7 @@ const baseAddress = memoryjs.mapViewOfFile(processObject.handle, fileHandle.hand
 const buffer = memoryjs.readBuffer(processObject.handle, baseAddress, 10);
 const data = buffer.toString();
 
-const success = memoryjs.closeHandle(fileHandle);
+const success = memoryjs.closeProcess(fileHandle);
 ```
 
 If you want to read a memory mapped file without having a target process to map the file to, you can map it to the current Node process with global variable `process.pid`:
