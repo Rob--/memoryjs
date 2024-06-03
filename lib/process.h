@@ -17,10 +17,10 @@ public:
   process();
   ~process();
 
-  Pair openProcess(const char* processName, char** errorMessage);
-  Pair openProcess(DWORD processId, char** errorMessage);
+  Pair openProcess(const char* processName, const char** errorMessage);
+  Pair openProcess(DWORD processId, const char** errorMessage);
   void closeProcess(HANDLE hProcess);
-  std::vector<PROCESSENTRY32> getProcesses(char** errorMessage);
+  std::vector<PROCESSENTRY32> getProcesses(const char** errorMessage);
 };
 
 #endif

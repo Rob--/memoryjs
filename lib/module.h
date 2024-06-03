@@ -9,9 +9,9 @@
 
 namespace module {
   DWORD64 getBaseAddress(const char* processName, DWORD processId);
-  MODULEENTRY32 findModule(const char* moduleName, DWORD processId, char** errorMessage);
-  std::vector<MODULEENTRY32> getModules(DWORD processId, char** errorMessage);
-  std::vector<THREADENTRY32> getThreads(DWORD processId, char** errorMessage);
+  MODULEENTRY32 findModule(const char* moduleName, DWORD processId, const char** errorMessage);
+  std::vector<MODULEENTRY32> getModules(DWORD processId, const char** errorMessage);
+  std::vector<THREADENTRY32> getThreads(DWORD processId, const char** errorMessage);
 
 };
 #endif

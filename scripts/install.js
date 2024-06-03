@@ -15,7 +15,7 @@ function run(script) {
   const args = script.split(' ').slice(1);
 
   // inherit stdio to print colour (helpful for warnings/errors readability)
-  const child = spawn(program, args, { stdio: 'inherit' });
+  const child = spawn(program, args, { stdio: 'inherit', shell:true });
 
   child.on('close', code => console.log(`Script "${script}" exited with ${code}`));
 }

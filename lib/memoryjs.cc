@@ -48,7 +48,7 @@ Napi::Value openProcess(const Napi::CallbackInfo& args) {
   }
 
   // Define error message that may be set by the function that opens the process
-  char* errorMessage = "";
+  const char* errorMessage = "";
 
   process::Pair pair;
 
@@ -125,7 +125,7 @@ Napi::Value getProcesses(const Napi::CallbackInfo& args) {
   }
 
   // Define error message that may be set by the function that gets the processes
-  char* errorMessage = "";
+  const char* errorMessage = "";
 
   std::vector<PROCESSENTRY32> processEntries = Process.getProcesses(&errorMessage);
 
@@ -186,7 +186,7 @@ Napi::Value getModules(const Napi::CallbackInfo& args) {
   }
 
   // Define error message that may be set by the function that gets the modules
-  char* errorMessage = "";
+  const char* errorMessage = "";
 
   std::vector<MODULEENTRY32> moduleEntries = module::getModules(args[0].As<Napi::Number>().Int32Value(), &errorMessage);
 
@@ -251,7 +251,7 @@ Napi::Value findModule(const Napi::CallbackInfo& args) {
   std::string moduleName(args[0].As<Napi::String>().Utf8Value());
 
   // Define error message that may be set by the function that gets the modules
-  char* errorMessage = "";
+  const char* errorMessage = "";
 
   MODULEENTRY32 module = module::findModule(moduleName.c_str(), args[1].As<Napi::Number>().Int32Value(), &errorMessage);
 
@@ -312,7 +312,7 @@ Napi::Value readMemory(const Napi::CallbackInfo& args) {
   const char* dataType = dataTypeArg.c_str();
 
   // Define the error message that will be set if no data type is recognised
-  char* errorMessage = "";
+  const char* errorMessage = "";
   Napi::Value retVal = env.Null();
 
   HANDLE handle = (HANDLE)args[0].As<Napi::Number>().Int64Value();
@@ -743,7 +743,7 @@ Napi::Value findPattern(const Napi::CallbackInfo& args) {
 
   // matching address
   uintptr_t address = 0;
-  char* errorMessage = "";
+  const char* errorMessage = "";
 
   std::vector<MODULEENTRY32> modules = module::getModules(GetProcessId(handle), &errorMessage);
   Pattern.search(handle, modules, 0, pattern.c_str(), flags, patternOffset, &address);
@@ -793,7 +793,7 @@ Napi::Value findPatternByModule(const Napi::CallbackInfo& args) {
 
   // matching address
   uintptr_t address = 0;
-  char* errorMessage = "";
+  const char* errorMessage = "";
 
   MODULEENTRY32 module = module::findModule(moduleName.c_str(), GetProcessId(handle), &errorMessage);
 
@@ -854,7 +854,7 @@ Napi::Value findPatternByAddress(const Napi::CallbackInfo& args) {
 
   // matching address
   uintptr_t address = 0;
-  char* errorMessage = "";
+  const char* errorMessage = "";
 
   std::vector<MODULEENTRY32> modules = module::getModules(GetProcessId(handle), &errorMessage);
   Pattern.search(handle, modules, baseAddress, pattern.c_str(), flags, patternOffset, &address);
@@ -945,7 +945,7 @@ Napi::Value callFunction(const Napi::CallbackInfo& args) {
     address = args[3].As<Napi::Number>().Int64Value();
   }
 
-  char* errorMessage = "";
+  const char* errorMessage = "";
   Call data = functions::call<int>(handle, parsedArgs, returnType, address, &errorMessage);
 
   // Free all the memory we allocated
@@ -1030,7 +1030,7 @@ Napi::Value virtualProtectEx(const Napi::CallbackInfo& args) {
 
   bool success = VirtualProtectEx(handle, (LPVOID) address, size, protection, &result);
 
-  char* errorMessage = "";
+  const char* errorMessage = "";
 
   if (success == 0) {
     errorMessage = "an error occurred calling VirtualProtectEx";
@@ -1135,7 +1135,7 @@ Napi::Value virtualQueryEx(const Napi::CallbackInfo& args) {
   MEMORY_BASIC_INFORMATION information;
   SIZE_T result = VirtualQueryEx(handle, (LPVOID)address, &information, sizeof(information));
 
-  char* errorMessage = "";
+  const char* errorMessage = "";
 
   if (result == 0 || result != sizeof(information)) {
     errorMessage = "an error occurred calling VirtualQueryEx";
@@ -1202,7 +1202,7 @@ Napi::Value virtualAllocEx(const Napi::CallbackInfo& args) {
 
   LPVOID allocatedAddress = VirtualAllocEx(handle, address, size, allocationType, protection);
 
-  char* errorMessage = "";
+  const char* errorMessage = "";
 
   // If null, it means an error occurred
   if (allocatedAddress == NULL) {
@@ -1402,7 +1402,7 @@ Napi::Value injectDll(const Napi::CallbackInfo& args) {
   std::string dllPath(args[1].As<Napi::String>().Utf8Value());
   Napi::Function callback = args[2].As<Napi::Function>();
 
-  char* errorMessage = "";
+  const char* errorMessage = "";
   DWORD moduleHandle = -1;
   bool success = dll::inject(handle, dllPath, &errorMessage, &moduleHandle);
 
@@ -1463,7 +1463,7 @@ Napi::Value unloadDll(const Napi::CallbackInfo& args) {
   // find module handle from name of DLL
   if (args[1].IsString()) {
     std::string moduleName(args[1].As<Napi::String>().Utf8Value());
-    char* errorMessage = "";
+    const char* errorMessage = "";
 
     MODULEENTRY32 module = module::findModule(moduleName.c_str(), GetProcessId(handle), &errorMessage);
 
@@ -1480,7 +1480,7 @@ Napi::Value unloadDll(const Napi::CallbackInfo& args) {
     moduleHandle = (HMODULE) module.modBaseAddr;
   }
 
-  char* errorMessage = "";
+  const char* errorMessage = "";
   bool success = dll::unload(handle, &errorMessage, moduleHandle);
 
   if (strcmp(errorMessage, "") && args.Length() != 3) {

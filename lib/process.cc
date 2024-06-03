@@ -12,7 +12,7 @@ using v8::Exception;
 using v8::Isolate;
 using v8::String;
 
-process::Pair process::openProcess(const char* processName, char** errorMessage){
+process::Pair process::openProcess(const char* processName, const char** errorMessage){
   PROCESSENTRY32 process;
   HANDLE handle = NULL;
 
@@ -38,7 +38,7 @@ process::Pair process::openProcess(const char* processName, char** errorMessage)
   };
 }
 
-process::Pair process::openProcess(DWORD processId, char** errorMessage) {
+process::Pair process::openProcess(DWORD processId, const char** errorMessage) {
   PROCESSENTRY32 process;
   HANDLE handle = NULL;
 
@@ -64,7 +64,7 @@ process::Pair process::openProcess(DWORD processId, char** errorMessage) {
   };
 }
 
-std::vector<PROCESSENTRY32> process::getProcesses(char** errorMessage) {
+std::vector<PROCESSENTRY32> process::getProcesses(const char** errorMessage) {
   // Take a snapshot of all processes.
   HANDLE hProcessSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, NULL);
   PROCESSENTRY32 pEntry;

@@ -25,7 +25,7 @@ bool debugger::detatch(DWORD processId) {
 }
 
 bool debugger::setHardwareBreakpoint(DWORD processId, DWORD64 address, Register reg, int trigger, int size) {
-  char* errorMessage = "";
+  const char* errorMessage = "";
   std::vector<THREADENTRY32> threads = module::getThreads(0, &errorMessage);
 
   if (strcmp(errorMessage, "")) {

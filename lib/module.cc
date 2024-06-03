@@ -7,12 +7,12 @@
 #include "memoryjs.h"
 
 DWORD64 module::getBaseAddress(const char* processName, DWORD processId) {
-  char* errorMessage = "";
+  const char* errorMessage = "";
   MODULEENTRY32 baseModule = module::findModule(processName, processId, &errorMessage);
   return (DWORD64)baseModule.modBaseAddr; 
 }
 
-MODULEENTRY32 module::findModule(const char* moduleName, DWORD processId, char** errorMessage) {
+MODULEENTRY32 module::findModule(const char* moduleName, DWORD processId, const char** errorMessage) {
   MODULEENTRY32 module;
   bool found = false;
 
@@ -36,7 +36,7 @@ MODULEENTRY32 module::findModule(const char* moduleName, DWORD processId, char**
   return module;
 } 
 
-std::vector<MODULEENTRY32> module::getModules(DWORD processId, char** errorMessage) {
+std::vector<MODULEENTRY32> module::getModules(DWORD processId, const char** errorMessage) {
   // Take a snapshot of all modules inside a given process.
   HANDLE hModuleSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPMODULE | TH32CS_SNAPMODULE32, processId);
   MODULEENTRY32 mEntry;
@@ -67,7 +67,7 @@ std::vector<MODULEENTRY32> module::getModules(DWORD processId, char** errorMessa
   return modules;
 }
 
-std::vector<THREADENTRY32> module::getThreads(DWORD processId, char** errorMessage) {
+std::vector<THREADENTRY32> module::getThreads(DWORD processId, const char** errorMessage) {
   HANDLE hThreadSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, processId);
   THREADENTRY32 mEntry;
 
