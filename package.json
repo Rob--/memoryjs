@@ -33,8 +33,6 @@
   },
   "homepage": "https://github.com/Rob--/memoryjs#readme",
   "dependencies": {
-    "eslint": "^8.5.0",
-    "eslint-config-airbnb-base": "^12.1.0",
     "node-addon-api": "^3.2.1"
   }
 }
